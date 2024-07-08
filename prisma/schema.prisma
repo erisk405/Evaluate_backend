@@ -15,8 +15,32 @@ datasource db {
 model User {
   uid    String @id @db.VarChar(3000)
   email String  @unique
-  name  String?
+  name  String
+  dateofbirth DateTime @db.Date
   password String
-  role  String
-  department String
+  role_id String?
+  role Role? @relation(fields: [role_id], references: [id])
+  department_id String?
+  department Department? @relation("Workon",fields: [department_id],references: [id])
+  image String?
+  headOfDepartment Department? @relation("HeadOfDepartment" )
+  deputyDirectorOf Department? @relation("DeputyDirectorOf")
+
+
+
+}
+model Role{
+  id String @id
+  role_name String
+  user User[]
+}
+model Department {
+  id                      String   @id
+  department_name         String
+  user                    User[] @relation("Workon")
+  image String?
+  headOfDepartment_id String?  @unique
+  headOfDepartment    User?    @relation("HeadOfDepartment", fields: [headOfDepartment_id], references: [uid])
+  deputyDirector_id   String?  @unique
+  deputyDirector      User?    @relation("DeputyDirectorOf", fields: [deputyDirector_id], references: [uid])
 }
