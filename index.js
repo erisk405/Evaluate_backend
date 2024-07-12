@@ -20,6 +20,17 @@ app.use(
 );
 
 
+//test api
+app.get("/test", (req, res) => {
+  try {
+    res.status(200).json({ message: "API is working" });
+  } catch (error) {
+    console.log(error);
+  }
+});
+
+// PUT ---------------------------------------
+
 app.put('/upload/:id', upload.single('image'), async (req, res) => {
   try {
       // URL ของรูปที่ถูกอัพโหลด
@@ -43,6 +54,8 @@ app.put('/upload/:id', upload.single('image'), async (req, res) => {
   }
 });
 
+// POST ----------------------------------------------------------
+
 
 app.post('/department', async (req, res) => {
   try {
@@ -62,14 +75,45 @@ app.post('/department', async (req, res) => {
   }
 });
 
-//test api
-app.get("/test", (req, res) => {
+app.post("/role",async(req,res)=>{
   try {
-    res.status(200).json({ message: "API is working" });
+    const role = await prisma.role.create({
+      data:{
+        id:req.body.id,
+        role_name:req.body.role_name
+      }
+    })
+    res.status(201).json(role)
   } catch (error) {
-    console.log(error);
+    console.error(error);
+    res.status(500).json({ error: 'Something went wrong!' });
+    
+  }
+})
+
+
+app.post("/users", async (req, res) => {
+  console.log(req.body);
+  try {
+    const user = await prisma.user.create({
+      data: {
+        uid: req.body.uid,
+        email: req.body.email,
+        name: req.body.name,
+        password: req.body.password,
+        role_id: req.body.role_id,
+        department_id: req.body.department_id,
+        dateofbirth:new Date(req.body.dateofbirth)
+      }
+    });
+    res.status(201).json(user);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Something went wrong!' });
   }
 });
+
+// GET --------------------------------------------------------
 app.get("/users", async (req, res) => {
   try {
     const user = await prisma.user.findMany({
@@ -95,21 +139,6 @@ app.get("/user/:id", async (req, res) => {
       res.status(200).json(user);
     } catch (error) {}
   });
-app.post("/role",async(req,res)=>{
-  try {
-    const role = await prisma.role.create({
-      data:{
-        id:req.body.id,
-        role_name:req.body.role_name
-      }
-    })
-    res.status(201).json(role)
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Something went wrong!' });
-    
-  }
-})
 app.get("/roles",async(req,res)=>{
   try {
     const roles = await prisma.role.findMany()
@@ -121,27 +150,6 @@ app.get("/roles",async(req,res)=>{
     res.status(500).json({ error: 'Something went wrong!' });
   }
 })
-
-app.post("/users", async (req, res) => {
-  console.log(req.body);
-  try {
-    const user = await prisma.user.create({
-      data: {
-        uid: req.body.uid,
-        email: req.body.email,
-        name: req.body.name,
-        password: req.body.password,
-        role_id: req.body.role_id,
-        department_id: req.body.department_id,
-        dateofbirth:new Date(req.body.dateofbirth)
-      }
-    });
-    res.status(201).json(user);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Something went wrong!' });
-  }
-});
 
 app.get('/workon/:id',async(req,res)=>{
   try {
