@@ -13,25 +13,28 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 model User {
-  uid    String @id @db.VarChar(3000)
+  id    String @id @default(uuid())
   email String  @unique
   name  String
   dateofbirth DateTime @db.Date
   password String
   role_id String?
-  role Role? @relation(fields: [role_id], references: [id])
   department_id String?
-  department Department? @relation("Workon",fields: [department_id],references: [id])
   image String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  phone String? 
+
+  role Role? @relation(fields: [role_id], references: [id])
+  department Department? @relation("Workon",fields: [department_id],references: [id])
   headOfDepartment Department? @relation("HeadOfDepartment" )
   deputyDirectorOf Department? @relation("DeputyDirectorOf")
 
-
-
 }
 model Role{
-  id String @id
+  id String @id 
   role_name String
+  description String?
   user User[]
 }
 model Department {
@@ -40,7 +43,7 @@ model Department {
   user                    User[] @relation("Workon")
   image String?
   headOfDepartment_id String?  @unique
-  headOfDepartment    User?    @relation("HeadOfDepartment", fields: [headOfDepartment_id], references: [uid])
+  headOfDepartment    User?    @relation("HeadOfDepartment", fields: [headOfDepartment_id], references: [id])
   deputyDirector_id   String?  @unique
-  deputyDirector      User?    @relation("DeputyDirectorOf", fields: [deputyDirector_id], references: [uid])
+  deputyDirector      User?    @relation("DeputyDirectorOf", fields: [deputyDirector_id], references: [id])
 }

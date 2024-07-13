@@ -1,3 +1,4 @@
+const bcrypt = require('bcrypt');
 const express = require("express");
 const { PrismaClient } = require("@prisma/client");
 const cors = require("cors");
@@ -20,7 +21,22 @@ app.use(
 );
 
 
+<<<<<<< HEAD
+app.put('/upload_image/:id', upload.single('image'), async (req, res) => {
+=======
+//test api
+app.get("/test", (req, res) => {
+  try {
+    res.status(200).json({ message: "API is working" });
+  } catch (error) {
+    console.log(error);
+  }
+});
+
+// PUT ---------------------------------------
+
 app.put('/upload/:id', upload.single('image'), async (req, res) => {
+>>>>>>> 4abbf1a9f063bfd1ee2a4079bcd5c2adf12e2127
   try {
       // URL ของรูปที่ถูกอัพโหลด
       const imageUrl = req.file.path;
@@ -43,6 +59,8 @@ app.put('/upload/:id', upload.single('image'), async (req, res) => {
   }
 });
 
+// POST ----------------------------------------------------------
+
 
 app.post('/department', async (req, res) => {
   try {
@@ -62,40 +80,27 @@ app.post('/department', async (req, res) => {
   }
 });
 
-//test api
-app.get("/test", (req, res) => {
+<<<<<<< HEAD
+app.get('/departments', async (req , res)=>{
   try {
-    res.status(200).json({ message: "API is working" });
+    const allDepart = await prisma.department.findMany({
+      select: {
+        id: true,
+        department_name: true,
+        image:true
+      },
+    })
+    res.status(200).json(allDepart)
   } catch (error) {
     console.log(error);
   }
-});
-app.get("/users", async (req, res) => {
-  try {
-    const user = await prisma.user.findMany({
-      include: { 
-        role: true,
-        department:true
-       }
+})
 
-    });
-    console.log(user);
-    res.status(200).json(user);
-  } catch (error) {}
-});
-
-app.get("/user/:id", async (req, res) => {
-    try {
-      const user = await prisma.user.findUnique({
-        where:{
-            uid:req.params.id
-        }
-      });
-      console.log(user);
-      res.status(200).json(user);
-    } catch (error) {}
-  });
+//test api
+app.get("/test", (req, res) => {
+=======
 app.post("/role",async(req,res)=>{
+>>>>>>> 4abbf1a9f063bfd1ee2a4079bcd5c2adf12e2127
   try {
     const role = await prisma.role.create({
       data:{
@@ -110,17 +115,7 @@ app.post("/role",async(req,res)=>{
     
   }
 })
-app.get("/roles",async(req,res)=>{
-  try {
-    const roles = await prisma.role.findMany()
-    res.status(200).json(roles);
-    
-  } catch (error) {
-    
-    console.error(error);
-    res.status(500).json({ error: 'Something went wrong!' });
-  }
-})
+
 
 app.post("/users", async (req, res) => {
   console.log(req.body);
@@ -142,7 +137,105 @@ app.post("/users", async (req, res) => {
     res.status(500).json({ error: 'Something went wrong!' });
   }
 });
+<<<<<<< HEAD
+app.post("/users", async (req, res) => {
+  console.log(req.body);
+  try {
+    const password = await req.body.password
+    const hashedPassword = bcrypt.hashSync(password,10)
+    const user = await prisma.user.create({
+      data: {
+        uid: req.body.uid,
+        email: req.body.email,
+        name: req.body.name,
+        password: hashedPassword,
+        role_id: req.body.role_id,
+        department_id: req.body.department_id,
+        dateofbirth:new Date(req.body.dateofbirth)
+      }
+    });
+    res.status(201).json(user);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Something went wrong!' });
+  }
+});
+=======
 
+// GET --------------------------------------------------------
+>>>>>>> 4abbf1a9f063bfd1ee2a4079bcd5c2adf12e2127
+app.get("/users", async (req, res) => {
+  try {
+    const user = await prisma.user.findMany({
+      include: { 
+        role: true,
+        department:true
+       }
+
+    });
+    console.log(user);
+    res.status(200).json(user);
+  } catch (error) {}
+});
+
+app.put("/users_update_role/:id", async(req, res)=>{
+  try {
+    const users = await prisma.user.update({
+      where:{
+        id:req.params.id
+      },
+      data:{
+        role_id:req.body.role_id
+      }
+    })
+    res.status(200).json(users)
+  } catch (error) {
+    console.log(error);
+  }
+})
+app.put("/users_update_department/:id", async(req, res)=>{
+  try {
+    const users = await prisma.user.update({
+      where:{
+        id:req.params.id
+      },
+      data:{
+        department_id:req.body.department_id
+      }
+    })
+    res.status(200).json(users)
+  } catch (error) {
+    console.log(error);
+  }
+})
+
+app.get("/user/:id", async (req, res) => {
+    try {
+      const user = await prisma.user.findUnique({
+        where:{
+            uid:req.params.id
+        }
+      });
+      console.log(user);
+      res.status(200).json(user);
+    } catch (error) {}
+  });
+app.get("/roles",async(req,res)=>{
+  try {
+    const roles = await prisma.role.findMany()
+    res.status(200).json(roles);
+    
+  } catch (error) {
+    
+    console.error(error);
+    res.status(500).json({ error: 'Something went wrong!' });
+  }
+})
+
+<<<<<<< HEAD
+
+=======
+>>>>>>> 4abbf1a9f063bfd1ee2a4079bcd5c2adf12e2127
 app.get('/workon/:id',async(req,res)=>{
   try {
     const workon = await prisma.user.findMany({
