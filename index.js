@@ -22,18 +22,24 @@ app.use(
 
 
 //test api
-app.get("/test", (req, res) => {
+app.get("/test", async (req, res) => {
   try {
-    res.status(200).json({ message: "API is working" });
+    const role = await prisma.role.create({
+      data:{
+        id:req.body.id,
+        role_name:req.body.role_name
+      }
+    })
+    res.status(201).json(role)
   } catch (error) {
-    console.log(error);
+    console.error(error);
+    res.status(500).json({ error: 'Something went wrong!' });
+    
   }
-});
+})
 
-// PUT ---------------------------------------
-
-app.put('/upload/:id', upload.single('image'), async (req, res) => {
->>>>>>> 4abbf1a9f063bfd1ee2a4079bcd5c2adf12e2127
+// PUT----------------------------------------------------------------
+app.put('/upload_image/:id', upload.single('image'), async (req, res) => {
   try {
       // URL ของรูปที่ถูกอัพโหลด
       const imageUrl = req.file.path;
@@ -56,8 +62,40 @@ app.put('/upload/:id', upload.single('image'), async (req, res) => {
   }
 });
 
-// POST ----------------------------------------------------------
 
+app.put("/users_update_role/:id", async(req, res)=>{
+  try {
+    const users = await prisma.user.update({
+      where:{
+        id:req.params.id
+      },
+      data:{
+        role_id:req.body.role_id
+      }
+    })
+    res.status(200).json(users)
+  } catch (error) {
+    console.log(error);
+  }
+})
+app.put("/users_update_department/:id", async(req, res)=>{
+  try {
+    const users = await prisma.user.update({
+      where:{
+        id:req.params.id
+      },
+      data:{
+        department_id:req.body.department_id
+      }
+    })
+    res.status(200).json(users)
+  } catch (error) {
+    console.log(error);
+  }
+})
+
+
+// POST ----------------------------------------------------------
 
 app.post('/department', async (req, res) => {
   try {
@@ -77,15 +115,48 @@ app.post('/department', async (req, res) => {
   }
 });
 
-//test api
-app.get("/test", (req, res) => {
+
+
+app.post("/users", async (req, res) => {
+  console.log(req.body);
   try {
-    res.status(200).json({ message: "API is working" });
+    const password = await req.body.password
+    const hashedPassword = bcrypt.hashSync(password,10)
+    const user = await prisma.user.create({
+      data: {
+        uid: req.body.uid,
+        email: req.body.email,
+        name: req.body.name,
+        password: hashedPassword,
+        role_id: req.body.role_id,
+        department_id: req.body.department_id,
+        dateofbirth:new Date(req.body.dateofbirth)
+      }
+    });
+    res.status(201).json(user);
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Something went wrong!' });
   }
 });
+
+// GET
+
+app.get('/departments', async (req , res)=>{
+  try {
+    const allDepart = await prisma.department.findMany({
+      select: {
+        id: true,
+        department_name: true,
+        image:true
+      },
+    })
+    res.status(200).json(allDepart)
+  } catch (error) {
+    console.log(error);
+  }
+})
+
 app.get("/users", async (req, res) => {
   try {
     const user = await prisma.user.findMany({
@@ -100,6 +171,7 @@ app.get("/users", async (req, res) => {
   } catch (error) {}
 });
 
+
 app.get("/user/:id", async (req, res) => {
     try {
       const user = await prisma.user.findUnique({
@@ -111,21 +183,6 @@ app.get("/user/:id", async (req, res) => {
       res.status(200).json(user);
     } catch (error) {}
   });
-app.post("/role",async(req,res)=>{
-  try {
-    const role = await prisma.role.create({
-      data:{
-        id:req.body.id,
-        role_name:req.body.role_name
-      }
-    })
-    res.status(201).json(role)
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Something went wrong!' });
-    
-  }
-})
 app.get("/roles",async(req,res)=>{
   try {
     const roles = await prisma.role.findMany()
@@ -137,27 +194,6 @@ app.get("/roles",async(req,res)=>{
     res.status(500).json({ error: 'Something went wrong!' });
   }
 })
-
-app.post("/users", async (req, res) => {
-  console.log(req.body);
-  try {
-    const user = await prisma.user.create({
-      data: {
-        uid: req.body.uid,
-        email: req.body.email,
-        name: req.body.name,
-        password: req.body.password,
-        role_id: req.body.role_id,
-        department_id: req.body.department_id,
-        dateofbirth:new Date(req.body.dateofbirth)
-      }
-    });
-    res.status(201).json(user);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Something went wrong!' });
-  }
-});
 
 app.get('/workon/:id',async(req,res)=>{
   try {
@@ -177,6 +213,7 @@ app.get('/workon/:id',async(req,res)=>{
     
   }
 })
+
 //start server
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
