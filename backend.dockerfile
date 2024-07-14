@@ -12,9 +12,6 @@ RUN npx prisma generate
 
 COPY . .
 
-# Install bcrypt inside Docker container
-RUN npm rebuild bcrypt --build-from-source
-
-EXPOSE 4000
+EXPOSE 8000
 
 CMD ["node", "index.js"]

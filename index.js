@@ -1,4 +1,4 @@
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 const express = require("express");
 const { PrismaClient } = require("@prisma/client");
 const cors = require("cors");
@@ -39,7 +39,7 @@ app.get("/test", async (req, res) => {
 })
 
 // PUT----------------------------------------------------------------
-app.put('/upload_image/:id', upload.single('image'), async (req, res) => {
+app.put('/usersImage/:id', upload.single('image'), async (req, res) => {
   try {
       // URL ของรูปที่ถูกอัพโหลด
       const imageUrl = req.file.path;
@@ -63,7 +63,7 @@ app.put('/upload_image/:id', upload.single('image'), async (req, res) => {
 });
 
 
-app.put("/users_update_role/:id", async(req, res)=>{
+app.put("/usersRole/:id", async(req, res)=>{
   try {
     const users = await prisma.user.update({
       where:{
@@ -78,7 +78,8 @@ app.put("/users_update_role/:id", async(req, res)=>{
     console.log(error);
   }
 })
-app.put("/users_update_department/:id", async(req, res)=>{
+
+app.put("/usersDepartment/:id", async(req, res)=>{
   try {
     const users = await prisma.user.update({
       where:{
@@ -97,7 +98,7 @@ app.put("/users_update_department/:id", async(req, res)=>{
 
 // POST ----------------------------------------------------------
 
-app.post('/department', async (req, res) => {
+app.post('/departments', async (req, res) => {
   try {
     console.log("im coming:",req.body);
     const department = await prisma.department.create({
@@ -172,7 +173,7 @@ app.get("/users", async (req, res) => {
 });
 
 
-app.get("/user/:id", async (req, res) => {
+app.get("/users/:id", async (req, res) => {
     try {
       const user = await prisma.user.findUnique({
         where:{
@@ -215,5 +216,5 @@ app.get('/workon/:id',async(req,res)=>{
 })
 
 //start server
-const PORT = process.env.PORT || 4000;
+const PORT = process.env.PORT || 8000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
