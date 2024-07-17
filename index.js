@@ -2,8 +2,8 @@ const bcrypt = require('bcryptjs');
 const express = require("express");
 const { PrismaClient } = require("@prisma/client");
 const cors = require("cors");
-const upload = require("./controller/routeUpload");
-
+const upload = require("./controllers/routeUpload");
+const routes = require("./routes");
 const prisma = new PrismaClient();
 const app = express();
 
@@ -19,7 +19,7 @@ app.use(
     allowedHeaders: ["Content-Type"], // Allowed headers
   })
 );
-
+app.use("/api", routes);
 
 //test api
 app.get("/test", async (req, res) => {
@@ -118,28 +118,28 @@ app.post('/departments', async (req, res) => {
 
 
 
-app.post("/users", async (req, res) => {
-  console.log(req.body);
-  try {
-    const password = await req.body.password
-    const hashedPassword = bcrypt.hashSync(password,10)
-    const user = await prisma.user.create({
-      data: {
-        uid: req.body.uid,
-        email: req.body.email,
-        name: req.body.name,
-        password: hashedPassword,
-        role_id: req.body.role_id,
-        department_id: req.body.department_id,
-        dateofbirth:new Date(req.body.dateofbirth)
-      }
-    });
-    res.status(201).json(user);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Something went wrong!' });
-  }
-});
+// app.post("/users", async (req, res) => {
+//   console.log(req.body);
+//   try {
+//     const password = await req.body.password
+//     const hashedPassword = bcrypt.hashSync(password,10)
+//     const user = await prisma.user.create({
+//       data: {
+//         uid: req.body.uid,
+//         email: req.body.email,
+//         name: req.body.name,
+//         password: hashedPassword,
+//         role_id: req.body.role_id,
+//         department_id: req.body.department_id,
+//         dateofbirth:new Date(req.body.dateofbirth)
+//       }
+//     });
+//     res.status(201).json(user);
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).json({ error: 'Something went wrong!' });
+//   }
+// });
 
 // GET
 
