@@ -15,7 +15,7 @@ const register = async (req, res) => {
 const login = async (req, res) => {
   const { email, password } = req.body;
   try {
-    const user = await User.findUserByUsername(email);
+    const user = await User.findUserByEmail(email);
     if (!user) {
       return res.status(401).json({ message: "Invalid username or password" });
     }
