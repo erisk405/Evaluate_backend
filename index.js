@@ -3,6 +3,7 @@ const { PrismaClient } = require("@prisma/client");
 const cors = require("cors");
 const upload = require("./controllers/routeUpload");
 const routes = require("./routes");
+const cookieParser = require("cookie-parser");
 const prisma = new PrismaClient();
 const app = express();
 
@@ -10,9 +11,11 @@ const app = express();
 //json
 app.use(express.json());
 
+app.use(cookieParser());
 // CORS configuration
 app.use(
   cors({
+    credentials: true,
     origin: "http://localhost:3000", // Allow only this origin
     methods: ["GET", "POST", "PUT", "DELETE"], // Allowed HTTP methods
     allowedHeaders: ["Content-Type"], // Allowed headers

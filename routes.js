@@ -11,6 +11,6 @@ router.get("/protected",middleware.verifyToken,(req,res) =>{
     res.json({message: "This is a protected route",userId: req.userId})
 })
 
-router.get("/users/:id",userController.findUser);
+router.get("/users",middleware.verifyToken,userController.findUser);
 
 module.exports = router

@@ -2,12 +2,13 @@ const jwt = require("jsonwebtoken");
 const config = require("../config");
 
 const verifyToken = (req, res, next) => {
-  const token = req.headers["authorization"];
+  const token = req.cookies.token;
   if (!token) return res.status(403).json({ message: "No token provided" });
 
   jwt.verify(token, config.jwtSecret, (err, decoded) => {
-    if (err)
+    if (err){
       return res.status(500).json({ message: "Failed to authenticate token" });
+    }
     req.userId = decoded.id;
     next();
   });
