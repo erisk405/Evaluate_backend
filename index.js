@@ -25,23 +25,6 @@ app.use(
 
 app.use("/api", routes);
 
-//test api
-app.get("/test", async (req, res) => {
-  try {
-    const role = await prisma.role.create({
-      data:{
-        id:req.body.id,
-        role_name:req.body.role_name
-      }
-    })
-    res.status(201).json(role)
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Something went wrong!' });
-    
-  }
-})
-
 // PUT----------------------------------------------------------------
 app.put('/usersImage/:id', upload.single('image'), async (req, res) => {
   try {

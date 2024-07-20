@@ -9,6 +9,7 @@ const router = express.Router();
 
 router.post("/sign-up",authController.register);
 router.post("/sign-in",authController.login);
+router.post('/sign-out',authController.logout);
 
 router.post("/form",formController.createForm)
 router.post("/questionType",formController.createQuestionType)

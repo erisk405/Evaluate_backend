@@ -3,6 +3,9 @@ const bcrypt = require("bcryptjs");
 const config = require("../config");
 const User = require("../models/userModel");
 
+const tokenExpiresIn = 3600; 
+const cookieMaxAge = tokenExpiresIn * 1000; 
+
 const register = async (req, res) => {
   try {
     await User.createUser(req.body);
@@ -25,10 +28,10 @@ const login = async (req, res) => {
       return res.status(401).json({ message: "Invalid username or password" });
     }
     const token = jwt.sign({ id: user.id }, config.jwtSecret, {
-      expiresIn: "1h",
+      expiresIn: tokenExpiresIn+'s',
     });
     res.cookie('token', token,{
-      maxAge: 3000000,
+      maxAge: cookieMaxAge,
       secure: true,
       httpOnly: true,
       sameSite: "none"
@@ -39,7 +42,18 @@ const login = async (req, res) => {
   }
 };
 
+
+const logout = (req, res) => {
+  try {
+    res.clearCookie('token', { path: '/', secure: true, sameSite: 'none' });
+    res.json({ message: 'Logout successful' });
+  } catch (error) {
+    res.status(500).json({ message: 'Error logging out' });
+  }
+};
+
 module.exports = {
     register,
-    login
+    login,
+    logout
 }
