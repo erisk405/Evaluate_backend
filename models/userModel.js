@@ -35,11 +35,42 @@ const findUserById = async (id) => {
     },
   });
 };
+const setDepartment = async(departmentId,uid)=>{
+  try {
+    return prisma.user.update({
+      where:{
+        id:uid,
+      },
+      data:{
+        department_id:departmentId
+      }
+    })
+  } catch (error) {
+    console.error({message:error});
+  }
+}
+const setRole = async(roleId,uid)=>{
+  try {
+    return prisma.user.update({
+      where:{
+        id:uid,
+      },
+      data:{
+        role_id:roleId
+      }
+    })
+  } catch (error) {
+    console.error({message:error});
+  }
+}
+
 
 
 
 module.exports = {
   createUser,
   findUserByEmail,
-  findUserById
+  findUserById,
+  setDepartment,
+  setRole
 };

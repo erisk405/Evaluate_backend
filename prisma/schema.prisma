@@ -29,16 +29,17 @@ model User {
   department Department? @relation("Workon",fields: [department_id],references: [id])
   headOfDepartment Department? @relation("HeadOfDepartment" )
   deputyDirectorOf Department? @relation("DeputyDirectorOf")
-
+  evaluates            Evaluate[]  @relation("UserEvaluates")
+  evaluationsReceived  Evaluate[] @relation("UserEvaluated")
 }
 model Role{
-  id String @id 
-  role_name String
+  id String @id @default(uuid())
+  role_name String @unique
   description String?
   user User[]
 }
 model Department {
-  id                      String   @id
+  id                      String   @id @default(uuid())
   department_name         String
   user                    User[] @relation("Workon")
   image String?
@@ -46,4 +47,36 @@ model Department {
   headOfDepartment    User?    @relation("HeadOfDepartment", fields: [headOfDepartment_id], references: [id])
   deputyDirector_id   String?  @unique
   deputyDirector      User?    @relation("DeputyDirectorOf", fields: [deputyDirector_id], references: [id])
+}
+
+model Evaluate{
+  id String @id @default(uuid())
+  evaluates_uid String
+  evaluated_uid String
+  form_id String
+  date DateTime @default(now())
+  form Form @relation("form-do-evaluate",fields: [form_id],references:[id])
+  evaluates      User     @relation("UserEvaluates", fields: [evaluates_uid], references: [id])
+  evaluated      User     @relation("UserEvaluated", fields: [evaluated_uid], references: [id])
+
+}
+model Form{
+  id String @id @default(uuid())
+  name String @unique
+  questions Form_question[] @relation("form-have-question")
+  evaluate_times Evaluate[] @relation("form-do-evaluate")
+}
+model Form_question{
+  id String @id @default(uuid())
+  name String @unique
+  form_id String
+  question_type_id String
+  form Form @relation("form-have-question",fields: [form_id],references: [id])
+  type Question_type @relation("type-have-question",fields: [question_type_id],references: [id])
+
+}
+model Question_type{
+    id String @id @default(uuid())
+    type String
+    questions Form_question[] @relation("type-have-question")
 }
