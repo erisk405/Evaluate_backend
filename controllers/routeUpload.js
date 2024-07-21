@@ -11,7 +11,7 @@ cloudinary.config({
 const storage = new CloudinaryStorage({
     cloudinary: cloudinary,
     params: {
-        folder: 'your_folder_name', // เปลี่ยนเป็นชื่อโฟลเดอร์ที่ต้องการ
+        folder: 'UserProfile', // เปลี่ยนเป็นชื่อโฟลเดอร์ที่ต้องการ
         format: async (req, file) => 'jpeg', // สามารถตั้งค่าให้เป็น 'png', 'jpeg', ฯลฯ
         public_id: (req, file) => Date.now().toString() + '-' + file.originalname,
     },
@@ -19,4 +19,18 @@ const storage = new CloudinaryStorage({
 
 const upload = multer({ storage: storage });
 
-module.exports = upload
+
+
+async function deleteImage(publicId) {
+    try {
+        const result = await cloudinary.uploader.destroy(publicId);
+        console.log(`Deleted image: ${result}`);
+    } catch (error) {
+        console.error('Error deleting image:', error);
+    }
+}
+
+module.exports = {
+    upload,
+    deleteImage
+}

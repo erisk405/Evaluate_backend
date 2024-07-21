@@ -31,7 +31,7 @@ const findUserById = async (id) => {
     select: {
       id: true,
       name: true,
-      image:true
+      image_id:true
     },
   });
 };
@@ -64,7 +64,28 @@ const setRole = async(roleId,uid)=>{
   }
 }
 
+const CheckOldImage = async(user)=>{
+  try {
+    return await prisma.image.findUnique({
+      where: { id: user.image_id },
+    });
+  } catch (error) {
+    console.error({message:error});
+  }
+}
 
+const updateImage = async(userId,imageId)=>{
+  try {
+    return await prisma.user.update({
+      where: { id: userId },
+      data: { image_id: imageId},
+    });
+    
+  } catch (error) {
+    console.error({message:error});
+
+  }
+}
 
 
 module.exports = {
@@ -72,5 +93,8 @@ module.exports = {
   findUserByEmail,
   findUserById,
   setDepartment,
-  setRole
+  setRole,
+  CheckOldImage,
+  updateImage
 };
+

@@ -20,7 +20,7 @@ model User {
   password String
   role_id String?
   department_id String?
-  image String?
+  image_id String? @unique
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   phone String? 
@@ -31,6 +31,7 @@ model User {
   deputyDirectorOf Department? @relation("DeputyDirectorOf")
   evaluates            Evaluate[]  @relation("UserEvaluates")
   evaluationsReceived  Evaluate[] @relation("UserEvaluated")
+  image Image? @relation("userImage",fields: [image_id],references: [id])
 }
 model Role{
   id String @id @default(uuid())
@@ -42,11 +43,13 @@ model Department {
   id                      String   @id @default(uuid())
   department_name         String
   user                    User[] @relation("Workon")
-  image String?
+  image_id String? @unique
   headOfDepartment_id String?  @unique
   headOfDepartment    User?    @relation("HeadOfDepartment", fields: [headOfDepartment_id], references: [id])
   deputyDirector_id   String?  @unique
   deputyDirector      User?    @relation("DeputyDirectorOf", fields: [deputyDirector_id], references: [id])
+  
+  image Image? @relation("departmentImage",fields: [image_id],references: [id])
 }
 
 model Evaluate{
@@ -79,4 +82,12 @@ model Question_type{
     id String @id @default(uuid())
     type String
     questions Form_question[] @relation("type-have-question")
+}
+
+model Image{
+  id String @id @default(uuid())
+  url String
+  public_id String
+  user User? @relation("userImage")
+  department Department? @relation("departmentImage")
 }
