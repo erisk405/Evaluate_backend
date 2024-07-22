@@ -74,7 +74,7 @@ const findUserById = async (id) => {
     select: {
       id: true,
       name: true,
-      image_id:true
+      image:true
     },
   });
 };

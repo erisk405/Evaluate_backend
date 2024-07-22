@@ -14,8 +14,6 @@ router.post('/sign-out',authController.logout);
 
 
 
-
-
 router.get("/form",formController.getAllform)
 router.get("/questionType",formController.getQuestionType) 
 router.get("/department",departmentController.getDepartments)
