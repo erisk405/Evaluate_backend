@@ -3,7 +3,7 @@ const { PrismaClient } = require("@prisma/client");
 
 const prisma = new PrismaClient();
 
-const createUser = async (user) => {
+const createUser = async (user,role) => {
   const password = await user.password;
   const hashedPassword = bcrypt.hashSync(password, 10);
   return prisma.user.create({
@@ -12,7 +12,7 @@ const createUser = async (user) => {
       email: user.email,
       name: user.name,
       password: hashedPassword,
-      role_id: user.role_id,
+      role_id: role.id,
       department_id: user.department_id,
       dateofbirth: new Date(user.dateofbirth),
     },
@@ -22,8 +22,51 @@ const createUser = async (user) => {
 const findUserByEmail = async (email) => {
   return prisma.user.findUnique({
     where: { email: email },
+    include:{
+      role:true
+    }
   });
 };
+
+const getAllUsers = async()=>{
+  return prisma.user.findMany({
+    select:{
+      id:true,
+      name:true,
+      role:true,
+      department_id:true
+    }
+  });
+
+}
+const myProfile = async(userId)=>{
+  return prisma.user.findUnique({
+    where:{
+      id:userId
+    },
+    select:{
+      name:true,
+      email:true,
+      phone:true,
+      department:{
+        select:{
+          id:true,
+          department_name:true
+        }
+      },
+      role:{
+        select:{
+          id:true,
+          role_name:true
+        }
+      },
+      image:true
+
+      
+    }
+  })
+}
+
 
 const findUserById = async (id) => {
   return prisma.user.findUnique({
@@ -49,11 +92,11 @@ const setDepartment = async(departmentId,uid)=>{
     console.error({message:error});
   }
 }
-const setRole = async(roleId,uid)=>{
+const setUserRole = async(userId,roleId)=>{
   try {
     return prisma.user.update({
       where:{
-        id:uid,
+        id:userId
       },
       data:{
         role_id:roleId
@@ -93,8 +136,10 @@ module.exports = {
   findUserByEmail,
   findUserById,
   setDepartment,
-  setRole,
+  setUserRole,
   CheckOldImage,
-  updateImage
+  updateImage,
+  getAllUsers,
+  myProfile
 };
 

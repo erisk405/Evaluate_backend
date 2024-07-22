@@ -2,13 +2,15 @@ const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const config = require("../config");
 const User = require("../models/userModel");
+const Role = require("../models/roleModel");
 
 const tokenExpiresIn = 3600; 
 const cookieMaxAge = tokenExpiresIn * 1000; 
 
 const register = async (req, res) => {
   try {
-    await User.createUser(req.body);
+    const role = await Role.checkMemberRole();
+    await User.createUser(req.body,role);
     res.status(201).json({ message: "User registered success !!!" });
   } catch (error) {
     res.status(500).json({ message: "Error registered user!" });
@@ -27,7 +29,7 @@ const login = async (req, res) => {
     if (!isMatch) {
       return res.status(401).json({ message: "Invalid username or password" });
     }
-    const token = jwt.sign({ id: user.id }, config.jwtSecret, {
+    const token = jwt.sign({ id: user.id ,role:user.role.role_name}, config.jwtSecret, {
       expiresIn: tokenExpiresIn+'s',
     });
     res.cookie('token', token,{

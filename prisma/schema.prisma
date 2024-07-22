@@ -28,7 +28,7 @@ model User {
   role Role? @relation(fields: [role_id], references: [id])
   department Department? @relation("Workon",fields: [department_id],references: [id])
   headOfDepartment Department? @relation("HeadOfDepartment" )
-  deputyDirectorOf Department? @relation("DeputyDirectorOf")
+  deputyDirectorOf Department? @relation("DeputyDirectorOf") 
   evaluates            Evaluate[]  @relation("UserEvaluates")
   evaluationsReceived  Evaluate[] @relation("UserEvaluated")
   image Image? @relation("userImage",fields: [image_id],references: [id])
@@ -41,7 +41,7 @@ model Role{
 }
 model Department {
   id                      String   @id @default(uuid())
-  department_name         String
+  department_name         String @unique
   user                    User[] @relation("Workon")
   image_id String? @unique
   headOfDepartment_id String?  @unique

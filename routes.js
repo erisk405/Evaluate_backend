@@ -12,11 +12,9 @@ router.post("/sign-up",authController.register);
 router.post("/sign-in",authController.login);
 router.post('/sign-out',authController.logout);
 
-router.post("/form",formController.createForm)
-router.post("/questionType",formController.createQuestionType)
-router.post("/question",formController.createQuestion)
-router.post("/department",departmentController.createDepartment)
-router.post("/role",roleController.createRole)
+
+
+
 
 router.get("/form",formController.getAllform)
 router.get("/questionType",formController.getQuestionType) 
@@ -25,15 +23,24 @@ router.get("/role",roleController.getRole)
 
 
 router.get("/protected",middleware.verifyToken,(req,res) =>{
-    res.json({message: "This is a protected route",userId: req.userId})
+    res.json({message: "This is a protected route",userId: req.userId,role:req.role})
 })
 
-router.get("/users",middleware.verifyToken,userController.findUser);
+router.get("/userProfile",middleware.verifyToken,userController.findUser);
+router.get("/myProfile",middleware.verifyToken,userController.getMyProfile)
 router.put("/usersDepartment",middleware.verifyToken,userController.setDepartment);
-router.put("/usersRole",middleware.verifyToken,userController.setRole);
 router.put("/usersImage", upload.single('image'), middleware.verifyToken, userController.updateUserImage);
 
+// admin path
+router.post("/role",middleware.verifyToken,middleware.verifyAdmin,roleController.createRole)
+router.post("/questionType",middleware.verifyToken,middleware.verifyAdmin,formController.createQuestionType)
+router.post("/question",middleware.verifyToken,middleware.verifyAdmin,formController.createQuestion)
+router.post("/department",middleware.verifyToken,middleware.verifyAdmin,departmentController.createDepartment)
 
+router.post("/form",middleware.verifyToken,middleware.verifyAdmin,formController.createForm)
+router.get("/allUsers",middleware.verifyToken,middleware.verifyAdmin,userController.getAllUsers)
+router.put("/usersRole/:id",middleware.verifyToken,middleware.verifyAdmin,userController.setUserRole);
+router.put("/role",middleware.verifyToken,middleware.verifyAdmin,userController.showRole);
 
 
 module.exports = router
