@@ -74,6 +74,7 @@ const findUserById = async (id) => {
     select: {
       id: true,
       name: true,
+      email: true,
       image:true
     },
   });
