@@ -111,7 +111,7 @@ const setUserRole = async(userId,roleId)=>{
 const CheckOldImage = async(user)=>{
   try {
     return await prisma.image.findUnique({
-      where: { id: user.image_id },
+      where: { id: user.image.id },
     });
   } catch (error) {
     console.error({message:error});

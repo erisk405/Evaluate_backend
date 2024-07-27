@@ -71,7 +71,7 @@ const getMyProfile = async(req,res)=>{
 const updateUserImage = async (req, res) => {
     try {
         const userId = req.userId
-        console.log(userId);
+        console.log("userId:",userId);
         // URL ของรูปที่ถูกอัพโหลด
         if (!req.file || !req.file.path) {
             throw new Error("Not found path image");
@@ -80,16 +80,12 @@ const updateUserImage = async (req, res) => {
         if (!user) {
           return res.status(404).json({ error: 'User not found!' });
         }
-        if (user.image_id) {
-          const oldImage = await User.CheckOldImage(user)
-    
-          if (oldImage) {
-            console.log(`Deleting old image with public_id: ${oldImage.public_id}`);
+        console.log("user:",user);
+        if (user.image) {
             // Delete the old image
-            await deleteImage(oldImage.public_id);
+            await deleteImage(user.image.public_id);
             // ลบ old image จาก database
-            await Image.DeleteImage(oldImage);
-          }
+            await Image.DeleteImage(user.image);
         }
   
         // บันทึก Image ลงในตาราง Image
