@@ -36,7 +36,7 @@ const getDepartments = async () => {
 
 const findDepartmentByName = async(name)=>{
     try {
-        return await prisma.department.findUnique({
+        return await prisma.department.findFirst({
             where: { department_name: name },
           });
     } catch (error) {

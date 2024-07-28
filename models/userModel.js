@@ -123,6 +123,9 @@ const updateImage = async(userId,imageId)=>{
     return await prisma.user.update({
       where: { id: userId },
       data: { image_id: imageId},
+      include: {
+        image: true, // This includes the related image
+      },
     });
     
   } catch (error) {

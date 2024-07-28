@@ -20,6 +20,7 @@ const createDepartment = async (req, res) =>{
         }
         
         const checkDepartmentName = await department.findDepartmentByName(departmentName);
+        console.log("department:",checkDepartmentName);
         if(checkDepartmentName){
             return res.status(404).json({ message: "name department duplicate" });
         }
