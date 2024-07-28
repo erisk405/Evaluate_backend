@@ -5,7 +5,7 @@ const userController = require("./controllers/userController")
 const formController = require("./controllers/formController")
 const departmentController = require("./controllers/departmentController")
 const roleController = require("./controllers/roleController");
-const { upload } = require("./controllers/routeUpload");
+const { upload, uploadDepartmentImage } = require("./controllers/routeUpload");
 const router = express.Router();
 
 router.post("/sign-up",authController.register);
@@ -33,7 +33,7 @@ router.put("/usersImage", upload.single('image'), middleware.verifyToken, userCo
 router.post("/role",middleware.verifyToken,middleware.verifyAdmin,roleController.createRole)
 router.post("/questionType",middleware.verifyToken,middleware.verifyAdmin,formController.createQuestionType)
 router.post("/question",middleware.verifyToken,middleware.verifyAdmin,formController.createQuestion)
-router.post("/department",middleware.verifyToken,middleware.verifyAdmin,departmentController.createDepartment)
+router.post("/department",uploadDepartmentImage.single('image'),departmentController.createDepartment)
 
 router.post("/form",middleware.verifyToken,middleware.verifyAdmin,formController.createForm)
 router.get("/allUsers",middleware.verifyToken,middleware.verifyAdmin,userController.getAllUsers)

@@ -24,7 +24,23 @@ const CreateImage = async (image)=>{
 
     }
 }
+
+const CreateDepartmentImage = async (image)=>{
+  try {
+      return await prisma.image.create({
+          data: {
+            url: image.url,
+            public_id: image.public_id, // Assuming req.file.filename is the public_id
+          },
+        });
+      
+  } catch (error) {
+      console.error({ message: error });
+
+  }
+}
 module.exports = {
   DeleteImage,
-  CreateImage
+  CreateImage,
+  CreateDepartmentImage
 };

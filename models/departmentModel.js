@@ -2,12 +2,11 @@ const { PrismaClient } = require("@prisma/client");
 
 const prisma = new PrismaClient();
 
-const createDepartment = async (departmentName,image) => {
+const createDepartment = async (departmentName) => {
     try {
         return prisma.department.create({
             data: {
-                department_name:departmentName,
-                image:image
+                department_name:departmentName
             },
           });
         
@@ -34,10 +33,59 @@ const getDepartments = async () => {
     
 }
 
+const findDepartmentByName = async(name)=>{
+    try {
+        return await prisma.department.findUnique({
+            where: { department_name: name },
+          });
+    } catch (error) {
+        console.error({message:error});
+    }
+
+}
+  
+const updateImage = async(departmentId,imageId)=>{
+    try {
+      return await prisma.department.update({
+        where: { id: departmentId },
+        data: { image_id: imageId},
+      });
+      
+    } catch (error) {
+      console.error({message:error});
+    }
+  }
+  const deleteDepartment = async (departmentId) => {
+    try {
+        return await prisma.department.delete({
+            where: { id: departmentId },
+        });
+    } catch (error) {
+        console.error({ message: error.message });
+        throw new Error("Database error during department deletion");
+    }
+};
+const updateDepartmentImage = async (departmentId, imageId) => {
+    try {
+        return await prisma.department.update({
+            where: { id: departmentId },
+            data: { image_id: imageId },
+        });
+    } catch (error) {
+        console.error({ message: error.message });
+        throw new Error("Database error during department update");
+    }
+};
+
+
 
 
 
 module.exports = {
     createDepartment,
-    getDepartments
+    getDepartments,
+    updateImage,
+    findDepartmentByName,
+    deleteDepartment,
+    updateDepartmentImage
    };
