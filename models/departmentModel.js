@@ -23,6 +23,7 @@ const getDepartments = async () => {
                     _count: {
                         select: { user: true },
                     },
+                    image:true,
                 },
             }
         );

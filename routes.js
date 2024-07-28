@@ -33,7 +33,7 @@ router.put("/usersImage", upload.single('image'), middleware.verifyToken, userCo
 router.post("/role",middleware.verifyToken,middleware.verifyAdmin,roleController.createRole)
 router.post("/questionType",middleware.verifyToken,middleware.verifyAdmin,formController.createQuestionType)
 router.post("/question",middleware.verifyToken,middleware.verifyAdmin,formController.createQuestion)
-router.post("/department",uploadDepartmentImage.single('image'),departmentController.createDepartment)
+router.post("/department",uploadDepartmentImage.single('image'),middleware.verifyToken,middleware.verifyAdmin,departmentController.createDepartment)
 
 router.post("/form",middleware.verifyToken,middleware.verifyAdmin,formController.createForm)
 router.get("/allUsers",middleware.verifyToken,middleware.verifyAdmin,userController.getAllUsers)
