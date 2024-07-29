@@ -4,7 +4,7 @@ const prisma = new PrismaClient();
 const DeleteImage = async (imageId) => {
   try {
     return await prisma.image.delete({
-      where: { id: imageId.id },
+      where: { id: imageId },
     });
   } catch (error) {
     console.error({ message: error });
@@ -24,6 +24,19 @@ const CreateImage = async (image)=>{
 
     }
 }
+const findImageById = async (imageId)=>{
+  try {
+      return await prisma.image.findUnique({
+          where: {
+            id:imageId
+          }
+        });
+      
+  } catch (error) {
+      console.error({ message: error });
+
+  }
+}
 
 const CreateDepartmentImage = async (image)=>{
   try {
@@ -42,5 +55,6 @@ const CreateDepartmentImage = async (image)=>{
 module.exports = {
   DeleteImage,
   CreateImage,
-  CreateDepartmentImage
+  CreateDepartmentImage,
+  findImageById
 };

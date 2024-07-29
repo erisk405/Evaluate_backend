@@ -39,6 +39,15 @@ const uploadImageToCloudinary = async (file) => {
         uploadStream.end(file.buffer);
     });
 };
+const deleteImageFromCloudinary = async (publicId) => {
+    try {
+        const result = await cloudinary.uploader.destroy(publicId);
+        console.log('Delete Result:', result);
+        return result;
+    } catch (error) {
+        console.error('Delete Error:', error);
+    }
+}
 
 
 
@@ -60,5 +69,6 @@ module.exports = {
     upload,
     uploadDepartmentImage,
     deleteImage,
-    uploadImageToCloudinary
+    uploadImageToCloudinary,
+    deleteImageFromCloudinary
 }

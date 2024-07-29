@@ -17,6 +17,7 @@ router.post('/sign-out',authController.logout);
 router.get("/form",formController.getAllform)
 router.get("/questionType",formController.getQuestionType) 
 router.get("/department",departmentController.getDepartments)
+router.get("/department/:id",departmentController.getDepartment)
 router.get("/role",roleController.getRole)
 
 
@@ -29,12 +30,14 @@ router.get("/myProfile",middleware.verifyToken,userController.getMyProfile)
 router.put("/usersDepartment",middleware.verifyToken,userController.setDepartment);
 router.put("/usersImage", upload.single('image'), middleware.verifyToken, userController.updateUserImage);
 
+
 // admin path
 router.post("/role",middleware.verifyToken,middleware.verifyAdmin,roleController.createRole)
 router.post("/questionType",middleware.verifyToken,middleware.verifyAdmin,formController.createQuestionType)
 router.post("/question",middleware.verifyToken,middleware.verifyAdmin,formController.createQuestion)
 router.post("/department",uploadDepartmentImage.single('image'),middleware.verifyToken,middleware.verifyAdmin,departmentController.createDepartment)
 
+router.put('/department-image/:id',middleware.verifyToken,middleware.verifyAdmin,uploadDepartmentImage.single('image'),departmentController.updateDepartmentImage);
 router.post("/form",middleware.verifyToken,middleware.verifyAdmin,formController.createForm)
 router.get("/allUsers",middleware.verifyToken,middleware.verifyAdmin,userController.getAllUsers)
 router.put("/usersRole/:id",middleware.verifyToken,middleware.verifyAdmin,userController.setUserRole);

@@ -13,6 +13,7 @@ const createUser = async (user,role) => {
       name: user.name,
       password: hashedPassword,
       role_id: role.id,
+      phone:user.phone,
       department_id: user.department_id,
       dateofbirth: new Date(user.dateofbirth),
     },
@@ -34,8 +35,9 @@ const getAllUsers = async()=>{
       id:true,
       name:true,
       role:true,
-      department_id:true
-    }
+      department_id:true,
+      image:true
+    },
   });
 
 }

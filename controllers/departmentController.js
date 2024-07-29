@@ -53,13 +53,55 @@ const createDepartment = async (req, res) =>{
         console.error({message: error});
     }
 }
-const updateDepartmentImage = async(req,res)=>{
+const updateDepartmentImage = async (req, res) => {
     try {
+        const image = req.file;
+        const  departmentId  = req.params.id;
         
+
+        if (!image || !req.file.buffer) {
+            throw new Error("Not found path image");
+        }
+
+        const mimeType = image.mimetype;
+        if (mimeType !== 'image/png' && mimeType !== 'image/jpeg') {
+            return res.status(400).json({ message: "Invalid image format, only PNG and JPEG are allowed" });
+        }
+
+        const existingDepartment = await department.findDepartmentById(departmentId);
+        if (!existingDepartment) {
+            return res.status(404).json({ message: "Department not found" });
+        }
+
+        const newImage = await route.uploadImageToCloudinary(image);
+        if (!newImage) {
+            return res.status(404).json({ message: "Failed to upload new image to Cloudinary" });
+        }
+
+        const oldImageId = existingDepartment.image_id;
+        if (oldImageId) {
+            console.log('oldImageId ',oldImageId);
+            const oldImage = await Image.findImageById(oldImageId);
+            if (oldImage) {
+                await route.deleteImageFromCloudinary(oldImage.public_id);
+                await Image.DeleteImage(oldImageId);
+            }
+        }
+
+        const uploadImage = await Image.CreateDepartmentImage(newImage);
+        if (!uploadImage) {
+            return res.status(404).json({ message: "Failed to save new image to database" });
+        }
+
+        const updateImageToDepartment = await department.updateDepartmentImage(departmentId, uploadImage.id);
+
+        res.status(200).json(updateImageToDepartment);
     } catch (error) {
-        console.error({message: error});
+        console.error({ message: error.message });
+        res.status(500).json({ message: error.message });
     }
-}
+};
+
 const getDepartments = async (req, res) =>{
     try {
         const responsed = await department.getDepartments();
@@ -71,8 +113,25 @@ const getDepartments = async (req, res) =>{
         console.error({message: error});
     }
 }
+
+const getDepartment = async (req, res) => {
+    const departmentId = req.params.id;
+    try {
+      const respond = await department.findDepartmentById(departmentId);
+      if (!respond) {
+        return res.status(404).json({ message: "Department not found" });
+      }
+      res.status(200).json(respond);
+    } catch (error) {
+      console.error({ message: error.message });
+      res.status(500).json({ message: "Internal server error" });
+    }
+  };
+  
+
 module.exports = {
     createDepartment,
     getDepartments,
-    updateDepartmentImage
+    updateDepartmentImage,
+    getDepartment
 }
