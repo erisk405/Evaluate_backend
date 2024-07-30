@@ -4,7 +4,7 @@ const config = require("../config");
 const User = require("../models/userModel");
 const Role = require("../models/roleModel");
 
-const tokenExpiresIn = 3600; 
+const tokenExpiresIn = 36000; 
 const cookieMaxAge = tokenExpiresIn * 1000; 
 
 const register = async (req, res) => {
