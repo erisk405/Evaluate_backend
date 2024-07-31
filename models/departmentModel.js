@@ -45,6 +45,7 @@ const findDepartmentById = async (departmentId) => {
       select:{
         id:true,
         department_name:true,
+        image_id:true,
         user:{
           select:{
             id:true,

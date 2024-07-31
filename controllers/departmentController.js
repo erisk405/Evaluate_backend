@@ -56,9 +56,8 @@ const createDepartment = async (req, res) =>{
 const updateDepartmentImage = async (req, res) => {
     try {
         const image = req.file;
-        const  departmentId  = req.params.id;
+        const departmentId  = req.params.id;
         
-
         if (!image || !req.file.buffer) {
             throw new Error("Not found path image");
         }
@@ -79,6 +78,9 @@ const updateDepartmentImage = async (req, res) => {
         }
 
         const oldImageId = existingDepartment.image_id;
+        console.log("oldImageId:",oldImageId);
+        console.log("existingDepartment:",existingDepartment);
+        console.log("department:",departmentId);
         if (oldImageId) {
             console.log('oldImageId ',oldImageId);
             const oldImage = await Image.findImageById(oldImageId);
