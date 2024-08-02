@@ -1,17 +1,27 @@
 const express = require("express");
-const { PrismaClient } = require("@prisma/client");
 require("dotenv").config();
 const cors = require("cors");
-const {upload , deleteImage} = require("./controllers/routeUpload");
 const routes = require("./routes");
 const cookieParser = require("cookie-parser");
-const prisma = new PrismaClient();
+const { Server } = require('socket.io');
+const http = require('http');
+
+
+
 const app = express();
+const server = http.createServer(app);
+const io = new Server(server,{
+  cors:{
+    origin: "http://localhost:3000", // อนุญาต origin นี้
+    methods: ["GET", "POST"]
+  }
+});
 
 
 //json
 app.use(express.json());
 
+// Cookie parser
 app.use(cookieParser());
 // CORS configuration
 app.use(
@@ -24,6 +34,23 @@ app.use(
 );
 
 app.use("/api", routes);
+
+// Socket.IO setup
+io.on('connection',(socket)=>{
+  console.log('A user connected');
+
+  socket.on('newRoleRequest',(data) => {
+    io.emit('adminNotification',data);
+  });
+
+  socket.on('roleRequestHandled',(data)=>{
+    io.emit('userNotification',data);
+  });
+
+  socket.on('disconnect',() =>{
+    console.log('User disconnected');
+  })
+});
 
 
 //start server

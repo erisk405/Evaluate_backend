@@ -32,12 +32,14 @@ model User {
   evaluates            Evaluate[]  @relation("UserEvaluates")
   evaluationsReceived  Evaluate[] @relation("UserEvaluated")
   image Image? @relation("userImage",fields: [image_id],references: [id])
+  roleRequests RoleRequest[] @relation("UserRoleRequests")
 }
 model Role{
   id String @id @default(uuid())
   role_name String @unique
   description String?
   user User[]
+  roleRequests RoleRequest[] @relation("RoleRequests")
 }
 model Department {
   id                      String   @id @default(uuid())
@@ -90,4 +92,23 @@ model Image{
   public_id String
   user User? @relation("userImage")
   department Department? @relation("departmentImage")
+}
+
+
+model RoleRequest {
+  id        String    @id @default(uuid()) 
+  userId    String
+  roleId    String
+  status    RequestStatus @default(PENDING)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  user     User      @relation("UserRoleRequests", fields: [userId], references: [id])
+  role     Role      @relation("RoleRequests", fields: [roleId], references: [id])
+}
+
+enum RequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
 }
