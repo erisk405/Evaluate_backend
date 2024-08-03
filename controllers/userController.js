@@ -56,7 +56,6 @@ const getAllUsers = async(req,res)=>{
 const getMyProfile = async(req,res)=>{
     try {
         const userId = req.userId
-        console.log(userId);
         const profile = await User.myProfile(userId);
         if (!profile) {
             return res.status(404).json({ message: "profile not found" });

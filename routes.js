@@ -13,13 +13,14 @@ router.post("/sign-in",authController.login);
 router.post('/sign-out',authController.logout);
 
 
-
 router.get("/form",formController.getAllform)
 router.get("/questionType",formController.getQuestionType) 
 router.get("/department",departmentController.getDepartments)
 router.get("/department/:id",departmentController.getDepartment)
 router.get("/role",roleController.getRole)
 
+router.post('/sendRoleRequest',roleController.sendRoleRequest)
+router.patch('/adminSendRole',roleController.adminSendRole)
 
 router.get("/protected",middleware.verifyToken,(req,res) =>{
     res.json({message: "This is a protected route",userId: req.userId,role:req.role})
