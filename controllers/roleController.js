@@ -34,7 +34,7 @@ const sendRoleRequest = async (req, res) => {
       }
       const idRequest = response.id;
       console.log("idRequest:", idRequest);
-      io.emit("newRoleRequest", { userId, roleId, idRequest });
+      // io.emit("newRoleRequest", { userId, roleId, idRequest });
       res.status(201).json(response);
     } catch (error) {
       console.error({ message: error });
@@ -59,9 +59,23 @@ const adminSendRole = async (req, res) => {
   }
 };
 
+const getRoleRequestPending = async (req,res)=>{
+  try {
+    const requestPending = await Role.getRoleRequestPending();
+    if (!requestPending) {
+      return res.status(404).json({ message: "don't get request pending!.." });
+    }
+    res.status(201).json(requestPending);
+    
+  } catch (error) {
+    console.error({ message: error });
+  }
+}
+
 module.exports = {
   createRole,
   getRole,
   sendRoleRequest,
   adminSendRole,
+  getRoleRequestPending
 };

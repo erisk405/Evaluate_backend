@@ -50,24 +50,79 @@ async function RoleRequest(userId, roleId) {
         roleId,
         status: "PENDING",
       },
+      select:{
+        id:true,
+        user:{
+          select:{
+            id:true,
+            name:true,
+            email:true,
+            image:true
+          }
+        },
+        role: {
+          select: {
+            id: true,
+            role_name: true
+          }
+        },
+        createdAt: true,
+        updatedAt: true
+      }
+      
+
     });
+    
     return request;
   } catch (error) {
-    res.status(500).json({ error: "Failed to create role request" });
+    console.error({ message: error });
   }
 }
 
 async function handlerRoleRequest(requestId, status) {
   try {
 
-    const request = await prisma.roleRequest.update({
+    return  await prisma.roleRequest.update({
       where: { id: requestId },
       data: { status },
     });
     // แจ้งเตือนไปยังสมาชิกที่เกี่ยวข้องผ่าน Socket.IO
-    return request
   } catch (error) {
-    res.status(500).json({ error: "Filed to update role request" });
+    console.error({ message: error });
+  }
+}
+
+const getRoleRequestPending = async()=>{
+  try {
+    const pendingRoleRequests = await prisma.roleRequest.findMany({
+      where: {
+        status: "PENDING"
+      },
+      select: {
+        id: true,
+        user:{
+          select:{
+            id:true,
+            name:true,
+            email:true,
+            image:true
+          }
+        },
+        role: {
+          select: {
+            id: true,
+            role_name: true
+          }
+        },
+        createdAt: true,
+        updatedAt: true
+      }
+    });
+  
+    return pendingRoleRequests;
+
+  } catch (error) {
+    console.error({ message: error });
   }
 }
 
@@ -77,4 +132,5 @@ module.exports = {
   checkMemberRole,
   RoleRequest,
   handlerRoleRequest,
+  getRoleRequestPending
 };

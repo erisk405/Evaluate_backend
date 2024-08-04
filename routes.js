@@ -41,6 +41,7 @@ router.post("/department",uploadDepartmentImage.single('image'),middleware.verif
 router.put('/department-image/:id',middleware.verifyToken,middleware.verifyAdmin,uploadDepartmentImage.single('image'),departmentController.updateDepartmentImage);
 router.post("/form",middleware.verifyToken,middleware.verifyAdmin,formController.createForm)
 router.get("/allUsers",middleware.verifyToken,middleware.verifyAdmin,userController.getAllUsers)
+router.get("/roleRequestPending",middleware.verifyToken,middleware.verifyAdmin,roleController.getRoleRequestPending)
 router.put("/usersRole/:id",middleware.verifyToken,middleware.verifyAdmin,userController.setUserRole);
 router.put("/role",middleware.verifyToken,middleware.verifyAdmin,userController.showRole);
 
