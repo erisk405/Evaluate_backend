@@ -44,36 +44,39 @@ const checkMemberRole = async () => {
 
 async function RoleRequest(userId, roleId) {
   try {
+    const pendingRoleRequestsCount = await prisma.roleRequest.count({
+      where: {
+        status: "PENDING",
+      },
+    });
     const request = await prisma.roleRequest.create({
       data: {
         userId,
         roleId,
         status: "PENDING",
       },
-      select:{
-        id:true,
-        user:{
-          select:{
-            id:true,
-            name:true,
-            email:true,
-            image:true
-          }
+      select: {
+        id: true,
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            image: true,
+          },
         },
         role: {
           select: {
             id: true,
-            role_name: true
-          }
+            role_name: true,
+          },
         },
         createdAt: true,
-        updatedAt: true
-      }
-      
-
+        updatedAt: true,
+      },
     });
-    
-    return request;
+
+    return { count: pendingRoleRequestsCount, data: request };
   } catch (error) {
     console.error({ message: error });
   }
@@ -81,8 +84,7 @@ async function RoleRequest(userId, roleId) {
 
 async function handlerRoleRequest(requestId, status) {
   try {
-
-    return  await prisma.roleRequest.update({
+    return await prisma.roleRequest.update({
       where: { id: requestId },
       data: { status },
     });
@@ -92,39 +94,43 @@ async function handlerRoleRequest(requestId, status) {
   }
 }
 
-const getRoleRequestPending = async()=>{
+const getRoleRequestPending = async () => {
   try {
+    const pendingRoleRequestsCount = await prisma.roleRequest.count({
+      where: {
+        status: "PENDING",
+      },
+    });
     const pendingRoleRequests = await prisma.roleRequest.findMany({
       where: {
-        status: "PENDING"
+        status: "PENDING",
       },
       select: {
         id: true,
-        user:{
-          select:{
-            id:true,
-            name:true,
-            email:true,
-            image:true
-          }
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            image: true,
+          },
         },
         role: {
           select: {
             id: true,
-            role_name: true
-          }
+            role_name: true,
+          },
         },
         createdAt: true,
-        updatedAt: true
-      }
+        updatedAt: true,
+      },
     });
-  
-    return pendingRoleRequests;
 
+    return { count: pendingRoleRequestsCount, data: pendingRoleRequests };
   } catch (error) {
     console.error({ message: error });
   }
-}
+};
 
 module.exports = {
   createRole,
@@ -132,5 +138,5 @@ module.exports = {
   checkMemberRole,
   RoleRequest,
   handlerRoleRequest,
-  getRoleRequestPending
+  getRoleRequestPending,
 };

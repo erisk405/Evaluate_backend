@@ -77,5 +77,5 @@ module.exports = {
   getRole,
   sendRoleRequest,
   adminSendRole,
-  getRoleRequestPending
+  getRoleRequestPending,
 };
