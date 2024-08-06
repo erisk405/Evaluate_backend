@@ -105,6 +105,7 @@ model RoleRequest {
 
   user     User      @relation("UserRoleRequests", fields: [userId], references: [id])
   role     Role      @relation("RoleRequests", fields: [roleId], references: [id])
+
 }
 
 enum RequestStatus {

@@ -63,9 +63,13 @@ const myProfile = async(userId)=>{
           role_name:true
         }
       },
-      image:true
-
-      
+      image:true,
+      roleRequests:{
+        select:{
+          role:true,
+          status:true,
+        }
+      }
     }
   })
 }
