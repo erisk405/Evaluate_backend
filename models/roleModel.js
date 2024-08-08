@@ -1,5 +1,5 @@
 const { PrismaClient } = require("@prisma/client");
-
+const moment = require("moment-timezone");
 const prisma = new PrismaClient();
 
 const createRole = async (role) => {
@@ -44,6 +44,9 @@ const checkMemberRole = async () => {
 
 async function RoleRequest(userId, roleId) {
   try {
+    const bangkokTime = moment().tz("Asia/Bangkok").format(); //format time to UTC
+    console.log("Current time in Bangkok:", bangkokTime);
+
     const pendingRoleRequestsCount = await prisma.roleRequest.count({
       where: {
         status: "PENDING",
@@ -54,6 +57,7 @@ async function RoleRequest(userId, roleId) {
         userId,
         roleId,
         status: "PENDING",
+        createdAt: bangkokTime,
       },
       select: {
         id: true,
@@ -82,6 +86,60 @@ async function RoleRequest(userId, roleId) {
   }
 }
 
+async function deleteOldRequest(userId) {
+  try {
+    const oldUser = await prisma.roleRequest.findFirst({
+      where: {
+        userId: userId,
+        status: "PENDING",
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (!oldUser) {
+      return "no olduser";
+    }
+    const deleteOldUser = await prisma.roleRequest.delete({
+      where: {
+        id: oldUser.id,
+      },
+    });
+    return deleteOldUser;
+  } catch (error) {
+    console.error({ message: error });
+  }
+}
+async function deleteStatusApprove(userId) {
+  try {
+    // Find the approved request for the given user
+    const request = await prisma.roleRequest.findFirst({
+      where: {
+        userId: userId,
+        status: "APPROVED",
+      },
+    });
+
+    // Check if the approved request exists
+    if (!request) {
+      return "don't have approve_request!";
+    }
+
+    // Delete the approved request
+    await prisma.roleRequest.delete({
+      where: {
+        id: request.id,
+      },
+    });
+
+    return "delete success";
+  } catch (error) {
+    console.error({ message: error });
+    return "An error occurred";
+  }
+}
+
 async function handlerRoleRequest(requestId, status) {
   try {
     return await prisma.roleRequest.update({
@@ -94,43 +152,48 @@ async function handlerRoleRequest(requestId, status) {
   }
 }
 
-const getRoleRequestPending = async () => {
-  try {
-    const pendingRoleRequestsCount = await prisma.roleRequest.count({
-      where: {
-        status: "PENDING",
-      },
-    });
-    const pendingRoleRequests = await prisma.roleRequest.findMany({
-      where: {
-        status: "PENDING",
-      },
-      select: {
-        id: true,
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            image: true,
-          },
+  const getRoleRequestPending = async (skip,limit) => {
+    try {
+      const pendingRoleRequestsCount = await prisma.roleRequest.count({
+        where: {
+          status: "PENDING",
         },
-        role: {
-          select: {
-            id: true,
-            role_name: true,
-          },
+      });
+      const pendingRoleRequests = await prisma.roleRequest.findMany({
+        where: {
+          status: "PENDING",
         },
-        createdAt: true,
-        updatedAt: true,
-      },
-    });
+        orderBy: {
+          createdAt:'desc'
+        },
+        skip:parseInt(skip),
+        take:parseInt(limit),
+        select: {
+          id: true,
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              image: true,
+            },
+          },
+          role: {
+            select: {
+              id: true,
+              role_name: true,
+            },
+          },
+          createdAt: true,
+          updatedAt: true,
+        },
+      });
 
-    return { count: pendingRoleRequestsCount, data: pendingRoleRequests };
-  } catch (error) {
-    console.error({ message: error });
-  }
-};
+      return { count: pendingRoleRequestsCount, data: pendingRoleRequests };
+    } catch (error) {
+      console.error({ message: error });
+    }
+  };
 
 module.exports = {
   createRole,
@@ -139,4 +202,6 @@ module.exports = {
   RoleRequest,
   handlerRoleRequest,
   getRoleRequestPending,
+  deleteOldRequest,
+  deleteStatusApprove,
 };

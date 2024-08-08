@@ -20,7 +20,7 @@ router.get("/department/:id",departmentController.getDepartment)
 router.get("/role",roleController.getRole)
 
 router.post('/sendRoleRequest',roleController.sendRoleRequest)
-router.patch('/adminSendRole',roleController.adminSendRole)
+router.patch('/resolveRole',roleController.resolveRole)
 
 router.get("/protected",middleware.verifyToken,(req,res) =>{
     res.json({message: "This is a protected route",userId: req.userId,role:req.role})
