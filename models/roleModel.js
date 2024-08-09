@@ -140,6 +140,11 @@ async function handlerRoleRequest(requestId, status) {
     return await prisma.roleRequest.update({
       where: { id: requestId },
       data: { status },
+      select:{
+        role:true,
+        status:true,
+        updatedAt:true,
+      }
     });
     // แจ้งเตือนไปยังสมาชิกที่เกี่ยวข้องผ่าน Socket.IO
   } catch (error) {

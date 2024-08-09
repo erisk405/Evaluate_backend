@@ -67,10 +67,11 @@ const resolveRole = async (req, res) => {
       return res.status(404).json({ message: "don't get role" });
     }
     const statusResponse = response.status;
-    const roleId = response.roleId;
+    const roleId = response.role.id;
   
     
     console.log("statusResponse :",statusResponse);
+    console.log("roleId :",roleId);
     
     if(statusResponse === 'APPROVED'){
       const setUserRole = await User.setUserRole(userId,roleId);
