@@ -1,4 +1,5 @@
 const Role = require("../models/roleModel");
+const User = require("../models/userModel");
 const { Server } = require("socket.io");
 const io = new Server();
 const createRole = async (req, res) => {
@@ -30,8 +31,8 @@ const sendRoleRequest = async (req, res) => {
       const { userId, roleId } = req.body;
       
       
-      // const oldRequest = await Role.deleteOldRequest(userId);
-      // console.log('oldRequest :',oldRequest);
+      const oldRequest = await Role.deleteOldRequest(userId);
+      console.log('oldRequest :',oldRequest);
       
       const response = await Role.RoleRequest(userId, roleId);
       console.log(response.data.role.id);
@@ -39,9 +40,6 @@ const sendRoleRequest = async (req, res) => {
         return res.status(404).json({ message: "don't get role" });
       }
       
-      
-      // const idRoleRequest = response.Role.id;
-      // console.log("idRoleRequest : ",idRoleRequest);
       
 
 
@@ -63,11 +61,24 @@ const resolveRole = async (req, res) => {
       const deleteOldApprove = await Role.deleteStatusApprove(userId);
       console.log('deleteOldApprove :',deleteOldApprove);
     }
-    
-
+   
     const response = await Role.handlerRoleRequest(requestId, status);
     if (!response) {
       return res.status(404).json({ message: "don't get role" });
+    }
+    const statusResponse = response.status;
+    const roleId = response.roleId;
+  
+    
+    console.log("statusResponse :",statusResponse);
+    
+    if(statusResponse === 'APPROVED'){
+      const setUserRole = await User.setUserRole(userId,roleId);
+      if(!setUserRole){
+        return res.status(404).json({ message: "don't set UserRole" });
+      }
+      console.log('updated UserRole');
+      
     }
 
     // io.emit("rolRequestHandled", { requestId, status });

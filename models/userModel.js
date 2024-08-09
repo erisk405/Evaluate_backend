@@ -1,6 +1,5 @@
 const bcrypt = require("bcryptjs");
-const { PrismaClient } = require("@prisma/client");
-
+const { PrismaClient,RequestStatus } = require("@prisma/client");
 const prisma = new PrismaClient();
 
 const createUser = async (user,role) => {
@@ -57,14 +56,12 @@ const myProfile = async(userId)=>{
           department_name:true
         }
       },
-      role:{
-        select:{
-          id:true,
-          role_name:true
-        }
-      },
+      role:true,
       image:true,
       roleRequests:{
+        where:{
+          status: RequestStatus.PENDING
+        },
         select:{
           role:true,
           status:true,

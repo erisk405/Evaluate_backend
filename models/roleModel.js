@@ -69,12 +69,7 @@ async function RoleRequest(userId, roleId) {
             image: true,
           },
         },
-        role: {
-          select: {
-            id: true,
-            role_name: true,
-          },
-        },
+        role:true,
         createdAt: true,
         updatedAt: true,
       },
