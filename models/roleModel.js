@@ -141,6 +141,7 @@ async function handlerRoleRequest(requestId, status) {
       where: { id: requestId },
       data: { status },
       select:{
+        id:true,
         role:true,
         status:true,
         updatedAt:true,
