@@ -16,6 +16,10 @@ const findUser = async (req, res) =>{
 const setDepartment = async (req, res) =>{
     const id = req.userId
     const {departmentId} = req.body
+    console.log("departmentId ",departmentId);
+    console.log('body ',req.body);
+    
+    
     try {
         const user = await User.setDepartment(departmentId,id);
         if (!user) {

@@ -91,6 +91,9 @@ const setDepartment = async(departmentId,uid)=>{
       },
       data:{
         department_id:departmentId
+      },
+      select:{
+        department:true
       }
     })
   } catch (error) {
