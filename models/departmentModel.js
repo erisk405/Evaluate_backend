@@ -16,7 +16,11 @@ const createDepartment = async (departmentName) => {
 const getDepartments = async () => {
   try {
     return prisma.department.findMany({
-      include: {
+      select :{
+        id:true,
+        department_name:true,
+        headOfDepartment_id:true,
+        deputyDirector_id:true,
         _count: {
           select: { user: true },
         },

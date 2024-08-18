@@ -107,6 +107,7 @@ const updateDepartmentImage = async (req, res) => {
 const getDepartments = async (req, res) =>{
     try {
         const responsed = await department.getDepartments();
+        // console.log("department:",responsed);
         if (!responsed) {
             return res.status(404).json({ message: "not get department" });
         }
