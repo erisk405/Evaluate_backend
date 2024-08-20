@@ -100,6 +100,23 @@ const updateDepartmentImage = async (departmentId, imageId) => {
     throw new Error("Database error during department update");
   }
 };
+const updateDepartment = async (departmentId,department_name,headOfDepartment_id,deputyDirector_id) => {
+  try {
+    return await prisma.department.update({
+      where: { id: departmentId },
+      data: {
+        department_name,
+        headOfDepartment_id,
+        deputyDirector_id
+      },
+    });
+  } catch (error) {
+    console.error({ message: error.message });
+    throw new Error("Database error during department update");
+  }
+};
+
+
 
 module.exports = {
   createDepartment,
@@ -109,4 +126,5 @@ module.exports = {
   deleteDepartment,
   updateDepartmentImage,
   findDepartmentById,
+  updateDepartment
 };

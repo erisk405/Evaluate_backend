@@ -18,6 +18,7 @@ router.get("/questionType",formController.getQuestionType)
 router.get("/department",departmentController.getDepartments)
 router.get("/department/:id",departmentController.getDepartment)
 router.get("/role",roleController.getRole)
+router.get("/findUserEmplyDepartment",userController.findUserEmptyDepartment);
 
 router.post('/sendRoleRequest',roleController.sendRoleRequest)
 router.patch('/resolveRole',roleController.resolveRole)
@@ -39,11 +40,13 @@ router.post("/question",middleware.verifyToken,middleware.verifyAdmin,formContro
 router.post("/department",uploadDepartmentImage.single('image'),middleware.verifyToken,middleware.verifyAdmin,departmentController.createDepartment)
 
 router.put('/department-image/:id',middleware.verifyToken,middleware.verifyAdmin,uploadDepartmentImage.single('image'),departmentController.updateDepartmentImage);
+router.put('/department',middleware.verifyToken,middleware.verifyAdmin,departmentController.updateDepartment);
 router.post("/form",middleware.verifyToken,middleware.verifyAdmin,formController.createForm)
 router.get("/allUsers",middleware.verifyToken,middleware.verifyAdmin,userController.getAllUsers)
 router.get("/roleRequestPending",middleware.verifyToken,middleware.verifyAdmin,roleController.getRoleRequestPending)
 router.put("/usersRole/:id",middleware.verifyToken,middleware.verifyAdmin,userController.setUserRole);
 router.put("/role",middleware.verifyToken,middleware.verifyAdmin,userController.showRole);
+router.put("/usersToDepartment",middleware.verifyToken,middleware.verifyAdmin,userController.addUserstoDepartment);
 
 
 module.exports = router

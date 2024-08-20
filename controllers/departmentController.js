@@ -116,6 +116,20 @@ const getDepartments = async (req, res) =>{
         console.error({message: error});
     }
 }
+const updateDepartment = async (req, res) =>{
+    const {department_id,department_name,headOfDepartment_id,deputyDirector_id} = req.body;
+    try {
+        const responsed = 
+        await department.updateDepartment(department_id,department_name,headOfDepartment_id,deputyDirector_id);
+        // console.log("department:",responsed);
+        if (!responsed) {
+            return res.status(404).json({ message: "not update department" });
+        }
+        res.status(201).json(responsed)
+    } catch (error) {
+        console.error({message: error});
+    }
+}
 
 const getDepartment = async (req, res) => {
     const departmentId = req.params.id;
@@ -136,5 +150,6 @@ module.exports = {
     createDepartment,
     getDepartments,
     updateDepartmentImage,
-    getDepartment
+    getDepartment,
+    updateDepartment
 }
