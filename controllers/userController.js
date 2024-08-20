@@ -47,6 +47,10 @@ const addUserstoDepartment = async (req, res) => {
   try {
     const { userIds, departmentId } = req.body; // Destructure the received JSON data
     const response = await User.assignUsersToDepartment(departmentId, userIds);
+    if(!response){
+      throw new error('addUserstoDepartment is error')
+    }
+    res.status(201).json({ message: "Add success !!!" });
   } catch (error) {
     console.error({ message: error });
   }
