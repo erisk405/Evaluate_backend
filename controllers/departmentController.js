@@ -143,8 +143,9 @@ const getDepartment = async (req, res) => {
       console.error({ message: error.message });
       res.status(500).json({ message: "Internal server error" });
     }
-  };
-  
+};
+
+
 
 module.exports = {
     createDepartment,
