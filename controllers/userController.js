@@ -43,7 +43,7 @@ const setUserRole = async (req, res) => {
     console.error({ message: error });
   }
 };
-const addUserstoDepartment = async (req, res) => {
+const setUserstoDepartment = async (req, res) => {
   try {
     const { userIds, departmentId } = req.body; // Destructure the received JSON data
     const response = await User.assignUsersToDepartment(departmentId, userIds);
@@ -140,5 +140,5 @@ module.exports = {
   getAllUsers,
   getMyProfile,
   findUserEmptyDepartment,
-  addUserstoDepartment,
+  setUserstoDepartment,
 };
