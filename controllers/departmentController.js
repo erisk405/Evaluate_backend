@@ -116,20 +116,30 @@ const getDepartments = async (req, res) =>{
         console.error({message: error});
     }
 }
-const updateDepartment = async (req, res) =>{
-    const {department_id,department_name,headOfDepartment_id,deputyDirector_id} = req.body;
+const updateDepartment = async (req, res) => {
+    console.log(req.body);
+    
+    const { department_id, department_name, headOfDepartment_id, deputyDirector_id } = req.body;
+  
     try {
-        const responsed = 
-        await department.updateDepartment(department_id,department_name,headOfDepartment_id,deputyDirector_id);
-        // console.log("department:",responsed);
-        if (!responsed) {
-            return res.status(404).json({ message: "not update department" });
-        }
-        res.status(201).json(responsed)
+      const response = await department.updateDepartment(
+        department_id,
+        department_name,
+        headOfDepartment_id,
+        deputyDirector_id
+      );
+  
+      if (!response) {
+        return res.status(404).json({ message: "Department not found or not updated" });
+      }
+  
+      res.status(201).json(response);
     } catch (error) {
-        console.error({message: error});
+      console.error("Error updating department:", error);
+      res.status(500).json({ message: "Internal server error", error });
     }
-}
+  };
+  
 
 const getDepartment = async (req, res) => {
     const departmentId = req.params.id;

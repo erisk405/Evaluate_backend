@@ -19,8 +19,22 @@ const getDepartments = async () => {
       select :{
         id:true,
         department_name:true,
-        headOfDepartment_id:true,
-        deputyDirector_id:true,
+        headOfDepartment:{
+          select:{
+            id:true,
+            name:true,
+            image:true,
+            role:true
+          },
+        },
+        deputyDirector:{
+          select:{
+            id:true,
+            name:true,
+            image:true,
+            role:true
+          },
+        },
         _count: {
           select: { user: true },
         },
