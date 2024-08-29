@@ -14,6 +14,7 @@ const createRole = async (role) => {
     console.error({ message: error });
   }
 };
+
 const getRole = async () => {
   try {
     return prisma.role.findMany();
@@ -21,6 +22,7 @@ const getRole = async () => {
     console.error({ message: error });
   }
 };
+
 const checkMemberRole = async () => {
   try {
     const memberRole = await prisma.role.findUnique({
