@@ -34,7 +34,9 @@ const getAllUsers = async () => {
       id: true,
       name: true,
       role: true,
-      department_id: true,
+      email:true,
+      phone:true,
+      department: true,
       image: true,
     },
   });
