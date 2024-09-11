@@ -16,6 +16,7 @@ model User {
   id    String @id @default(uuid())
   email String  @unique
   name  String
+  prefix_id String?
   dateofbirth DateTime @db.Date
   password String
   role_id String?
@@ -25,14 +26,18 @@ model User {
   updatedAt DateTime @updatedAt
   phone String? 
 
+  prefix Prefix? @relation(fields: [prefix_id],references: [prefix_id])
   role Role? @relation(fields: [role_id], references: [id])
   department Department? @relation("Workon",fields: [department_id],references: [id])
   headOfDepartment Department? @relation("HeadOfDepartment" )
   deputyDirectorOf Department? @relation("DeputyDirectorOf") 
-  evaluates            Evaluate[]  @relation("UserEvaluates")
-  evaluationsReceived  Evaluate[] @relation("UserEvaluated")
+  evaluates            Evaluate[]  @relation("UserEvaluator")
+  evaluationsReceived  Evaluate[] @relation("UserAssessor")
   image Image? @relation("userImage",fields: [image_id],references: [id])
   roleRequests RoleRequest[] @relation("UserRoleRequests")
+
+  sepervise Supervise[] @relation("UserSupervise")
+
 }
 model Role{
   id String @id @default(uuid())
@@ -52,38 +57,40 @@ model Department {
   deputyDirector      User?    @relation("DeputyDirectorOf", fields: [deputyDirector_id], references: [id])
   
   image Image? @relation("departmentImage",fields: [image_id],references: [id])
+
+  supervise Supervise? @relation("SuperviseOfDepartment")
 }
 
 model Evaluate{
   id String @id @default(uuid())
-  evaluates_uid String
-  evaluated_uid String
+  assessor_id String
+  evaluator_id String
   form_id String
   date DateTime @default(now())
   form Form @relation("form-do-evaluate",fields: [form_id],references:[id])
-  evaluates      User     @relation("UserEvaluates", fields: [evaluates_uid], references: [id])
-  evaluated      User     @relation("UserEvaluated", fields: [evaluated_uid], references: [id])
+  evaluator      User     @relation("UserEvaluator", fields: [evaluator_id], references: [id])
+  assessor      User     @relation("UserAssessor", fields: [assessor_id], references: [id])
 
 }
 model Form{
   id String @id @default(uuid())
   name String @unique
-  questions Form_question[] @relation("form-have-question")
+  questions FormQuestion[] @relation("form-have-question")
   evaluate_times Evaluate[] @relation("form-do-evaluate")
 }
-model Form_question{
+model FormQuestion{
   id String @id @default(uuid())
   name String @unique
   form_id String
   question_type_id String
   form Form @relation("form-have-question",fields: [form_id],references: [id])
-  type Question_type @relation("type-have-question",fields: [question_type_id],references: [id])
+  type QuestionType @relation("type-have-question",fields: [question_type_id],references: [id])
 
 }
-model Question_type{
+model QuestionType{
     id String @id @default(uuid())
     type String
-    questions Form_question[] @relation("type-have-question")
+    questions FormQuestion[] @relation("type-have-question")
 }
 
 model Image{
@@ -106,6 +113,22 @@ model RoleRequest {
   user     User      @relation("UserRoleRequests", fields: [userId], references: [id])
   role     Role      @relation("RoleRequests", fields: [roleId], references: [id])
 
+}
+
+model Prefix{
+  prefix_id String @id @default(uuid())
+  prefix_name String 
+  user User[]
+}
+
+
+model Supervise{
+  supervise_id String @id @default(uuid())
+  user_id String
+  department_id String @unique
+  
+  user User @relation("UserSupervise",fields: [user_id],references: [id])
+  department Department @relation("SuperviseOfDepartment",fields: [department_id],references: [id])
 }
 
 enum RequestStatus {
