@@ -45,6 +45,9 @@ model Role{
   description String?
   user User[]
   roleRequests RoleRequest[] @relation("RoleRequests")
+
+  permissionAsses Permission? @relation("AssessorOfRole")
+  permissionEval Permission? @relation("EvaluatorOfRole")
 }
 model Department {
   id                      String   @id @default(uuid())
@@ -77,6 +80,8 @@ model Form{
   name String @unique
   questions FormQuestion[] @relation("form-have-question")
   evaluate_times Evaluate[] @relation("form-do-evaluate")
+
+  permissionForms PermissionForm[] @relation("FormOfPermission")
 }
 model FormQuestion{
   id String @id @default(uuid())
@@ -131,8 +136,35 @@ model Supervise{
   department Department @relation("SuperviseOfDepartment",fields: [department_id],references: [id])
 }
 
+model Permission{
+  permission_id String @id @default(uuid())
+  assessor_role_id String @unique
+  evaluator_role_id String @unique
+  permission_level PermissionLevel @default(LEVEL_1)
+  in_group  Boolean
+  assessorRole Role @relation("AssessorOfRole",fields: [assessor_role_id],references: [id])
+  evaluatorRole Role @relation("EvaluatorOfRole",fields: [evaluator_role_id],references:[id])
+
+  permissionForm PermissionForm[] @relation("PermissionToForm")
+}
+
+model PermissionForm{
+  permission_id String
+  form_id String
+  
+  form Form @relation("FormOfPermission",fields: [form_id],references: [id])
+  permission Permission @relation("PermissionToForm",fields: [permission_id],references: [permission_id])
+
+  @@id([permission_id, form_id])
+}
+
 enum RequestStatus {
   PENDING
   APPROVED
   REJECTED
+}
+enum PermissionLevel {
+  LEVEL_1
+  LEVEL_2
+  LEVEL_3
 }
