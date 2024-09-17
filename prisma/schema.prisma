@@ -17,7 +17,6 @@ model User {
   email String  @unique
   name  String
   prefix_id String?
-  dateofbirth DateTime @db.Date
   password String
   role_id String?
   department_id String?
@@ -37,6 +36,8 @@ model User {
   roleRequests RoleRequest[] @relation("UserRoleRequests")
 
   sepervise Supervise[] @relation("UserSupervise")
+
+  history History[]
 
 }
 model Role{
@@ -66,21 +67,19 @@ model Department {
 
 model Evaluate{
   id String @id @default(uuid())
+  period_id String
   assessor_id String
   evaluator_id String
-  form_id String
   date DateTime @default(now())
-  form Form @relation("form-do-evaluate",fields: [form_id],references:[id])
   evaluator      User     @relation("UserEvaluator", fields: [evaluator_id], references: [id])
   assessor      User     @relation("UserAssessor", fields: [assessor_id], references: [id])
-
+  
+  period Period @relation(fields: [period_id],references: [period_id])
 }
 model Form{
   id String @id @default(uuid())
   name String @unique
   questions FormQuestion[] @relation("form-have-question")
-  evaluate_times Evaluate[] @relation("form-do-evaluate")
-
   permissionForms PermissionForm[] @relation("FormOfPermission")
 }
 model FormQuestion{
@@ -156,6 +155,39 @@ model PermissionForm{
   permission Permission @relation("PermissionToForm",fields: [permission_id],references: [permission_id])
 
   @@id([permission_id, form_id])
+}
+
+model Period{
+  period_id String @id @default(uuid())
+  title String
+  start DateTime
+  end DateTime
+  isAction Boolean
+
+  evaluate Evaluate[]
+  history History[]
+}
+
+model History{
+  history_id String @id @default(uuid())
+  user_id String
+  period_id String
+  history_question_id String
+  average Float
+  standard_deviation Float 
+
+  user User @relation(fields: [user_id],references: [id])
+  period Period @relation(fields: [period_id],references: [period_id])
+  historyQuestion HistoryQuestion @relation(fields: [history_question_id],references: [history_question_id])
+
+}
+
+model HistoryQuestion{
+  history_question_id String @id @default(uuid())
+  questionHead String
+  question String
+
+  history History[]
 }
 
 enum RequestStatus {
