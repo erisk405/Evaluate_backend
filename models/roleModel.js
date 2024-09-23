@@ -7,6 +7,7 @@ const createRole = async (role) => {
     return prisma.role.create({
       data: {
         role_name: role.role_name,
+        role_level: role.role_level,
         description: role.description,
       },
     });

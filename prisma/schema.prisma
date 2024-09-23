@@ -44,6 +44,7 @@ model Role{
   id String @id @default(uuid())
   role_name String @unique
   description String?
+  role_level RoleLevel @default(LEVEL_1)
   user User[]
   roleRequests RoleRequest[] @relation("RoleRequests")
 
@@ -139,7 +140,6 @@ model Permission{
   permission_id String @id @default(uuid())
   assessor_role_id String @unique
   evaluator_role_id String @unique
-  permission_level PermissionLevel @default(LEVEL_1)
   in_group  Boolean
   assessorRole Role @relation("AssessorOfRole",fields: [assessor_role_id],references: [id])
   evaluatorRole Role @relation("EvaluatorOfRole",fields: [evaluator_role_id],references:[id])
@@ -195,8 +195,9 @@ enum RequestStatus {
   APPROVED
   REJECTED
 }
-enum PermissionLevel {
+enum RoleLevel {
   LEVEL_1
   LEVEL_2
   LEVEL_3
+  LEVEL_4
 }
