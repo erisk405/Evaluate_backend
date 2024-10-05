@@ -13,8 +13,8 @@ const createUser = async (user, role) => {
       password: hashedPassword,
       role_id: role.id,
       phone: user.phone,
-      department_id: user.department_id,
-      dateofbirth: new Date(user.dateofbirth),
+      department_id: user.department,
+      prefix_id: user.prefix
     },
   });
 };

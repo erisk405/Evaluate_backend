@@ -5,6 +5,7 @@ const userController = require("./controllers/userController")
 const formController = require("./controllers/formController")
 const departmentController = require("./controllers/departmentController")
 const roleController = require("./controllers/roleController");
+const prefixController = require("./controllers/prefixController")
 const { upload, uploadDepartmentImage } = require("./controllers/routeUpload");
 const router = express.Router();
 
@@ -12,6 +13,7 @@ router.post("/sign-up",authController.register);
 router.post("/sign-in",authController.login);
 router.post('/sign-out',authController.logout);
 
+router.get("/prefix",prefixController.getPrefix);
 
 router.get("/form",formController.getAllform)
 router.get("/questionType",formController.getQuestionType) 
@@ -34,6 +36,8 @@ router.put("/usersImage", upload.single('image'), middleware.verifyToken, userCo
 
 
 // admin path
+router.post("/prefix",middleware.verifyToken,middleware.verifyAdmin, prefixController.createPrefix)
+
 router.post("/role",middleware.verifyToken,middleware.verifyAdmin,roleController.createRole)
 router.post("/questionType",middleware.verifyToken,middleware.verifyAdmin,formController.createQuestionType)
 router.post("/question",middleware.verifyToken,middleware.verifyAdmin,formController.createQuestion)
