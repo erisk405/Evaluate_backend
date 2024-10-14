@@ -2,6 +2,7 @@ const Role = require("../models/roleModel");
 const User = require("../models/userModel");
 const { Server } = require("socket.io");
 const io = new Server();
+
 const createRole = async (req, res) => {
   try {
     const created = await Role.createRole(req.body);

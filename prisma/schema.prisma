@@ -79,13 +79,13 @@ model Evaluate{
 }
 model Form{
   id String @id @default(uuid())
-  name String @unique
+  name String 
   questions FormQuestion[] @relation("form-have-question")
   permissionForms PermissionForm[] @relation("FormOfPermission")
 }
 model FormQuestion{
   id String @id @default(uuid())
-  name String @unique
+  name String 
   form_id String
   question_type_id String
   form Form @relation("form-have-question",fields: [form_id],references: [id])

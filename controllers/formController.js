@@ -13,6 +13,33 @@ const createForm = async (req, res) =>{
     }
 }
 
+const updateForm = async (req,res) =>{
+    const {id,name} = req.body.data
+    console.log("req.body",req.body);
+    
+    try {
+        const update = await form.updateFormById(id,name);
+        if (!update) {
+            return res.status(404).json({ message: "not update" });
+        }
+        res.status(201).json(update)
+    } catch (error) {
+        console.error({message: error});
+    }
+}
+const deleteForm = async (req,res) =>{
+    const {id} = req.body
+    try {
+        const response = await form.deleteFormById(id);
+        if (!response) {
+            return res.status(404).json({ message: "not delete" });
+        }
+        res.status(201).json(response)
+    } catch (error) {
+        console.error({message: error});
+    }
+}
+
 const getAllform = async(req,res)=>{
     try {
         const response = await form.getAllform()
@@ -67,5 +94,7 @@ module.exports = {
     getAllform,
     createQuestionType,
     getQuestionType,
-    createQuestion
+    createQuestion,
+    updateForm,
+    deleteForm
 }

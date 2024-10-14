@@ -6,6 +6,7 @@ const formController = require("./controllers/formController")
 const departmentController = require("./controllers/departmentController")
 const roleController = require("./controllers/roleController");
 const prefixController = require("./controllers/prefixController")
+const permissionController = require("./controllers/permissionController");
 const { upload, uploadDepartmentImage } = require("./controllers/routeUpload");
 const router = express.Router();
 
@@ -36,6 +37,8 @@ router.put("/usersImage", upload.single('image'), middleware.verifyToken, userCo
 
 
 // admin path
+router.put('/form',middleware.verifyToken,middleware.verifyAdmin,formController.updateForm);
+
 router.post("/prefix",middleware.verifyToken,middleware.verifyAdmin, prefixController.createPrefix)
 
 router.post("/role",middleware.verifyToken,middleware.verifyAdmin,roleController.createRole)
@@ -45,7 +48,13 @@ router.post("/department",uploadDepartmentImage.single('image'),middleware.verif
 
 router.put('/department-image/:id',middleware.verifyToken,middleware.verifyAdmin,uploadDepartmentImage.single('image'),departmentController.updateDepartmentImage);
 router.put('/department',middleware.verifyToken,middleware.verifyAdmin,departmentController.updateDepartment);
+
+
+router.post("/permission",middleware.verifyToken,middleware.verifyAdmin,permissionController.createPermision);
+
 router.post("/form",middleware.verifyToken,middleware.verifyAdmin,formController.createForm)
+router.delete("/form",middleware.verifyToken,middleware.verifyAdmin,formController.deleteForm)
+
 router.get("/allUsers",middleware.verifyToken,middleware.verifyAdmin,userController.getAllUsers)
 router.get("/roleRequestPending",middleware.verifyToken,middleware.verifyAdmin,roleController.getRoleRequestPending)
 router.put("/usersRole/:id",middleware.verifyToken,middleware.verifyAdmin,userController.setUserRole);
