@@ -48,8 +48,10 @@ model Role{
   user User[]
   roleRequests RoleRequest[] @relation("RoleRequests")
 
-  permissionAsses Permission? @relation("AssessorOfRole")
+
   permissionEval Permission? @relation("EvaluatorOfRole")
+
+  permissionRole PermissionRole[] @relation("RoleToPermission")
 }
 model Department {
   id                      String   @id @default(uuid())
@@ -138,13 +140,14 @@ model Supervise{
 
 model Permission{
   permission_id String @id @default(uuid())
-  assessor_role_id String @unique
   evaluator_role_id String @unique
   in_group  Boolean
-  assessorRole Role @relation("AssessorOfRole",fields: [assessor_role_id],references: [id])
+
   evaluatorRole Role @relation("EvaluatorOfRole",fields: [evaluator_role_id],references:[id])
 
   permissionForm PermissionForm[] @relation("PermissionToForm")
+  
+  permissionRole PermissionRole[] @relation("PermissionToRole")
 }
 
 model PermissionForm{
@@ -155,6 +158,16 @@ model PermissionForm{
   permission Permission @relation("PermissionToForm",fields: [permission_id],references: [permission_id])
 
   @@id([permission_id, form_id])
+}
+
+model PermissionRole{
+  role_id String 
+  permission_id String
+
+  role Role @relation("RoleToPermission",fields: [role_id],references: [id])
+  permission Permission @relation("PermissionToRole",fields: [permission_id],references: [permission_id])
+
+  @@id([permission_id,role_id])
 }
 
 model Period{

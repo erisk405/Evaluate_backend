@@ -2,19 +2,33 @@ const { PrismaClient } = require("@prisma/client");
 const moment = require("moment-timezone");
 const prisma = new PrismaClient();
 
-const createRole = async (role) => {
+const createRole = async (roleName,description,roleLevel) => {
   try {
     return prisma.role.create({
       data: {
-        role_name: role.role_name,
-        role_level: role.role_level,
-        description: role.description,
+        role_name: roleName,
+        role_level: roleLevel,
+        description: description,
       },
     });
   } catch (error) {
     console.error({ message: error });
   }
 };
+
+const deleteRole = async (id) =>{
+  try {
+    return prisma.role.delete({
+      where: {
+        id
+      }
+    })
+    
+  } catch (error) {
+    console.error({ message: error });
+    
+  }
+}
 
 const getRole = async () => {
   try {
@@ -208,4 +222,5 @@ module.exports = {
   getRoleRequestPending,
   deleteOldRequest,
   deleteStatusApprove,
+  deleteRole
 };

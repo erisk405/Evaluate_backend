@@ -1,11 +1,11 @@
 const Role = require("../models/roleModel");
 const User = require("../models/userModel");
-const { Server } = require("socket.io");
-const io = new Server();
 
 const createRole = async (req, res) => {
   try {
-    const created = await Role.createRole(req.body);
+    const {roleName,description,roleLevel} = req.body;
+    
+    const created = await Role.createRole(roleName,description,roleLevel);
     console.log(created);
     if (!created) {
       return res.status(404).json({ message: "don't create role" });
@@ -26,6 +26,19 @@ const getRole = async (req, res) => {
     console.error({ message: error });
   }
 };
+
+const deleteRole = async (req,res) => {
+  try {
+    const {id} = req.body
+    const responsed = await Role.deleteRole(id)
+    if (!responsed) {
+      return res.status(404).json({ message: "don't get role" });
+    }
+    res.status(201).json(responsed);
+  } catch (error) {
+    console.error({ message: error });
+  }
+}
 
 const sendRoleRequest = async (req, res) => {
     try {
@@ -116,4 +129,5 @@ module.exports = {
   sendRoleRequest,
   resolveRole,
   getRoleRequestPending,
+  deleteRole
 };

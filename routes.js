@@ -42,6 +42,8 @@ router.put('/form',middleware.verifyToken,middleware.verifyAdmin,formController.
 router.post("/prefix",middleware.verifyToken,middleware.verifyAdmin, prefixController.createPrefix)
 
 router.post("/role",middleware.verifyToken,middleware.verifyAdmin,roleController.createRole)
+router.delete("/role",middleware.verifyToken,middleware.verifyAdmin,roleController.deleteRole)
+
 router.post("/questionType",middleware.verifyToken,middleware.verifyAdmin,formController.createQuestionType)
 router.post("/question",middleware.verifyToken,middleware.verifyAdmin,formController.createQuestion)
 router.post("/department",uploadDepartmentImage.single('image'),middleware.verifyToken,middleware.verifyAdmin,departmentController.createDepartment)
