@@ -49,9 +49,9 @@ model Role{
   roleRequests RoleRequest[] @relation("RoleRequests")
 
 
-  permissionEval Permission? @relation("EvaluatorOfRole")
+  permissionsAsEvaluator Permission[] @relation("EvaluatorOfRole")
+  permissionsAsAssessor  Permission[] @relation("AssessorOfRole")
 
-  permissionRole PermissionRole[] @relation("RoleToPermission")
 }
 model Department {
   id                      String   @id @default(uuid())
@@ -140,35 +140,28 @@ model Supervise{
 
 model Permission{
   permission_id String @id @default(uuid())
-  evaluator_role_id String @unique
-  in_group  Boolean
+  assessor_role_id String 
+  evaluator_role_id String 
+
 
   evaluatorRole Role @relation("EvaluatorOfRole",fields: [evaluator_role_id],references:[id])
-
+  assessorRole Role @relation("AssessorOfRole",fields: [assessor_role_id],references:[id])
   permissionForm PermissionForm[] @relation("PermissionToForm")
-  
-  permissionRole PermissionRole[] @relation("PermissionToRole")
+
+  @@index([assessor_role_id])
+  @@index([evaluator_role_id])
 }
 
 model PermissionForm{
   permission_id String
   form_id String
-  
+  ingroup Boolean
+
   form Form @relation("FormOfPermission",fields: [form_id],references: [id])
   permission Permission @relation("PermissionToForm",fields: [permission_id],references: [permission_id])
-
-  @@id([permission_id, form_id])
+  @@id([permission_id, form_id, ingroup])
 }
 
-model PermissionRole{
-  role_id String 
-  permission_id String
-
-  role Role @relation("RoleToPermission",fields: [role_id],references: [id])
-  permission Permission @relation("PermissionToRole",fields: [permission_id],references: [permission_id])
-
-  @@id([permission_id,role_id])
-}
 
 model Period{
   period_id String @id @default(uuid())
@@ -185,22 +178,32 @@ model History{
   history_id String @id @default(uuid())
   user_id String
   period_id String
-  history_question_id String
-  average Float
-  standard_deviation Float 
-
+  role_name String
+  department_name String
   user User @relation(fields: [user_id],references: [id])
   period Period @relation(fields: [period_id],references: [period_id])
-  historyQuestion HistoryQuestion @relation(fields: [history_question_id],references: [history_question_id])
+
+  history_detail HistoryDetail[]
 
 }
 
-model HistoryQuestion{
-  history_question_id String @id @default(uuid())
+model HistoryDetail{
+  history_detail_id String @id @default(uuid())
+  history_id String 
   questionHead String
   question String
+  history History @relation(fields: [history_id],references: [history_id])
+  history_score HistoryScore[]
+}
 
-  history History[]
+model HistoryScore{
+  history_score_id String @id @default(uuid())
+  history_detail_id String 
+  type_name String
+  average Float
+  standard_deviation Float
+
+  history_detail HistoryDetail @relation(fields: [history_detail_id],references: [history_detail_id])
 }
 
 enum RequestStatus {

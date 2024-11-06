@@ -62,6 +62,6 @@ router.get("/roleRequestPending",middleware.verifyToken,middleware.verifyAdmin,r
 router.put("/usersRole/:id",middleware.verifyToken,middleware.verifyAdmin,userController.setUserRole);
 router.put("/role",middleware.verifyToken,middleware.verifyAdmin,userController.showRole);
 router.put("/usersToDepartment",middleware.verifyToken,middleware.verifyAdmin,userController.setUserstoDepartment);
-
+router.put("/permissionRole",middleware.verifyToken,middleware.verifyAdmin,permissionController.updatePermission);
 
 module.exports = router
