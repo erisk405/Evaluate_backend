@@ -2,7 +2,7 @@ const { PrismaClient } = require("@prisma/client");
 const moment = require("moment-timezone");
 const prisma = new PrismaClient();
 
-const createRole = async (roleName,description,roleLevel) => {
+const createRole = async (roleName, description, roleLevel) => {
   try {
     return prisma.role.create({
       data: {
@@ -16,23 +16,54 @@ const createRole = async (roleName,description,roleLevel) => {
   }
 };
 
-const deleteRole = async (id) =>{
+const deleteRole = async (id) => {
   try {
     return prisma.role.delete({
       where: {
-        id
-      }
-    })
-    
+        id,
+      },
+    });
   } catch (error) {
     console.error({ message: error });
-    
   }
-}
+};
 
 const getRole = async () => {
   try {
-    return prisma.role.findMany();
+    return prisma.role.findMany({
+      include: {
+        permissionsAsAssessor: {
+          select: {
+            permission_id: true,
+            // ดึงข้อมูล role ของ assessor
+            assessorRole: {
+              select: {
+                id: true,
+                role_name: true,
+              },
+            },
+            // ดึงข้อมูล role ของ evaluator
+            evaluatorRole: {
+              select: {
+                id: true,
+                role_name: true,
+              },
+            },
+            permissionForm: {
+              select: {
+                ingroup: true,
+                form: {
+                  select: {
+                    id: true,
+                    name: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
   } catch (error) {
     console.error({ message: error });
   }
@@ -86,7 +117,7 @@ async function RoleRequest(userId, roleId) {
             image: true,
           },
         },
-        role:true,
+        role: true,
         createdAt: true,
         updatedAt: true,
       },
@@ -157,12 +188,12 @@ async function handlerRoleRequest(requestId, status) {
     return await prisma.roleRequest.update({
       where: { id: requestId },
       data: { status },
-      select:{
-        id:true,
-        role:true,
-        status:true,
-        updatedAt:true,
-      }
+      select: {
+        id: true,
+        role: true,
+        status: true,
+        updatedAt: true,
+      },
     });
     // แจ้งเตือนไปยังสมาชิกที่เกี่ยวข้องผ่าน Socket.IO
   } catch (error) {
@@ -170,48 +201,48 @@ async function handlerRoleRequest(requestId, status) {
   }
 }
 
-  const getRoleRequestPending = async (skip,limit) => {
-    try {
-      const pendingRoleRequestsCount = await prisma.roleRequest.count({
-        where: {
-          status: "PENDING",
-        },
-      });
-      const pendingRoleRequests = await prisma.roleRequest.findMany({
-        where: {
-          status: "PENDING",
-        },
-        orderBy: {
-          createdAt:'desc'
-        },
-        skip:parseInt(skip),
-        take:parseInt(limit),
-        select: {
-          id: true,
-          user: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
-              image: true,
-            },
+const getRoleRequestPending = async (skip, limit) => {
+  try {
+    const pendingRoleRequestsCount = await prisma.roleRequest.count({
+      where: {
+        status: "PENDING",
+      },
+    });
+    const pendingRoleRequests = await prisma.roleRequest.findMany({
+      where: {
+        status: "PENDING",
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+      skip: parseInt(skip),
+      take: parseInt(limit),
+      select: {
+        id: true,
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            image: true,
           },
-          role: {
-            select: {
-              id: true,
-              role_name: true,
-            },
-          },
-          createdAt: true,
-          updatedAt: true,
         },
-      });
+        role: {
+          select: {
+            id: true,
+            role_name: true,
+          },
+        },
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
 
-      return { count: pendingRoleRequestsCount, data: pendingRoleRequests };
-    } catch (error) {
-      console.error({ message: error });
-    }
-  };
+    return { count: pendingRoleRequestsCount, data: pendingRoleRequests };
+  } catch (error) {
+    console.error({ message: error });
+  }
+};
 
 module.exports = {
   createRole,
@@ -222,5 +253,5 @@ module.exports = {
   getRoleRequestPending,
   deleteOldRequest,
   deleteStatusApprove,
-  deleteRole
+  deleteRole,
 };
