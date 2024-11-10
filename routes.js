@@ -63,5 +63,6 @@ router.put("/usersRole/:id",middleware.verifyToken,middleware.verifyAdmin,userCo
 router.put("/role",middleware.verifyToken,middleware.verifyAdmin,userController.showRole);
 router.put("/usersToDepartment",middleware.verifyToken,middleware.verifyAdmin,userController.setUserstoDepartment);
 router.put("/permissionRole",middleware.verifyToken,middleware.verifyAdmin,permissionController.updatePermission);
+router.delete("/permissionForm",middleware.verifyToken,middleware.verifyAdmin,permissionController.deletePermissionForm);
 
 module.exports = router

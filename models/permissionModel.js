@@ -29,15 +29,56 @@ const createPermissionForm = async (permission_id,inGroup,form_id) => {
 };
 
 
-const updatePermission = async (data) =>{
+const updatePermissionForm = async (permission_id,inGroup,form_id) =>{
   try{
   }catch(error){
     console.error({ message: error });
   }
 };
 
+const deletePermissionForm = async (permission_id) =>{
+  try{
+    return prisma.permissionForm.deleteMany({
+      where:{
+        permission_id: permission_id,
+      }
+    });
+
+  }catch(error){
+    console.error({ message: error });
+  }
+};
+
+const findPermissionByRoleId = async (role_id) =>{
+ try {
+  return prisma.permission.findMany({
+    where:{
+      assessor_role_id:role_id,
+    }
+
+  })
+ } catch (error) {
+  
+ }
+};
+
+const findPermissionFormById = async (permission_id) =>{
+  try {
+   return prisma.permissionForm.findMany({
+     where:{
+      permission_id,
+     }
+ 
+   })
+  } catch (error) {
+   
+  }
+ };
 module.exports = {
   createPermission,
-  updatePermission,
-  createPermissionForm
+  updatePermissionForm,
+  createPermissionForm,
+  deletePermissionForm,
+  findPermissionByRoleId,
+  findPermissionFormById
 };
