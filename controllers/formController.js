@@ -1,4 +1,5 @@
 const form = require("../models/formModel");
+const question = require("../models/questionModel");
 
 const createForm = async (req, res) =>{
     const {name} = req.body
@@ -52,34 +53,11 @@ const getAllform = async(req,res)=>{
         console.error({message: error});
     }
 }
-const getQuestionType = async(req,res)=>{
-    try {
-        const response = await form.getQuestionType()
-        if (!response) {
-            return res.status(404).json({ message: "type not found" });
-        }
-        res.status(201).json(response)
-        
-    } catch (error) {
-        console.error({message: error});
-    }
-}
-const createQuestionType = async(req,res)=>{
-    try {
-        const {type} = req.body
-        const added = await form.createQuestionType(type)
-        if(!added){
-            return res.status(404).json({ message: "questionType not add" });
-        }
-        res.status(201).json(added)
-    } catch (error) {
-        console.error({message: error});
-    }
-}
+
 const createQuestion = async(req,res)=>{
     try {
-        const {formId,typeId,name} = req.body
-        const added = await form.createQuestion(formId,typeId,name)
+        const {formId,content} = req.body
+        const added = await question.createQuestion(content,formId);
         if(!added){
             return res.status(404).json({ message: "question not add" });
         }
@@ -88,13 +66,40 @@ const createQuestion = async(req,res)=>{
         console.error({message: error});
     }
 }
+const updateQuestion = async(req,res)=>{
+    try {
+        const {questionId,content} = req.body
+        const added = await question.updateQuestion(content,questionId);
+        if(!added){
+            return res.status(404).json({ message: "question not update" });
+        }
+        res.status(201).json(added)
+    } catch (error) {
+        console.error({message: error});
+    }
+}
+
+const deleteQuestion = async(req,res)=>{
+    try {
+        const id = req.params.questionId
+        console.log("id",id);
+        
+        const deleted = await question.deleteQuestion(id);
+        if(!deleted){
+            return res.status(404).json({ message: "question not delete" });
+        }
+        res.status(201).json(deleted)
+    } catch (error) {
+        console.error({message: error});
+    }
+}
 
 module.exports = {
     createForm,
     getAllform,
-    createQuestionType,
-    getQuestionType,
     createQuestion,
     updateForm,
-    deleteForm
+    deleteForm,
+    updateQuestion,
+    deleteQuestion
 }

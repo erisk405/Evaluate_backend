@@ -3,6 +3,8 @@ const prisma = new PrismaClient();
 
 const createPermission = async (assessor_role_id,evaluator_role_id) => {
   try {
+    console.log("evaluator_role_id",evaluator_role_id);
+    
     return prisma.permission.create({
       data:{
         assessor_role_id,
@@ -49,6 +51,19 @@ const deletePermissionForm = async (permission_id) =>{
   }
 };
 
+const deletePermission = async (assessor_role_id) =>{
+  try{
+    return prisma.permission.deleteMany({
+      where:{
+        assessor_role_id: assessor_role_id,
+      }
+    });
+
+  }catch(error){
+    console.error({ message: error });
+  }
+};
+
 const findPermissionByRoleId = async (role_id) =>{
  try {
   return prisma.permission.findMany({
@@ -80,5 +95,6 @@ module.exports = {
   createPermissionForm,
   deletePermissionForm,
   findPermissionByRoleId,
-  findPermissionFormById
+  findPermissionFormById,
+  deletePermission
 };

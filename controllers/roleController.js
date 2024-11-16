@@ -1,5 +1,6 @@
 const Role = require("../models/roleModel");
 const User = require("../models/userModel");
+const permission = require("../models/permissionModel");
 
 const createRole = async (req, res) => {
   try {
@@ -30,6 +31,18 @@ const getRole = async (req, res) => {
 const deleteRole = async (req,res) => {
   try {
     const {id} = req.body
+    const permissionfind = await permission.findPermissionByRoleId(id);
+    if(!!permissionfind){
+      for(const [_,value]of Object.entries(permissionfind)){
+        // console.log("value",value);
+        const deletePermissionForm = await permission.deletePermissionForm(value.permission_id);
+        // console.log("deletePermissionForm",deletePermissionForm);
+        
+      }
+      const deletePermission = await permission.deletePermission(id);
+      // console.log("deletePermission",deletePermission);
+      
+    }
     const responsed = await Role.deleteRole(id)
     if (!responsed) {
       return res.status(404).json({ message: "don't get role" });

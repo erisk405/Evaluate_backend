@@ -17,7 +17,6 @@ router.post('/sign-out',authController.logout);
 router.get("/prefix",prefixController.getPrefix);
 
 router.get("/form",formController.getAllform)
-router.get("/questionType",formController.getQuestionType) 
 router.get("/department",departmentController.getDepartments)
 router.get("/department/:id",middleware.verifyToken,departmentController.getDepartment)
 router.get("/role",middleware.verifyToken,roleController.getRole)
@@ -44,8 +43,8 @@ router.post("/prefix",middleware.verifyToken,middleware.verifyAdmin, prefixContr
 router.post("/role",middleware.verifyToken,middleware.verifyAdmin,roleController.createRole)
 router.delete("/role",middleware.verifyToken,middleware.verifyAdmin,roleController.deleteRole)
 
-router.post("/questionType",middleware.verifyToken,middleware.verifyAdmin,formController.createQuestionType)
-router.post("/question",middleware.verifyToken,middleware.verifyAdmin,formController.createQuestion)
+
+
 router.post("/department",uploadDepartmentImage.single('image'),middleware.verifyToken,middleware.verifyAdmin,departmentController.createDepartment)
 
 router.put('/department-image/:id',middleware.verifyToken,middleware.verifyAdmin,uploadDepartmentImage.single('image'),departmentController.updateDepartmentImage);
@@ -55,7 +54,10 @@ router.put('/department',middleware.verifyToken,middleware.verifyAdmin,departmen
 router.post("/permission",middleware.verifyToken,middleware.verifyAdmin,permissionController.createPermision);
 
 router.post("/form",middleware.verifyToken,middleware.verifyAdmin,formController.createForm)
+router.post("/question",middleware.verifyToken,middleware.verifyAdmin,formController.createQuestion)
+router.put("/question",middleware.verifyToken,middleware.verifyAdmin,formController.updateQuestion)
 router.delete("/form",middleware.verifyToken,middleware.verifyAdmin,formController.deleteForm)
+router.delete("/question/:questionId",middleware.verifyToken,middleware.verifyAdmin,formController.deleteQuestion)
 
 router.get("/allUsers",middleware.verifyToken,middleware.verifyAdmin,userController.getAllUsers)
 router.get("/roleRequestPending",middleware.verifyToken,middleware.verifyAdmin,roleController.getRoleRequestPending)

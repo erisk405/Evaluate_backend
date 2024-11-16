@@ -76,9 +76,19 @@ model Evaluate{
   date DateTime @default(now())
   evaluator      User     @relation("UserEvaluator", fields: [evaluator_id], references: [id])
   assessor      User     @relation("UserAssessor", fields: [assessor_id], references: [id])
-  
   period Period @relation(fields: [period_id],references: [period_id])
+  evaluateDetail EvaluateDetail[] @relation("EvaluateToDetail")
 }
+model EvaluateDetail{
+  id String @id @default(uuid())
+  evaluate_id String
+  question_id String @unique
+  score Float
+
+  formQuestion FormQuestion @relation(fields: [question_id],references: [id])
+  evaluate Evaluate @relation("EvaluateToDetail",fields: [evaluate_id],references: [id])
+}
+
 model Form{
   id String @id @default(uuid())
   name String 
@@ -87,17 +97,10 @@ model Form{
 }
 model FormQuestion{
   id String @id @default(uuid())
-  name String 
+  content String 
   form_id String
-  question_type_id String
   form Form @relation("form-have-question",fields: [form_id],references: [id])
-  type QuestionType @relation("type-have-question",fields: [question_type_id],references: [id])
-
-}
-model QuestionType{
-    id String @id @default(uuid())
-    type String
-    questions FormQuestion[] @relation("type-have-question")
+  evaluateDetail EvaluateDetail? 
 }
 
 model Image{

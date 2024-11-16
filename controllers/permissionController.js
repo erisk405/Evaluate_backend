@@ -251,6 +251,8 @@ const deletePermissionForm = async (req, res) => {
   }
 };
 
+
+
 module.exports = {
   createPermision,
   updatePermission,
