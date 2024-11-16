@@ -91,13 +91,13 @@ model EvaluateDetail{
 
 model Form{
   id String @id @default(uuid())
-  name String 
+  name String @unique
   questions FormQuestion[] @relation("form-have-question")
   permissionForms PermissionForm[] @relation("FormOfPermission")
 }
 model FormQuestion{
   id String @id @default(uuid())
-  content String 
+  content String @unique
   form_id String
   form Form @relation("form-have-question",fields: [form_id],references: [id])
   evaluateDetail EvaluateDetail? 

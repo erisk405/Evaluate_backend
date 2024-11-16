@@ -40,9 +40,26 @@ const deleteQuestion = async (questionId) => {
     }
   };
 
+  const getQuestions = async (formId) =>{
+    try {
+      return prisma.formQuestion.findMany({
+        where:{
+          form_id:formId
+        },
+        select:{
+          id:true,
+          content:true
+        }
+      });
+      
+    } catch (error) {
+      console.error({ message: error });
+    }
+  }
 
 module.exports = {
   createQuestion,
   updateQuestion,
-  deleteQuestion
+  deleteQuestion,
+  getQuestions
 };

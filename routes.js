@@ -58,6 +58,7 @@ router.post("/question",middleware.verifyToken,middleware.verifyAdmin,formContro
 router.put("/question",middleware.verifyToken,middleware.verifyAdmin,formController.updateQuestion)
 router.delete("/form",middleware.verifyToken,middleware.verifyAdmin,formController.deleteForm)
 router.delete("/question/:questionId",middleware.verifyToken,middleware.verifyAdmin,formController.deleteQuestion)
+router.get("/questions",middleware.verifyToken,middleware.verifyAdmin,formController.getQuestions)
 
 router.get("/allUsers",middleware.verifyToken,middleware.verifyAdmin,userController.getAllUsers)
 router.get("/roleRequestPending",middleware.verifyToken,middleware.verifyAdmin,roleController.getRoleRequestPending)

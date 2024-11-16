@@ -93,6 +93,22 @@ const deleteQuestion = async(req,res)=>{
         console.error({message: error});
     }
 }
+const getQuestions = async(req,res)=>{
+    try {
+        const {formId} = req.body;
+        console.log("formId",formId);
+        
+        const questions = await question.getQuestions(formId);
+        if(!questions){
+            return res.status(404).json({ message: "don't get questions" });
+
+        }
+        res.status(201).json(questions);
+        
+    } catch (error) {
+        console.error({message: error});
+    }
+}
 
 module.exports = {
     createForm,
@@ -101,5 +117,6 @@ module.exports = {
     updateForm,
     deleteForm,
     updateQuestion,
-    deleteQuestion
+    deleteQuestion,
+    getQuestions
 }
