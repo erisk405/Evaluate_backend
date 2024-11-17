@@ -95,7 +95,7 @@ const deleteQuestion = async(req,res)=>{
 }
 const getQuestions = async(req,res)=>{
     try {
-        const {formId} = req.body;
+        const formId = req.params.formId;
         console.log("formId",formId);
         
         const questions = await question.getQuestions(formId);
