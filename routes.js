@@ -59,7 +59,7 @@ router.post("/form",middleware.verifyToken,middleware.verifyAdmin,formController
 router.delete("/form",middleware.verifyToken,middleware.verifyAdmin,formController.deleteForm)
 router.post("/question",middleware.verifyToken,middleware.verifyAdmin,formController.createQuestion)
 router.put("/question",middleware.verifyToken,middleware.verifyAdmin,formController.updateQuestion)
-router.delete("/question/:questionId",middleware.verifyToken,middleware.verifyAdmin,formController.deleteQuestion)
+router.delete("/question",middleware.verifyToken,middleware.verifyAdmin,formController.deleteQuestion)
 router.get("/questions/:formId",middleware.verifyToken,middleware.verifyAdmin,formController.getQuestions)
 //--------------form----------------------
 
