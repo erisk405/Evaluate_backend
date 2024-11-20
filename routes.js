@@ -8,6 +8,7 @@ const roleController = require("./controllers/roleController");
 const prefixController = require("./controllers/prefixController");
 const permissionController = require("./controllers/permissionController");
 const periodController = require("./controllers/periodController");
+const evaluateController = require("./controllers/evaluateController");
 const { upload, uploadDepartmentImage } = require("./controllers/routeUpload");
 const router = express.Router();
 
@@ -21,6 +22,8 @@ router.post('/sign-out',authController.logout);
 //--------------perfix----------------------
 router.get("/prefix",prefixController.getPrefix);
 router.post("/prefix",middleware.verifyToken,middleware.verifyAdmin, prefixController.createPrefix);
+router.put("/prefix",middleware.verifyToken,middleware.verifyAdmin, prefixController.updatePrefix);
+router.delete("/prefix/:prefix_id",middleware.verifyToken,middleware.verifyAdmin, prefixController.deletePrefix);
 //--------------perfix----------------------
 
 //--------------department----------------------
@@ -76,5 +79,9 @@ router.get("/periods",middleware.verifyToken,middleware.verifyAdmin,periodContro
 router.get("/period/:period_id",middleware.verifyToken,middleware.verifyAdmin,periodController.getPeriodById);
 router.delete("/period/:period_id",middleware.verifyToken,middleware.verifyAdmin,periodController.deletePeriod);
 //-------------period------------------------------->>>
+
+//-------------evaluate------------------------------->>>
+router.post("/evaluate",middleware.verifyToken,middleware.verifyAdmin,evaluateController.createEvaluate);
+//-------------evaluate------------------------------->>>
 
 module.exports = router
