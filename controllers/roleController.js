@@ -50,6 +50,7 @@ const deleteRole = async (req,res) => {
     res.status(201).json(responsed);
   } catch (error) {
     console.error({ message: error });
+    res.status(500).json({ message: "Error deleting role", error: error.message });
   }
 }
 
