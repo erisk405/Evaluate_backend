@@ -171,25 +171,15 @@ const updateDepartment = async (req, res) => {
 
 const getDepartment = async (req, res) => {
   const departmentId = req.params.id;
-  const { page = 0, size = 5 } = req.query; // รับ page และ size จาก query params
-
-  const pageIndex = parseInt(page, 10);
-  const pageSize = parseInt(size, 10);
   try {
     // เรียกใช้งาน findDepartmentById และรับค่า department กับ totalUsers
-    const { department_data, totalUsers } = await department.findDepartmentById(
+    const department_data = await department.findDepartmentById(
       departmentId,
-      pageIndex,
-      pageSize
     );
     if (!department_data) {
       return res.status(404).json({ message: "Department not found" });
     }
-    res.status(200).json({
-        data: department_data,
-        totalPages: Math.ceil(totalUsers / pageSize), // จำนวนหน้าทั้งหมด
-        totalUsers: totalUsers,
-    });
+    res.status(200).json(department_data);
   } catch (error) {
     console.error({ message: error.message });
     res.status(500).json({ message: "Internal server error" });

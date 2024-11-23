@@ -75,7 +75,7 @@ router.delete("/permissionForm",middleware.verifyToken,middleware.verifyAdmin,pe
 //-------------period------------------------------->>>
 router.post("/period",middleware.verifyToken,middleware.verifyAdmin,periodController.createPeriod);
 router.put("/period",middleware.verifyToken,middleware.verifyAdmin,periodController.updatePeriod);
-router.get("/periods",middleware.verifyToken,middleware.verifyAdmin,periodController.getAllPeriods);
+router.get("/periods",middleware.verifyToken,periodController.getAllPeriods);
 router.get("/period/:period_id",middleware.verifyToken,middleware.verifyAdmin,periodController.getPeriodById);
 router.delete("/period/:period_id",middleware.verifyToken,middleware.verifyAdmin,periodController.deletePeriod);
 //-------------period------------------------------->>>

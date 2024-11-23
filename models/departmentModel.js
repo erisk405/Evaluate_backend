@@ -57,17 +57,10 @@ const findDepartmentByName = async (name) => {
 };
 const findDepartmentById = async (
   departmentId,
-  pageIndex = 0,
-  pageSize = 5
+ 
 ) => {
   try {
-    // นับจำนวนผู้ใช้ทั้งหมดใน department นี้
-    const totalUsers = await prisma.user.count({
-      where: { department_id: departmentId },
-    });
-
-    // console.log("totalUsers:",totalUsers);
-
+  
     // ดึงข้อมูล department พร้อมกับผู้ใช้
     const department_data = await prisma.department.findUnique({
       where: { id: departmentId },
@@ -76,14 +69,20 @@ const findDepartmentById = async (
         department_name: true,
         image_id: true,
         user: {
-          skip: pageIndex * pageSize,
-          take: pageSize,
+          // skip: pageIndex * pageSize,
+          // take: pageSize,
           select: {
             id: true,
             name: true,
-            email: true,
+           
             phone: true,
-            role: true,
+            role:{
+              select:{
+                id:true,
+                role_name:true,
+                role_level:true
+              }
+            },
             image: true,
           },
         },
@@ -93,13 +92,14 @@ const findDepartmentById = async (
     
     return {
       department_data,
-      totalUsers
+      // totalUsers
     }
   } catch (error) {
     console.error({ message: error.message });
     throw new Error("Error fetching department data");
   }
 };
+
 
 const updateImage = async (departmentId, imageId) => {
   try {
