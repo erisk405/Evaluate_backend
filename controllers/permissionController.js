@@ -237,7 +237,7 @@ const updatePermission = async (req, res) => {
   }
 };
 
-const deletePermissionForm = async (req, res) => {
+const deletePermissionForm = async (req, res) => {d
   try {
     console.log("delete", req.body);
     const { permission_id } = req.body;

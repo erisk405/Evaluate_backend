@@ -1,6 +1,53 @@
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 
+const checkPeriodOverlap = async (newStart, newEnd) => {
+  try {
+    const overlappingPeriod = await prisma.period.findFirst({
+      where: {
+        OR: [
+          {
+            AND: [
+              { start: { lte: newStart } },
+              { end: { gte: newStart } }
+            ]
+          },
+          {
+            AND: [
+              { start: { lte: newEnd } },
+              { end: { gte: newEnd } }
+            ]
+          },
+          {
+            AND: [
+              { start: { gte: newStart } },
+              { end: { lte: newEnd } }
+            ]
+          }
+        ]
+      }
+    });
+
+    return overlappingPeriod;
+  } catch (error) {
+    console.error({ message: error });
+    throw error;
+  }
+};
+const validateDateTime = (dateTimeStr) => {
+  // ตรวจสอบรูปแบบ ISO datetime
+  const isoDateTimeRegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?Z$/;
+  if (!isoDateTimeRegex.test(dateTimeStr)) {
+    throw new Error(`Invalid datetime format: ${dateTimeStr}. Expected format: YYYY-MM-DDTHH:mm:ss.sssZ`);
+  }
+  
+  const date = new Date(dateTimeStr);
+  if (isNaN(date.getTime())) {
+    throw new Error(`Invalid datetime: ${dateTimeStr}`);
+  }
+  
+  return date;
+};
 const createPeriod = async (data) => {
   try {
     return prisma.period.create({
@@ -8,11 +55,12 @@ const createPeriod = async (data) => {
         title: data.title,
         start: data.start,
         end: data.end,
-        isAction: false,
+        isAction: data.isAction ?? false,
       },
     });
   } catch (error) {
-    console.error({ message: error });
+    console.error({ message: error.message });
+    // throw error;
   }
 };
 const updatePeriod = async (data) => {
@@ -84,5 +132,7 @@ module.exports = {
   setActionPeriod,
   getPeriods,
   getPeriodById,
-  deletePeriod
+  deletePeriod,
+  checkPeriodOverlap,
+  validateDateTime
 };
