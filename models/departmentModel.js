@@ -83,6 +83,7 @@ const findDepartmentById = async (
                 role_level:true
               }
             },
+            department:true,
             image: true,
           },
         },
