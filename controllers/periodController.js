@@ -31,7 +31,7 @@ const createPeriod = async (req, res) => {
       const created = await period.createPeriod(data);
       
       if (!created) {
-        return res.status(400).json({
+        return res.status(500).json({
           success: false,
           message: "Failed to create period"
         });
@@ -54,7 +54,7 @@ const createPeriod = async (req, res) => {
   
       // จัดการ Prisma errors
       if (error.code) {
-        return res.status(400).json({
+        return res.status(500).json({
           success: false,
           message: "Database error",
           error: error.message
