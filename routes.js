@@ -38,7 +38,7 @@ router.get("/department/:id",middleware.verifyToken,departmentController.getDepa
 router.get("/role",middleware.verifyToken,roleController.getRole)
 router.post("/role",middleware.verifyToken,middleware.verifyAdmin,roleController.createRole)
 router.delete("/role",middleware.verifyToken,middleware.verifyAdmin,roleController.deleteRole)
-router.put("/role",middleware.verifyToken,middleware.verifyAdmin,userController.showRole);
+router.put("/role",middleware.verifyToken,middleware.verifyAdmin,roleController.updateRole);
 router.post('/sendRoleRequest',middleware.verifyToken,roleController.sendRoleRequest)
 router.patch('/resolveRole',middleware.verifyToken,middleware.verifyAdmin,roleController.resolveRole)
 router.get("/roleRequestPending",middleware.verifyToken,middleware.verifyAdmin,roleController.getRoleRequestPending)

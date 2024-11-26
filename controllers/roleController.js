@@ -28,6 +28,21 @@ const getRole = async (req, res) => {
   }
 };
 
+const updateRole = async (req, res) => {
+  try {
+    const {role_id,roleName,description,roleLevel} = req.body;
+    
+    const updated = await Role.updateRole(role_id,roleName,description,roleLevel);
+    console.log(updated);
+    if (!updated) {
+      return res.status(404).json({ message: "don't updated role" });
+    }
+    res.status(201).json(updated);
+  } catch (error) {
+    console.error({ message: error });
+  }
+};
+
 const deleteRole = async (req,res) => {
   try {
     const {id} = req.body
@@ -53,6 +68,7 @@ const deleteRole = async (req,res) => {
     res.status(500).json({ message: "Error deleting role", error: error.message });
   }
 }
+
 
 const sendRoleRequest = async (req, res) => {
     try {
@@ -143,5 +159,6 @@ module.exports = {
   sendRoleRequest,
   resolveRole,
   getRoleRequestPending,
-  deleteRole
+  deleteRole,
+  updateRole
 };

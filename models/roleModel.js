@@ -16,6 +16,23 @@ const createRole = async (roleName, description, roleLevel) => {
   }
 };
 
+const updateRole = async (role_id, roleName, description, roleLevel) => {
+  try {
+    return prisma.role.update({
+      where: {
+        id: role_id,
+      },
+      data: {
+        role_name: roleName,
+        role_level: roleLevel,
+        description: description,
+      },
+    });
+  } catch (error) {
+    console.error({ message: error });
+  }
+};
+
 const deleteRole = async (id) => {
   try {
     return prisma.role.delete({
@@ -254,4 +271,5 @@ module.exports = {
   deleteOldRequest,
   deleteStatusApprove,
   deleteRole,
+  updateRole,
 };
