@@ -138,22 +138,30 @@ const getDepartments = async (req, res) => {
     console.error({ message: error });
   }
 };
+const getDepartmentsForAdmin = async (req, res) => {
+  try {
+    const responsed = await department.getDepartmentsForAdmin();
+    // console.log("department:",responsed);
+    if (!responsed) {
+      return res.status(404).json({ message: "not get department" });
+    }
+    res.status(201).json(responsed);
+  } catch (error) {
+    console.error({ message: error });
+  }
+};
 const updateDepartment = async (req, res) => {
   console.log(req.body);
 
   const {
     department_id,
     department_name,
-    headOfDepartment_id,
-    deputyDirector_id,
   } = req.body;
 
   try {
     const response = await department.updateDepartment(
       department_id,
       department_name,
-      headOfDepartment_id,
-      deputyDirector_id
     );
 
     if (!response) {
@@ -172,8 +180,22 @@ const updateDepartment = async (req, res) => {
 const getDepartment = async (req, res) => {
   const departmentId = req.params.id;
   try {
-    // เรียกใช้งาน findDepartmentById และรับค่า department กับ totalUsers
     const department_data = await department.findDepartmentById(
+      departmentId,
+    );
+    if (!department_data) {
+      return res.status(404).json({ message: "Department not found" });
+    }
+    res.status(200).json(department_data);
+  } catch (error) {
+    console.error({ message: error.message });
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+const getDepartmentForAdmin = async (req, res) => {
+  const departmentId = req.params.id;
+  try {
+    const department_data = await department.findDepartmentByIdForAdmin(
       departmentId,
     );
     if (!department_data) {
@@ -192,4 +214,6 @@ module.exports = {
   updateDepartmentImage,
   getDepartment,
   updateDepartment,
+  getDepartmentForAdmin,
+  getDepartmentsForAdmin
 };

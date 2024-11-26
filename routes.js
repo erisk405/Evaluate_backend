@@ -32,7 +32,9 @@ router.post("/department",uploadDepartmentImage.single('image'),middleware.verif
 router.put('/department-image/:id',middleware.verifyToken,middleware.verifyAdmin,uploadDepartmentImage.single('image'),departmentController.updateDepartmentImage);
 router.put('/department',middleware.verifyToken,middleware.verifyAdmin,departmentController.updateDepartment);
 router.get("/department",departmentController.getDepartments);
+router.get("/department/admin",middleware.verifyToken,middleware.verifyAdmin,departmentController.getDepartmentsForAdmin);
 router.get("/department/:id",middleware.verifyToken,departmentController.getDepartment);
+router.get("/department/admin/:id",middleware.verifyToken,middleware.verifyAdmin,departmentController.getDepartmentForAdmin);
 //--------------department----------------------
 
 //-------------supervise------------------------------->>>
