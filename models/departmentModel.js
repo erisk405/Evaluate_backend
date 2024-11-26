@@ -74,8 +74,6 @@ const findDepartmentById = async (
           select: {
             id: true,
             name: true,
-           
-            phone: true,
             role:{
               select:{
                 id:true,
@@ -87,6 +85,30 @@ const findDepartmentById = async (
             image: true,
           },
         },
+        supervise:{
+          select:{
+            user:{
+              select:{
+                id:true,
+                name:true,
+                image:true,
+                role:{
+                  select:{
+                    id:true,
+                    role_name:true
+                  }
+                },
+                department:{
+                  select:{
+                    id:true,
+                    department_name:true
+                  }
+                }
+
+              }
+            }
+          }
+        }
       }, // Ensure the ID is parsed as an integer
     });
     console.log("department_data:",department_data);

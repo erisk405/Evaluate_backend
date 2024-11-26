@@ -9,6 +9,7 @@ const prefixController = require("./controllers/prefixController");
 const permissionController = require("./controllers/permissionController");
 const periodController = require("./controllers/periodController");
 const evaluateController = require("./controllers/evaluateController");
+const superviseController = require("./controllers/superviseController");
 const { upload, uploadDepartmentImage } = require("./controllers/routeUpload");
 const router = express.Router();
 
@@ -33,6 +34,13 @@ router.put('/department',middleware.verifyToken,middleware.verifyAdmin,departmen
 router.get("/department",departmentController.getDepartments);
 router.get("/department/:id",middleware.verifyToken,departmentController.getDepartment);
 //--------------department----------------------
+
+//-------------supervise------------------------------->>>
+router.post("/supervise",middleware.verifyToken,middleware.verifyAdmin, superviseController.createSuperviseCon);
+router.put("/supervise",middleware.verifyToken,middleware.verifyAdmin, superviseController.updateSuperviseCon);
+router.delete("/supervise/:superviseId",middleware.verifyToken,middleware.verifyAdmin, superviseController.deleteSuperviseCon);
+router.get("/supervise/:userId",middleware.verifyToken,middleware.verifyAdmin, superviseController.getSuperviseByUserIdCon);
+//-------------supervise------------------------------->>>
 
 //--------------role----------------------
 router.get("/role",middleware.verifyToken,roleController.getRole)

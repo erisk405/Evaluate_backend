@@ -28,8 +28,6 @@ model User {
   prefix Prefix? @relation(fields: [prefix_id],references: [prefix_id])
   role Role? @relation(fields: [role_id], references: [id])
   department Department? @relation("Workon",fields: [department_id],references: [id])
-  headOfDepartment Department? @relation("HeadOfDepartment" )
-  deputyDirectorOf Department? @relation("DeputyDirectorOf") 
   evaluates            Evaluate[]  @relation("UserEvaluator")
   evaluationsReceived  Evaluate[] @relation("UserAssessor")
   image Image? @relation("userImage",fields: [image_id],references: [id])
@@ -58,11 +56,6 @@ model Department {
   department_name         String @unique
   user                    User[] @relation("Workon")
   image_id String? @unique
-  headOfDepartment_id String?  @unique
-  headOfDepartment    User?    @relation("HeadOfDepartment", fields: [headOfDepartment_id], references: [id])
-  deputyDirector_id   String?  @unique
-  deputyDirector      User?    @relation("DeputyDirectorOf", fields: [deputyDirector_id], references: [id])
-  
   image Image? @relation("departmentImage",fields: [image_id],references: [id])
 
   supervise Supervise? @relation("SuperviseOfDepartment")
