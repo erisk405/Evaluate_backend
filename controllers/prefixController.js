@@ -40,8 +40,10 @@ const updatePrefix = async (req, res) => {
 };
 const deletePrefix = async (req, res) => {
     try {
-      const prefix_id = req.params.prefix_id;
-      const deleted = await prefix.deletePrefix(prefix_id);
+      const prefixToDelete = req.body;
+      // เอามาแค่ question ID 
+      const prefixIds = prefixToDelete.map((prefix) => prefix.prefix_id);
+      const deleted = await prefix.deletePrefix(prefixIds);
       if (!deleted) {
         return res.status(404).json({ message: "don't delete prefix" });
       }

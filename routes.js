@@ -24,7 +24,7 @@ router.post('/sign-out',authController.logout);
 router.get("/prefix",prefixController.getPrefix);
 router.post("/prefix",middleware.verifyToken,middleware.verifyAdmin, prefixController.createPrefix);
 router.put("/prefix",middleware.verifyToken,middleware.verifyAdmin, prefixController.updatePrefix);
-router.delete("/prefix/:prefix_id",middleware.verifyToken,middleware.verifyAdmin, prefixController.deletePrefix);
+router.delete("/prefix",middleware.verifyToken,middleware.verifyAdmin, prefixController.deletePrefix);
 //--------------perfix----------------------
 
 //--------------department----------------------
