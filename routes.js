@@ -57,7 +57,7 @@ router.get("/roleRequestPending",middleware.verifyToken,middleware.verifyAdmin,r
 //--------------user----------------------
 router.get("/findUserEmplyDepartment",userController.findUserEmptyDepartment);
 router.get("/userProfile",middleware.verifyToken,userController.findUser);
-router.get("/myProfile",middleware.verifyToken,userController.getMyProfile)
+router.get("/myProfile",middleware.verifyToken,userController.getMyProfile);
 router.put("/usersDepartment",middleware.verifyToken,userController.setDepartment);
 router.put("/usersRole/:id",middleware.verifyToken,middleware.verifyAdmin,userController.setUserRole);
 router.put("/usersImage", upload.single('image'), middleware.verifyToken, userController.updateUserImage);
@@ -91,7 +91,7 @@ router.delete("/period/:period_id",middleware.verifyToken,middleware.verifyAdmin
 //-------------period------------------------------->>>
 
 //-------------evaluate------------------------------->>>
-router.post("/evaluate",middleware.verifyToken,middleware.verifyAdmin,evaluateController.createEvaluate);
+router.post("/evaluate",middleware.verifyToken,evaluateController.createEvaluate);
 //-------------evaluate------------------------------->>>
 
 module.exports = router

@@ -14,7 +14,7 @@ const createUser = async (user, role) => {
       role_id: role.id,
       phone: user.phone,
       department_id: user.department,
-      prefix_id: user.prefix
+      prefix_id: user.prefix,
     },
   });
 };
@@ -34,8 +34,8 @@ const getAllUsers = async () => {
       id: true,
       name: true,
       role: true,
-      email:true,
-      phone:true,
+      email: true,
+      phone: true,
       department: true,
       image: true,
     },
@@ -57,7 +57,31 @@ const myProfile = async (userId) => {
           department_name: true,
         },
       },
-      role: true,
+      role: {
+        include: {
+          permissionsAsAssessor: {
+            include: {
+              permissionForm: {
+                select: {
+                  ingroup: true,
+                  form: {
+                    select: {
+                      id:true,
+                      name: true,
+                      questions: {
+                        select: {
+                          id: true,
+                          content: true,
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
       image: true,
       roleRequests: {
         where: {
@@ -89,9 +113,9 @@ const findUserEmptyDepartment = async () => {
     where: {
       department_id: null,
       role: {
-          role_name: {
-            not: "admin",
-          },
+        role_name: {
+          not: "admin",
+        },
       },
     },
     select: {
@@ -102,7 +126,8 @@ const findUserEmptyDepartment = async () => {
     },
   });
 };
-const assignUsersToDepartment = async (departmentId, userIds) => { // updete multiple user Department_id
+const assignUsersToDepartment = async (departmentId, userIds) => {
+  // updete multiple user Department_id
   return prisma.user.updateMany({
     where: {
       id: {
@@ -189,5 +214,5 @@ module.exports = {
   getAllUsers,
   myProfile,
   findUserEmptyDepartment,
-  assignUsersToDepartment
+  assignUsersToDepartment,
 };
