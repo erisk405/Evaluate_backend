@@ -12,194 +12,199 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
-model User {
-  id    String @id @default(uuid())
-  email String  @unique
-  name  String
-  prefix_id String?
-  password String
-  role_id String?
-  department_id String?
-  image_id String? @unique
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  phone String? 
 
-  prefix Prefix? @relation(fields: [prefix_id],references: [prefix_id])
-  role Role? @relation(fields: [role_id], references: [id])
-  department Department? @relation("Workon",fields: [department_id],references: [id])
-  evaluates            Evaluate[]  @relation("UserEvaluator")
-  evaluationsReceived  Evaluate[] @relation("UserAssessor")
-  image Image? @relation("userImage",fields: [image_id],references: [id])
-  roleRequests RoleRequest[] @relation("UserRoleRequests")
+model User {
+  id            String   @id @default(uuid())
+  email         String   @unique
+  name          String
+  prefix_id     String?
+  password      String
+  role_id       String?
+  department_id String?
+  image_id      String?  @unique
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  phone         String?
+
+  prefix              Prefix?       @relation(fields: [prefix_id], references: [prefix_id])
+  role                Role?         @relation(fields: [role_id], references: [id])
+  department          Department?   @relation("Workon", fields: [department_id], references: [id])
+  evaluates           Evaluate[]    @relation("UserEvaluator")
+  evaluationsReceived Evaluate[]    @relation("UserAssessor")
+  image               Image?        @relation("userImage", fields: [image_id], references: [id])
+  roleRequests        RoleRequest[] @relation("UserRoleRequests")
 
   sepervise Supervise[] @relation("UserSupervise")
 
   history History[]
-
 }
-model Role{
-  id String @id @default(uuid())
-  role_name String @unique
-  description String?
-  role_level RoleLevel @default(LEVEL_1)
-  user User[]
-  roleRequests RoleRequest[] @relation("RoleRequests")
 
+model Role {
+  id           String        @id @default(uuid())
+  role_name    String        @unique
+  description  String?
+  role_level   RoleLevel     @default(LEVEL_1)
+  user         User[]
+  roleRequests RoleRequest[] @relation("RoleRequests")
 
   permissionsAsEvaluator Permission[] @relation("EvaluatorOfRole")
   permissionsAsAssessor  Permission[] @relation("AssessorOfRole")
-
 }
+
 model Department {
-  id                      String   @id @default(uuid())
-  department_name         String @unique
-  user                    User[] @relation("Workon")
-  image_id String? @unique
-  image Image? @relation("departmentImage",fields: [image_id],references: [id])
+  id              String  @id @default(uuid())
+  department_name String  @unique
+  user            User[]  @relation("Workon")
+  image_id        String? @unique
+  image           Image?  @relation("departmentImage", fields: [image_id], references: [id])
 
   supervise Supervise? @relation("SuperviseOfDepartment")
 }
 
-model Evaluate{
-  id String @id @default(uuid())
-  period_id String
-  assessor_id String
-  evaluator_id String
-  date DateTime @default(now())
-  evaluator      User     @relation("UserEvaluator", fields: [evaluator_id], references: [id])
-  assessor      User     @relation("UserAssessor", fields: [assessor_id], references: [id])
-  period Period @relation(fields: [period_id],references: [period_id])
+model Evaluate {
+  id             String           @id @default(uuid())
+  period_id      String
+  assessor_id    String
+  evaluator_id   String
+  date           DateTime         @default(now())
+  evaluator      User             @relation("UserEvaluator", fields: [evaluator_id], references: [id])
+  assessor       User             @relation("UserAssessor", fields: [assessor_id], references: [id])
+  period         Period           @relation(fields: [period_id], references: [period_id])
   evaluateDetail EvaluateDetail[] @relation("EvaluateToDetail")
+  
+  @@unique([assessor_id, evaluator_id])
 }
-model EvaluateDetail{
-  id String @id @default(uuid())
+
+model EvaluateDetail {
+  id          String @id @default(uuid())
   evaluate_id String
-  question_id String @unique
-  score Float
+  question_id String
+  score       Float
 
-  formQuestion FormQuestion @relation(fields: [question_id],references: [id])
-  evaluate Evaluate @relation("EvaluateToDetail",fields: [evaluate_id],references: [id])
+  // กำหนดความสัมพันธ์ไปยัง FormQuestion
+  formQuestion FormQuestion @relation(fields: [question_id], references: [id], name: "EvaluateDetailToFormQuestion")
+  evaluate     Evaluate     @relation("EvaluateToDetail", fields: [evaluate_id], references: [id])
+
+  // Unique constraint ระหว่าง evaluate_id และ question_id
+  @@unique([evaluate_id, question_id])
 }
 
-model Form{
-  id String @id @default(uuid())
-  name String @unique
-  questions FormQuestion[] @relation("form-have-question")
+model Form {
+  id              String           @id @default(uuid())
+  name            String           @unique
+  questions       FormQuestion[]   @relation("form-have-question")
   permissionForms PermissionForm[] @relation("FormOfPermission")
 }
-model FormQuestion{
-  id String @id @default(uuid())
+
+model FormQuestion {
+  id      String @id @default(uuid())
   content String @unique
   form_id String
-  form Form @relation("form-have-question",fields: [form_id],references: [id])
-  evaluateDetail EvaluateDetail? 
+  form    Form   @relation("form-have-question", fields: [form_id], references: [id])
+
+  // Opposite relation field ชี้กลับไปที่ EvaluateDetail
+  evaluateDetails EvaluateDetail[] @relation(name: "EvaluateDetailToFormQuestion")
 }
 
-model Image{
-  id String @id @default(uuid())
-  url String
-  public_id String
-  user User? @relation("userImage")
+model Image {
+  id         String      @id @default(uuid())
+  url        String
+  public_id  String
+  user       User?       @relation("userImage")
   department Department? @relation("departmentImage")
 }
 
-
 model RoleRequest {
-  id        String    @id @default(uuid()) 
+  id        String        @id @default(uuid())
   userId    String
   roleId    String
   status    RequestStatus @default(PENDING)
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
 
-  user     User      @relation("UserRoleRequests", fields: [userId], references: [id])
-  role     Role      @relation("RoleRequests", fields: [roleId], references: [id])
-
+  user User @relation("UserRoleRequests", fields: [userId], references: [id])
+  role Role @relation("RoleRequests", fields: [roleId], references: [id])
 }
 
-model Prefix{
-  prefix_id String @id @default(uuid())
-  prefix_name String 
-  user User[]
+model Prefix {
+  prefix_id   String @id @default(uuid())
+  prefix_name String
+  user        User[]
 }
 
-
-model Supervise{
-  supervise_id String @id @default(uuid())
-  user_id String
+model Supervise {
+  supervise_id  String @id @default(uuid())
+  user_id       String
   department_id String @unique
-  
-  user User @relation("UserSupervise",fields: [user_id],references: [id])
-  department Department @relation("SuperviseOfDepartment",fields: [department_id],references: [id])
+
+  user       User       @relation("UserSupervise", fields: [user_id], references: [id])
+  department Department @relation("SuperviseOfDepartment", fields: [department_id], references: [id])
 }
 
-model Permission{
-  permission_id String @id @default(uuid())
-  assessor_role_id String 
-  evaluator_role_id String 
+model Permission {
+  permission_id     String @id @default(uuid())
+  assessor_role_id  String
+  evaluator_role_id String
 
-
-  evaluatorRole Role @relation("EvaluatorOfRole",fields: [evaluator_role_id],references:[id])
-  assessorRole Role @relation("AssessorOfRole",fields: [assessor_role_id],references:[id])
+  evaluatorRole  Role             @relation("EvaluatorOfRole", fields: [evaluator_role_id], references: [id])
+  assessorRole   Role             @relation("AssessorOfRole", fields: [assessor_role_id], references: [id])
   permissionForm PermissionForm[] @relation("PermissionToForm")
 
   @@index([assessor_role_id])
   @@index([evaluator_role_id])
 }
 
-model PermissionForm{
+model PermissionForm {
   permission_id String
-  form_id String
-  ingroup Boolean
+  form_id       String
+  ingroup       Boolean
 
-  form Form @relation("FormOfPermission",fields: [form_id],references: [id])
-  permission Permission @relation("PermissionToForm",fields: [permission_id],references: [permission_id])
+  form       Form       @relation("FormOfPermission", fields: [form_id], references: [id])
+  permission Permission @relation("PermissionToForm", fields: [permission_id], references: [permission_id])
+
   @@id([permission_id, form_id, ingroup])
 }
 
-
-model Period{
-  period_id String @id @default(uuid())
-  title String
-  start DateTime
-  end DateTime
-  isAction Boolean
+model Period {
+  period_id String   @id @default(uuid())
+  title     String
+  start     DateTime
+  end       DateTime
+  isAction  Boolean
 
   evaluate Evaluate[]
-  history History[]
+  history  History[]
 }
 
-model History{
-  history_id String @id @default(uuid())
-  user_id String
-  period_id String
-  role_name String
+model History {
+  history_id      String @id @default(uuid())
+  user_id         String
+  period_id       String
+  role_name       String
   department_name String
-  user User @relation(fields: [user_id],references: [id])
-  period Period @relation(fields: [period_id],references: [period_id])
+  user            User   @relation(fields: [user_id], references: [id])
+  period          Period @relation(fields: [period_id], references: [period_id])
 
   history_detail HistoryDetail[]
-
 }
 
-model HistoryDetail{
-  history_detail_id String @id @default(uuid())
-  history_id String 
-  questionHead String
-  question String
-  history History @relation(fields: [history_id],references: [history_id])
-  history_score HistoryScore[]
+model HistoryDetail {
+  history_detail_id String         @id @default(uuid())
+  history_id        String
+  questionHead      String
+  question          String
+  history           History        @relation(fields: [history_id], references: [history_id])
+  history_score     HistoryScore[]
 }
 
-model HistoryScore{
-  history_score_id String @id @default(uuid())
-  history_detail_id String 
-  type_name String
-  average Float
+model HistoryScore {
+  history_score_id   String @id @default(uuid())
+  history_detail_id  String
+  type_name          String
+  average            Float
   standard_deviation Float
 
-  history_detail HistoryDetail @relation(fields: [history_detail_id],references: [history_detail_id])
+  history_detail HistoryDetail @relation(fields: [history_detail_id], references: [history_detail_id])
 }
 
 enum RequestStatus {
@@ -207,6 +212,7 @@ enum RequestStatus {
   APPROVED
   REJECTED
 }
+
 enum RoleLevel {
   LEVEL_1
   LEVEL_2

@@ -47,10 +47,56 @@ const setUserstoDepartment = async (req, res) => {
   try {
     const { userIds, departmentId } = req.body; // Destructure the received JSON data
     const response = await User.assignUsersToDepartment(departmentId, userIds);
-    if(!response){
-      throw new error('addUserstoDepartment is error')
+    if (!response) {
+      throw new error("addUserstoDepartment is error");
     }
     res.status(201).json({ message: "Add success !!!" });
+  } catch (error) {
+    console.error({ message: error });
+  }
+};
+
+const updateProfileUserByAdmin = async (req, res) => {
+  try {
+    const updateProfile = req.body;
+    console.log("updateProfile", updateProfile);
+
+    // แก้ไข หน่วยงาน
+    const updateDepart = await User.setDepartment(
+      updateProfile.department,
+      updateProfile.userId
+    );
+    if (!updateDepart) {
+      return res.status(404).json({ message: "updateDepart error update" });
+    }
+
+    // แก้ไข ตัวแหน่ง
+    const updateRole = await User.setUserRole(
+      updateProfile.userId,
+      updateProfile.role
+    );
+    if (!updateRole) {
+      return res.status(404).json({ message: "updateRole error update" });
+    }
+
+    // แก้ไข ชื่อ สกุล
+    const updateUserName = await User.updateUserName(
+      updateProfile.userId,
+      updateProfile.name
+    );
+    if (!updateUserName) {
+      return res.status(404).json({ message: "updateUserName error update" });
+    }
+
+    // แก้ไข อีเมลล์
+    const updateUserEmail = await User.updateUserEmail(
+      updateProfile.userId,
+      updateProfile.email
+    );
+    if (!updateUserEmail) {
+      return res.status(404).json({ message: "updateUserEmail error update" });
+    }
+    res.status(200).json({ message: "update success !!!" });
   } catch (error) {
     console.error({ message: error });
   }
@@ -141,4 +187,5 @@ module.exports = {
   getMyProfile,
   findUserEmptyDepartment,
   setUserstoDepartment,
+  updateProfileUserByAdmin,
 };

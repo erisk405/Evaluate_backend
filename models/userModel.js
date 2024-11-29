@@ -18,6 +18,36 @@ const createUser = async (user, role) => {
     },
   });
 };
+const updateUserName = async (uid,name) => {
+  try {
+    return prisma.user.update({
+      where: {
+        id: uid,
+      },
+      data: {
+        name,
+      },
+    });
+  } catch (error) {
+    console.log("Error on updateUserName model!!");
+    console.error({message:error});
+  }
+};
+const updateUserEmail = async (uid,email) => {
+  try {
+    return prisma.user.update({
+      where: {
+        id: uid,
+      },
+      data: {
+        email,
+      },
+    });
+  } catch (error) {
+    console.log("Error on updateUserName model!!");
+    console.error({message:error});
+  }
+};
 
 const findUserByEmail = async (email) => {
   return prisma.user.findUnique({
@@ -66,7 +96,7 @@ const myProfile = async (userId) => {
                   ingroup: true,
                   form: {
                     select: {
-                      id:true,
+                      id: true,
                       name: true,
                       questions: {
                         select: {
@@ -215,4 +245,6 @@ module.exports = {
   myProfile,
   findUserEmptyDepartment,
   assignUsersToDepartment,
+  updateUserName,
+  updateUserEmail
 };
