@@ -1,5 +1,6 @@
 const evaluate = require("../models/evaluateModel");
 const evaluateDetail = require("../models/evaluateDetailModel");
+const department = require("../models/departmentModel");
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 const createEvaluate = async (req, res) => {
@@ -12,14 +13,14 @@ const createEvaluate = async (req, res) => {
 
     // และ จากนั้น ก็ใช้ ใช้ try-catch เพื่อจัดการข้อผิดพลาด เช่น การ validate รูปแบบของ evalData.questions
     // หากเกิดข้อผิดพลาด ระบบจะ rollback และส่ง response พร้อมข้อความแสดงข้อผิดพลาด
-    console.log("evalData", evalData);
+    // console.log("evalData", evalData);
 
     const result = await prisma.$transaction(async (tx) => {
       // เรียกใช้ฟังก์ชันใน Model พร้อมส่ง transaction object
       const created = await evaluate.createEvaluate(evalData, tx);
       if (!created) throw new Error("Failed to create evaluate");
-    console.log("created",created.id);
-    
+      console.log("created", created.id);
+
       const createDetail = await evaluateDetail.createDetailEval(
         created.id,
         evalData.questions,
@@ -53,7 +54,62 @@ const createEvaluate = async (req, res) => {
     });
   }
 };
+const findEvaluateUserContr = async (req,res)=>{
+  try {
+    const {assessor_id,eval_depart_id,period_id} = req.body;
+    const founded = await evaluate.findUserEvaluate(assessor_id,eval_depart_id,period_id);
 
+    res.status(201).json(founded);
+  } catch (error) {
+    console.error("Error in find:", error);
+    // ส่ง error ทั่วไปสำหรับกรณีที่ไม่เจาะจง
+    res.status(500).json({
+      message: "เกิดข้อผิดพลาดภายในระบบ",
+      error: error.message,
+    });
+  }
+}
+
+const findAllEluatedUserContr = async(req,res) =>{
+  try {
+    const {assessor_id,period_id} = req.body;
+    const departments = await department.getDepartments();
+    const report = [];
+    if(department){
+      async function fetchDepartmentData() {
+        for(const department of departments){
+          try {
+            const founded = await evaluate.findUserEvaluate(assessor_id,department.id,period_id);
+            console.log("founded",founded);
+            
+            data = {
+              id:department.id,
+              department: department.department_name,
+              allEvaluator:department._count
+            }
+            
+            report.push(data);
+            
+          } catch (error) {
+            console.error(`Error fetching department ${department}:`, error);
+          }
+        }
+      }
+      fetchDepartmentData();
+    }
+    res.status(201).json(report);
+    
+  } catch (error) {
+    console.error("Error in find:", error);
+    // ส่ง error ทั่วไปสำหรับกรณีที่ไม่เจาะจง
+    res.status(500).json({
+      message: "เกิดข้อผิดพลาดภายในระบบ",
+      error: error.message,
+    });
+  }
+}
 module.exports = {
   createEvaluate,
+  findEvaluateUserContr,
+  findAllEluatedUserContr
 };

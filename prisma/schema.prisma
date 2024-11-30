@@ -59,20 +59,23 @@ model Department {
   image           Image?  @relation("departmentImage", fields: [image_id], references: [id])
 
   supervise Supervise? @relation("SuperviseOfDepartment")
+  evaluate  Evaluate[] @relation("EvaluatotDepart")
 }
 
 model Evaluate {
-  id             String           @id @default(uuid())
-  period_id      String
-  assessor_id    String
-  evaluator_id   String
-  date           DateTime         @default(now())
-  evaluator      User             @relation("UserEvaluator", fields: [evaluator_id], references: [id])
-  assessor       User             @relation("UserAssessor", fields: [assessor_id], references: [id])
-  period         Period           @relation(fields: [period_id], references: [period_id])
-  evaluateDetail EvaluateDetail[] @relation("EvaluateToDetail")
-  
-  @@unique([assessor_id, evaluator_id])
+  id              String           @id @default(uuid())
+  period_id       String
+  assessor_id     String
+  evaluator_id    String
+  eval_depart_id  String
+  date            DateTime         @default(now())
+  evaluator       User             @relation("UserEvaluator", fields: [evaluator_id], references: [id])
+  assessor        User             @relation("UserAssessor", fields: [assessor_id], references: [id])
+  period          Period           @relation(fields: [period_id], references: [period_id])
+  evaluateDetail  EvaluateDetail[] @relation("EvaluateToDetail")
+  evaluatorDepart Department       @relation("EvaluatotDepart", fields: [eval_depart_id], references: [id])
+
+  @@unique([assessor_id, evaluator_id, eval_depart_id])
 }
 
 model EvaluateDetail {
