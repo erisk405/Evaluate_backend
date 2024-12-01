@@ -59,7 +59,9 @@ const createEvaluate = async (req, res) => {
 };
 const findEvaluateUserContr = async (req,res)=>{
   try {
-    const {assessor_id,eval_depart_id,period_id} = req.body;
+    const assessor_id = req.params.assessor_id;
+    const eval_depart_id = req.params.eval_depart_id;
+    const period_id = req.params.period_id;
     const founded = await evaluate.findUserEvaluate(assessor_id,eval_depart_id,period_id);
 
     res.status(201).json(founded);
