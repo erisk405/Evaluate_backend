@@ -42,6 +42,7 @@ router.post("/supervise",middleware.verifyToken,middleware.verifyAdmin, supervis
 router.put("/supervise",middleware.verifyToken,middleware.verifyAdmin, superviseController.updateSuperviseCon);
 router.delete("/supervise/:superviseId",middleware.verifyToken,middleware.verifyAdmin, superviseController.deleteSuperviseCon);
 router.get("/supervise/:userId",middleware.verifyToken,middleware.verifyAdmin, superviseController.getSuperviseByUserIdCon);
+router.get("/supervises",middleware.verifyToken,middleware.verifyAdmin, superviseController.getSupervisesCon);
 //-------------supervise------------------------------->>>
 
 //--------------role----------------------

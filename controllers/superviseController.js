@@ -75,10 +75,30 @@ const getSuperviseByUserIdCon = async (req, res) => {
     });
   }
 };
+const getSupervisesCon = async (req, res) => {
+  try {
+    const supervises = await supervise.getSupervises();
+    console.log("supervises",supervises);
+    
+    return res.status(200).json({
+      message:"Success",
+      data:supervises
+    });
+
+  } catch (error) {
+    console.error({ message: error });
+    return res.status(501).json({
+      success: false,
+      message: "Database error",
+      error: error.message,
+    });
+  }
+};
 
 module.exports = {
     createSuperviseCon,
     updateSuperviseCon,
     deleteSuperviseCon,
-    getSuperviseByUserIdCon
+    getSuperviseByUserIdCon,
+    getSupervisesCon
 };

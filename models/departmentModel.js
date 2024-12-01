@@ -40,45 +40,44 @@ const getDepartmentsForAdmin = async () => {
           select: {
             id: true,
             name: true,
-            department:true,
+            department: true,
             image: true,
-            email:true,
-            phone:true,
-            prefix:true,
-            role:{
-              select:{
-                id:true,
-                role_name:true,
-                role_level:true
-              }
+            email: true,
+            phone: true,
+            prefix: true,
+            role: {
+              select: {
+                id: true,
+                role_name: true,
+                role_level: true,
+              },
             },
           },
         },
-        supervise:{
-          select:{
-            supervise_id:true,
-            user:{
-              select:{
-                id:true,
-                name:true,
-                image:true,
-                role:{
-                  select:{
-                    id:true,
-                    role_name:true
-                  }
+        supervise: {
+          select: {
+            supervise_id: true,
+            user: {
+              select: {
+                id: true,
+                name: true,
+                image: true,
+                role: {
+                  select: {
+                    id: true,
+                    role_name: true,
+                  },
                 },
-                department:{
-                  select:{
-                    id:true,
-                    department_name:true
-                  }
-                }
-
-              }
-            }
-          }
-        }
+                department: {
+                  select: {
+                    id: true,
+                    department_name: true,
+                  },
+                },
+              },
+            },
+          },
+        },
       },
     });
   } catch (error) {
@@ -86,6 +85,29 @@ const getDepartmentsForAdmin = async () => {
   }
 };
 
+const countEvaluatorOfDepartment = async (assessor_id) => {
+  try {
+    return prisma.department.findMany({
+      select: {
+        id: true,
+        department_name: true,
+        user:{
+          where:{
+            NOT:{
+              id:assessor_id
+            }
+          },
+          select:{
+            id:true,
+            name:true
+          }
+        },
+      },
+    });
+  } catch (error) {
+    console.error({ message: error });
+  }
+};
 
 const findDepartmentByName = async (name) => {
   try {
@@ -96,12 +118,8 @@ const findDepartmentByName = async (name) => {
     console.error({ message: error });
   }
 };
-const findDepartmentById = async (
-  departmentId,
- 
-) => {
+const findDepartmentById = async (departmentId) => {
   try {
-  
     // ดึงข้อมูล department พร้อมกับผู้ใช้
     const department_data = await prisma.department.findUnique({
       where: { id: departmentId },
@@ -115,61 +133,57 @@ const findDepartmentById = async (
           select: {
             id: true,
             name: true,
-            department:true,
+            department: true,
             image: true,
-            role:{
-              select:{
-                id:true,
-                role_name:true,
-                role_level:true
-              }
+            role: {
+              select: {
+                id: true,
+                role_name: true,
+                role_level: true,
+              },
             },
           },
         },
-        supervise:{
-          select:{
-            supervise_id:true,
-            user:{
-              select:{
-                id:true,
-                name:true,
-                image:true,
-                role:{
-                  select:{
-                    id:true,
-                    role_name:true
-                  }
+        supervise: {
+          select: {
+            supervise_id: true,
+            user: {
+              select: {
+                id: true,
+                name: true,
+                image: true,
+                role: {
+                  select: {
+                    id: true,
+                    role_name: true,
+                  },
                 },
-                department:{
-                  select:{
-                    id:true,
-                    department_name:true
-                  }
-                }
-
-              }
-            }
-          }
-        }
+                department: {
+                  select: {
+                    id: true,
+                    department_name: true,
+                  },
+                },
+              },
+            },
+          },
+        },
       }, // Ensure the ID is parsed as an integer
     });
-    console.log("department_data:",department_data);
-    
+    console.log("department_data:", department_data);
+
     return {
       department_data,
       // totalUsers
-    }
+    };
   } catch (error) {
     console.error({ message: error.message });
     throw new Error("Error fetching department data");
   }
 };
 
-const findDepartmentByIdForAdmin = async (
-  departmentId,
-) => {
+const findDepartmentByIdForAdmin = async (departmentId) => {
   try {
-  
     // ดึงข้อมูล department พร้อมกับผู้ใช้
     const department_data = await prisma.department.findUnique({
       where: { id: departmentId },
@@ -181,59 +195,57 @@ const findDepartmentByIdForAdmin = async (
           select: {
             id: true,
             name: true,
-            department:true,
+            department: true,
             image: true,
-            email:true,
-            phone:true,
-            prefix:true,
-            role:{
-              select:{
-                id:true,
-                role_name:true,
-                role_level:true
-              }
+            email: true,
+            phone: true,
+            prefix: true,
+            role: {
+              select: {
+                id: true,
+                role_name: true,
+                role_level: true,
+              },
             },
           },
         },
-        supervise:{
-          select:{
-            supervise_id:true,
-            user:{
-              select:{
-                id:true,
-                name:true,
-                image:true,
-                role:{
-                  select:{
-                    id:true,
-                    role_name:true
-                  }
+        supervise: {
+          select: {
+            supervise_id: true,
+            user: {
+              select: {
+                id: true,
+                name: true,
+                image: true,
+                role: {
+                  select: {
+                    id: true,
+                    role_name: true,
+                  },
                 },
-                department:{
-                  select:{
-                    id:true,
-                    department_name:true
-                  }
-                }
-
-              }
-            }
-          }
-        }
+                department: {
+                  select: {
+                    id: true,
+                    department_name: true,
+                  },
+                },
+              },
+            },
+          },
+        },
       }, // Ensure the ID is parsed as an integer
     });
-    console.log("department_data:",department_data);
-    
+    console.log("department_data:", department_data);
+
     return {
       department_data,
       // totalUsers
-    }
+    };
   } catch (error) {
     console.error({ message: error.message });
     throw new Error("Error fetching department data");
   }
 };
-
 
 const updateImage = async (departmentId, imageId) => {
   try {
@@ -297,5 +309,6 @@ module.exports = {
   findDepartmentById,
   updateDepartment,
   findDepartmentByIdForAdmin,
-  getDepartmentsForAdmin
+  getDepartmentsForAdmin,
+  countEvaluatorOfDepartment,
 };

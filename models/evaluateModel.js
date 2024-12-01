@@ -49,7 +49,6 @@ const findUserEvaluate = async (assessor_id,eval_depart_id,period_id)=>{
           select:{
             id:true,
             name:true,
-            role:true
           }
         }
       }

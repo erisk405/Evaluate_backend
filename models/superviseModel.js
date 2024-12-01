@@ -59,10 +59,57 @@ const getSuperviseByUserId = async (user_id) => {
     console.error({ message: error });
   }
 };
+const getSupervises = async () => {
+  try {
+    return prisma.supervise.findMany({
+      select:{
+        supervise_id:true,
+        user:{
+          select:{
+            id:true,
+            name:true,
+          }
+        },
+        department:{
+          select:{
+            id:true,
+            department_name:true
+          }
+        }
+      }
+    });
+  } catch (error) {
+    console.error({ message: error });
+  }
+};
+const countSuperviseByDepartmentId = async(department_id)=>{
+  try {
+    return prisma.supervise.findMany({
+      where:{
+        department_id
+      }
+      ,select:{
+        user:{
+          select:{
+            id:true,
+            name:true
+          }
+        }
+      }
+    });
+    
+  } catch (error) {
+    console.error({ message: error });
+  }
+}
+
 
 module.exports = {
   createSupervise,
   updateSupervise,
   deleteSupervise,
   getSuperviseByUserId,
+  getSupervises,
+  countSuperviseByDepartmentId,
+  countSuperviseByDepartmentId
 };

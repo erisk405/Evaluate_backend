@@ -1,8 +1,11 @@
 const evaluate = require("../models/evaluateModel");
 const evaluateDetail = require("../models/evaluateDetailModel");
 const department = require("../models/departmentModel");
+const superviseModel = require("../models/superviseModel");
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
+
+
 const createEvaluate = async (req, res) => {
   try {
     const evalData = req.body;
@@ -70,38 +73,42 @@ const findEvaluateUserContr = async (req,res)=>{
   }
 }
 
-const findAllEluatedUserContr = async(req,res) =>{
+const findAllEluatedUserContr = async (req, res) => {
   try {
-    const {assessor_id,period_id} = req.body;
-    const departments = await department.getDepartments();
+    const { assessor_id, period_id } = req.body;
+    const evaluatorOfDepart = await department.countEvaluatorOfDepartment(assessor_id);
     const report = [];
-    if(department){
-      async function fetchDepartmentData() {
-        for(const department of departments){
-          try {
-            const founded = await evaluate.findUserEvaluate(assessor_id,department.id,period_id);
-            console.log("founded",founded);
-            
-            data = {
-              id:department.id,
-              department: department.department_name,
-              allEvaluator:department._count
-            }
-            
-            report.push(data);
-            
-          } catch (error) {
-            console.error(`Error fetching department ${department}:`, error);
+
+    if (evaluatorOfDepart && evaluatorOfDepart.length > 0) {
+      // Use Promise.all to handle async operations
+      await Promise.all(evaluatorOfDepart.map(async (department) => {
+        try { 
+          const founded = await evaluate.findUserEvaluate(assessor_id,department.id,period_id);
+          const supervise = await superviseModel.countSuperviseByDepartmentId(department.id);
+         
+          
+          const data = {
+            department_id: department.id,
+            department_name: department.department_name,
+            evaluator: department.user.length+supervise.length,
+            evaluatorData: department.user, // Use _count instead of user.length
+            evaluated:founded.length,
+            evaluatedData:founded
+
           }
+          
+          report.push(data);
+          
+        } catch (error) {
+          console.error(`Error fetching department ${department.department_name}:`, error);
         }
-      }
-      fetchDepartmentData();
+      }));
     }
+    
     res.status(201).json(report);
     
   } catch (error) {
     console.error("Error in find:", error);
-    // ส่ง error ทั่วไปสำหรับกรณีที่ไม่เจาะจง
     res.status(500).json({
       message: "เกิดข้อผิดพลาดภายในระบบ",
       error: error.message,
