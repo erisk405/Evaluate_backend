@@ -18,7 +18,7 @@ const createUser = async (user, role) => {
     },
   });
 };
-const updateUserName = async (uid,name) => {
+const updateUserName = async (uid, name) => {
   try {
     return prisma.user.update({
       where: {
@@ -30,10 +30,10 @@ const updateUserName = async (uid,name) => {
     });
   } catch (error) {
     console.log("Error on updateUserName model!!");
-    console.error({message:error});
+    console.error({ message: error });
   }
 };
-const updateUserEmail = async (uid,email) => {
+const updateUserEmail = async (uid, email) => {
   try {
     return prisma.user.update({
       where: {
@@ -45,7 +45,7 @@ const updateUserEmail = async (uid,email) => {
     });
   } catch (error) {
     console.log("Error on updateUserName model!!");
-    console.error({message:error});
+    console.error({ message: error });
   }
 };
 
@@ -233,7 +233,59 @@ const updateImage = async (userId, imageId) => {
   }
 };
 
+const countAssessors = async (assessorRoleId, userId) => {
+  try {
+    // ดึง department_id ของ user ที่ต้องการดูข้อมูล
+    const userDepartment = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { department_id: true },
+    });
+
+    if (!userDepartment) {
+      throw new Error("User not found");
+    }
+
+    const assessorCount = await prisma.user.count({
+      where: {
+        role_id: assessorRoleId,
+        department_id: userDepartment.department_id, // นับเฉพาะ ingroup
+      },
+    });
+
+    return assessorCount;
+  } catch (error) {
+    console.error("Error counting assessors:", error);
+    throw error;
+  }
+};
+const countAssessorsOutgroup = async (assessorRoleId, userId) => {
+  try {
+    const userDepartment = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { department_id: true },
+    });
+
+    if (!userDepartment) {
+      throw new Error("User not found");
+    }
+
+    const assessorCount = await prisma.user.count({
+      where: {
+        role_id: assessorRoleId,
+        NOT: { department_id: userDepartment.department_id }, // เฉพาะ outgroup
+      },
+    });
+
+    return assessorCount;
+  } catch (error) {
+    console.error("Error counting outgroup assessors:", error);
+    throw error;
+  }
+};
+
+
 module.exports = {
+  // findAllUserforCount,
   createUser,
   findUserByEmail,
   findUserById,
@@ -246,5 +298,7 @@ module.exports = {
   findUserEmptyDepartment,
   assignUsersToDepartment,
   updateUserName,
-  updateUserEmail
+  updateUserEmail,
+  countAssessors,
+  countAssessorsOutgroup
 };

@@ -260,6 +260,83 @@ const getRoleRequestPending = async (skip, limit) => {
     console.error({ message: error });
   }
 };
+const findRoleHasBeenUser = async (department_id, userId) => {
+  try {
+    const inGroupUser = await prisma.role.findMany({
+      where: {
+        user: {
+          some: {
+            department_id: department_id, // ปรับให้ถูกต้อง
+            role: {
+              role_name: {
+                not: "admin",
+              },
+            },
+          },
+        },
+      },
+      select: {
+        id: true,
+        role_name: true,
+        _count: {
+          select: {
+            user: true,
+          },
+        },
+        user: {
+          select: {
+            name: true,
+          },
+          where: {
+            department_id: department_id, // ปรับเงื่อนไขให้ถูกต้อง
+            id: {
+              not: userId,
+            },
+          },
+        },
+      },
+    });
+
+    const outGroupUser = await prisma.role.findMany({
+      where: {
+        user: {
+          some: {
+            department_id: {
+              not: department_id,
+            },
+            role: {
+              role_name: {
+                not: "admin",
+              },
+            },
+            id: {
+              not: userId,
+            },
+          },
+        },
+      },
+      select: {
+        id: true,
+        role_name: true,
+        _count: {
+          select: {
+            user: true,
+          },
+        },
+        user: {
+          select: {
+            name: true,
+          },
+        },
+      },
+    });
+
+    return { inGroupUser, outGroupUser };
+  } catch (error) {
+    console.error("Error fetching roles:", error);
+    throw error; // เพื่อให้ฟังก์ชันแจ้งข้อผิดพลาดไปยังที่ที่ถูกเรียก
+  }
+};
 
 module.exports = {
   createRole,
@@ -272,4 +349,5 @@ module.exports = {
   deleteStatusApprove,
   deleteRole,
   updateRole,
+  findRoleHasBeenUser,
 };

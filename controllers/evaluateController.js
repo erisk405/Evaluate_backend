@@ -3,6 +3,9 @@ const evaluateDetail = require("../models/evaluateDetailModel");
 const department = require("../models/departmentModel");
 const superviseModel = require("../models/superviseModel");
 const form = require("../models/formModel");
+const role = require("../models/roleModel");
+const user = require("../models/userModel");
+const permission = require("../models/permissionModel");
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 
@@ -106,9 +109,9 @@ const findAllEluatedUserContr = async (req, res) => {
               department_id: department.id,
               department_name: department.department_name,
               evaluator: department.user.length + supervise.length,
-              evaluatorData: department.user, // Use _count instead of user.length
+              // evaluatorData: department.user, // Use _count instead of user.length
               evaluated: founded.length,
-              evaluatedData: founded,
+              // evaluatedData: founded,
             };
 
             report.push(data);
@@ -122,7 +125,7 @@ const findAllEluatedUserContr = async (req, res) => {
       );
     }
 
-    res.status(201).json(report);
+    res.status(200).json(report);
   } catch (error) {
     console.error("Error in find:", error);
     res.status(500).json({
@@ -132,41 +135,120 @@ const findAllEluatedUserContr = async (req, res) => {
   }
 };
 
+const getAssessorsPerFormByEvaluator = async (userId) => {
+  try {
+    const evaluatorPermissions = await permission.findEvaluatorPermissions(
+      userId
+    );
+    let totalAssessors = 0;
+
+    const formUse = await Promise.all(
+      evaluatorPermissions.map(async (permission) => {
+        const assessorIngroup = await user.countAssessors(
+          permission.assessorRole.id,
+          userId
+        ); // เฉพาะ ingroup
+        const assessorOutgroup = await user.countAssessorsOutgroup(
+          permission.assessorRole.id,
+          userId
+        ); // เฉพาะ outgroup
+
+        totalAssessors += assessorIngroup + assessorOutgroup;
+        // console.log(totalAssessors);
+        return permission.permissionForm.map((form) => ({
+          ingroup: form.ingroup,
+          formId: form.form.id,
+          formName: form.form.name,
+          usedPermissIngroup: assessorIngroup,
+          usedPermissOutgroup: assessorOutgroup,
+        }));
+      })
+    );
+
+    const flattenedFormUse = formUse.flat();
+    const combinedForms = Object.values(
+      flattenedFormUse.reduce((acc, item) => {
+        if (!acc[item.formId]) {
+          acc[item.formId] = {
+            formId: item.formId,
+            formName: item.formName,
+            totalAssesPerForm: item.ingroup
+              ? item.usedPermissIngroup
+              : item.usedPermissOutgroup,
+            totalAssessors: totalAssessors,
+          };
+        } else if (item.ingroup) {
+          acc[item.formId].totalAssesPerForm += item.usedPermissIngroup;
+        } else {
+          acc[item.formId].totalAssesPerForm += item.usedPermissOutgroup;
+        }
+        return acc;
+      }, {})
+    );
+    // console.log(combinedForms);
+
+    return combinedForms;
+  } catch (error) {
+    console.error("Error fetching assessors per form by evaluator:", error);
+    throw error;
+  }
+};
+
 const getResultEvaluate = async (req, res) => {
   try {
     const evaluator_id = req.params.evaluator_id;
+    const headData = {
+      evaluatorName: null,
+      periodName: null,
+      allAssessorEvaluated: 0,
+      success: null,
+    };
+    const resultData = {
+      evaluateScore: null,
+      assessorsHasPermiss: null,
+    };
     const period_id = req.params.period_id;
+    let amountAssessor;
+    const forms = await form.getAllform();
+    // กรณีที่ไม่มีฟอร์ม
+    if (!forms || forms.length === 0) {
+      return res.status(404).json({ message: "not found form" });
+    }
+
+    const AssessorsPerForm = await getAssessorsPerFormByEvaluator(evaluator_id);
+    // console.log(AssessorsPerForm);
+    if (AssessorsPerForm && AssessorsPerForm.length !== 0) {
+      resultData.assessorsHasPermiss = AssessorsPerForm;
+    }
+
+    //ดึงผลที่ถุกประเมิน
     const result = await evaluate.getResultEvaluateById(
       evaluator_id,
       period_id
     );
-    
-    const headData = {
-      evaluatorName:result[0].evaluator.name,
-      periodName:result[0].period.title
-    }
-    
-    const forms = await form.getAllform();
     // กรณีที่ไม่มีผลการประเมิน
     if (!result || result.length === 0) {
-      return res.status(404).json({
-        message: "ไม่พบข้อมูลการประเมิน",
-      });
-    }
+      headData.success = {
+        success: false,
+        message: "ยังไม่มีการประเมิน",
+      };
+    } else {
+      headData.evaluatorName = result[0].evaluator.name;
+      headData.periodName = result[0].period.title;
+      headData.allAssessorEvaluated = result.length;
 
-    // กรณีที่ไม่มีฟอร์ม
-    if (!forms || forms.length === 0) {
-      return res.status(404).json({
-        message: "ไม่พบข้อมูลฟอร์ม",
-      });
-    }
-
-    if (forms && forms.length > 0) {
       const formResults = forms.map((form) => {
+        amountAssessor = 0;
         const scores = [];
+
         result.forEach((data) => {
+          let sw = true;
           data.evaluateDetail.forEach((questions) => {
             if (form.id == questions.formQuestion.form.id) {
+              if (sw) {
+                sw = false;
+                amountAssessor++;
+              }
               scores.push(questions.score);
             }
           });
@@ -191,12 +273,22 @@ const getResultEvaluate = async (req, res) => {
           formName: form.name,
           average: average.toFixed(3),
           SD: sd.toFixed(3),
+          amountAssessor: amountAssessor,
         };
       });
-      //end
-      res.status(200).json({headData,formResults});
-      console.log(formResults);
+
+      if (formResults) {
+        resultData.evaluateScore = formResults;
+        headData.success = {
+          success: true,
+          message: "มีผลการประเมิน",
+        };
+      }
     }
+    return res.status(200).json({ headData, resultData });
+    //end
+
+    // console.log(formResults);
   } catch (error) {
     console.error("Error in find:", error);
     res.status(500).json({
@@ -205,9 +297,11 @@ const getResultEvaluate = async (req, res) => {
     });
   }
 };
+
 module.exports = {
   createEvaluate,
   findEvaluateUserContr,
   findAllEluatedUserContr,
   getResultEvaluate,
+  getAssessorsPerFormByEvaluator,
 };
