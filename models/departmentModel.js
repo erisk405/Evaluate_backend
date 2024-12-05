@@ -299,6 +299,29 @@ const updateDepartment = async (
   }
 };
 
+const checkEvaluationCompletion = async()=>{
+  try {
+    const departments = await prisma.department.findMany({
+      select:{
+        id:true,
+        department_name:true,
+        image:true,
+        user:{
+          select:{
+            id:true,
+            name:true
+          }
+        }
+      },
+      
+    });
+    return departments;
+  } catch (error) {
+    console.error({ message: error.message });
+    
+  }
+}
+
 module.exports = {
   createDepartment,
   getDepartments,
@@ -311,4 +334,5 @@ module.exports = {
   findDepartmentByIdForAdmin,
   getDepartmentsForAdmin,
   countEvaluatorOfDepartment,
+  checkEvaluationCompletion
 };

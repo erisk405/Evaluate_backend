@@ -3,9 +3,9 @@ const evaluateDetail = require("../models/evaluateDetailModel");
 const department = require("../models/departmentModel");
 const superviseModel = require("../models/superviseModel");
 const form = require("../models/formModel");
-const role = require("../models/roleModel");
 const user = require("../models/userModel");
 const permission = require("../models/permissionModel");
+const period = require("../models/periodModel");
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 
@@ -298,10 +298,86 @@ const getResultEvaluate = async (req, res) => {
   }
 };
 
+const getEvaluatePerDepart = async (req, res) => {
+  try {
+    const departments = await department.checkEvaluationCompletion();
+    const period_id = req.params.period_id;
+
+    const periodCk = await period.getPeriodById(period_id);
+
+    if (!periodCk) {
+      return res.status(404).json({ message: "not found period" });
+    }
+
+    const departmentResults = await Promise.all(
+      departments.map(async (department) => {
+        const countUser = await Promise.all(
+          department.user.map(async (userfind) => {
+            const userId = userfind.id;
+            const users = await user.findPermissionByUserId(userId, period_id);
+            const totalCount = users.role.permissionsAsAssessor.reduce(
+              (total, item) => {
+                return total + item.evaluatorRole._count.user;
+              },
+              0
+            );
+            const countReceived = users.evaluationsReceived.length;
+            let finishCk = true;
+            if (totalCount == 0) {
+              finishCk = false;
+            } else if (countReceived < totalCount) {
+              finishCk = false;
+            }
+            const userData = {
+              id: users.id,
+              name: users.name,
+              finished: finishCk,
+              countReceived: countReceived,
+              totalCount: totalCount,
+            };
+            // console.log(userData);
+
+            return {
+              userData,
+            };
+          })
+        );
+
+        const countFinish = countUser.reduce((total, item) => {
+          if (item.userData.finished) {
+            total++;
+          }
+          return total;
+        }, 0);
+
+        return {
+          id: department.id,
+          image: department.image,
+          department: department.department_name,
+          totalUsers: countUser.length,
+          totalFinished: countFinish,
+          totalUnfinished: countUser.length - countFinish,
+        };
+      })
+    );
+
+    // console.log(departmentResults);
+
+    return res.status(200).json(departmentResults);
+  } catch (error) {
+    console.error("Error in find:", error);
+    return res.status(500).json({
+      message: "เกิดข้อผิดพลาดภายในระบบ",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   createEvaluate,
   findEvaluateUserContr,
   findAllEluatedUserContr,
   getResultEvaluate,
   getAssessorsPerFormByEvaluator,
+  getEvaluatePerDepart,
 };

@@ -283,6 +283,78 @@ const countAssessorsOutgroup = async (assessorRoleId, userId) => {
   }
 };
 
+const findPermissionByUserId = async (userId,period_id) => {
+  try {
+    const user = await prisma.user.findUnique({
+      where: {
+        id: userId,
+      },
+      select: {
+        id: true,
+        name: true,
+        role: {
+          select: {
+            id: true,
+            role_name: true,
+            permissionsAsAssessor: {
+              where:{
+                permissionForm:{
+                  some:{}
+                }
+              },
+              select: {
+                permission_id: true,
+                evaluatorRole: {
+                  select: {
+                    role_name: true,
+                    _count: {
+                      select: {
+                        user: {
+                          where: {
+                            id: {
+                              not: userId,
+                            },
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+            
+          },
+        },
+        evaluationsReceived: {
+          // Get the users that the current user has evaluated\
+          where:{
+            period_id,
+          },
+          select: {
+            period_id:true,
+            evaluator: {
+              select: {
+                id: true,
+                name: true,
+                role: {
+                  select: {
+                    id: true,
+                    role_name: true,
+                  },
+                },
+              },
+            },
+          },
+         
+        },
+      },
+    });
+    return user;
+  } catch (error) {
+    console.error("Error fetching permissions by user ID:", error);
+    throw error; // Optionally throw the error to be handled by the caller
+  }
+};
 
 module.exports = {
   // findAllUserforCount,
@@ -300,5 +372,6 @@ module.exports = {
   updateUserName,
   updateUserEmail,
   countAssessors,
-  countAssessorsOutgroup
+  countAssessorsOutgroup,
+  findPermissionByUserId,
 };

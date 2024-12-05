@@ -98,6 +98,7 @@ router.post("/evaluate",middleware.verifyToken,evaluateController.createEvaluate
 router.get("/findUserEval/:assessor_id/:eval_depart_id/:period_id",middleware.verifyToken,evaluateController.findEvaluateUserContr);
 router.get("/countUserEvaluated/:assessor_id/:period_id",middleware.verifyToken,evaluateController.findAllEluatedUserContr);
 router.get("/resultEvaluate/:evaluator_id/:period_id",middleware.verifyToken,evaluateController.getResultEvaluate);
+router.get("/resultEvaluatePerDepart/:period_id",middleware.verifyToken,middleware.verifyAdmin,evaluateController.getEvaluatePerDepart);
 //-------------evaluate------------------------------->>>
 
 module.exports = router
