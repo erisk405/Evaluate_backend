@@ -197,72 +197,65 @@ const getAssessorsPerFormByEvaluator = async (userId) => {
 const getResultEvaluate = async (req, res) => {
   try {
     const evaluator_id = req.params.evaluator_id;
-    const headData = {
-      evaluatorName: null,
-      periodName: null,
-      allAssessorEvaluated: 0,
-      totalAssessors: 0,
-      success: null,
-    };
     const period_id = req.params.period_id;
+    const headData = {
+      totalEvaluated: 0,
+      totalAssessorsHasPermiss: 0,
+      totalAVG: 0,
+      totalSD: 0,
+    };
+
+    // ดึงข้อมูลฟอร์มทั้งหมด
     const forms = await form.getAllform();
-    // กรณีที่ไม่มีฟอร์ม
     if (!forms || forms.length === 0) {
       return res.status(404).json({ message: "not found form" });
     }
 
+    // สร้างแผนที่ของ AssessorsPerForm เพื่อการค้นหาที่รวดเร็ว
     const AssessorsPerForm = await getAssessorsPerFormByEvaluator(evaluator_id);
     // console.log(AssessorsPerForm);
-    if (AssessorsPerForm && AssessorsPerForm.length !== 0) {
-      // resultData.assessorsHasPermiss = AssessorsPerForm;
-    }
 
-    //ดึงผลที่ถุกประเมิน
+    const assessorsMap = new Map(
+      AssessorsPerForm?.map((item) => [item.formId, item.totalAssesPerForm])
+    );
+    // console.log(assessorsMap);
+    headData.totalAssessorsHasPermiss =
+      AssessorsPerForm.length > 0 ? AssessorsPerForm[0].totalAssessors : 0;
+
+    // ดึงผลการประเมิน
     const result = await evaluate.getResultEvaluateById(
       evaluator_id,
       period_id
     );
-    // กรณีที่ไม่มีผลการประเมิน
+
     if (!result || result.length === 0) {
       headData.success = {
         success: false,
         message: "ยังไม่มีการประเมิน",
       };
     } else {
-      headData.success = {
-        success: true,
-        message: "มีการประเมิน",
-      };
+      headData.success = true;
       headData.evaluatorName = result[0].evaluator.name;
       headData.periodName = result[0].period.title;
       headData.allAssessorEvaluated = result.length;
-      const formResults = await Promise.all(
-        forms.map(async (form) => {
-          let amountOFAssessors = 0;
-          let sw = true;
-          const allScore = {
-            allEVG: [],
-            allSD: [],
-          };
-          const questions = await Promise.all(
-            form.questions.map(async (questions) => {
-              const detail = await evaluateDetail.getScoreByQuestion(
-                evaluator_id,
-                questions.id,
-                period_id
-              );
-              if (sw) {
-                amountOFAssessors += detail.length;
-                sw = false;
-              }
+    }
 
+    const formResults = await Promise.all(
+      forms.map(async (form) => {
+        const dataAVG = [];
+        const dataSD = [];
+
+        // รวบรวม Promise ทั้งหมดใน questions
+        const amountOFAssessorsPromises = form.questions.map((question) =>
+          evaluateDetail
+            .getScoreByQuestion(evaluator_id, question.id, period_id)
+            .then((detail) => {
               const totalScore = detail.reduce(
                 (sum, item) => sum + item.score,
                 0
               );
               const average =
                 detail.length > 0 ? totalScore / detail.length : 0;
-              // คำนวณ SD
               const variance =
                 detail.length > 0
                   ? detail.reduce(
@@ -271,51 +264,68 @@ const getResultEvaluate = async (req, res) => {
                     ) / detail.length
                   : 0;
               const sd = Math.sqrt(variance);
-              allScore.allEVG.push(average);
 
-              allScore.allSD.push(sd);
+              dataAVG.push(average);
+              dataSD.push(sd);
+
+              return detail.length; // จำนวนคนที่ประเมินในคำถามนี้
             })
-          );
-          const sumAvgPerForm = allScore.allEVG.reduce(
-            (sum, item) => sum + item,
-            0
-          );
-          const sumSDPerForm = allScore.allSD.reduce(
-            (sum, item) => sum + item,
-            0
-          );
-          const totalAvgPerForm =
-            allScore.allEVG.length > 0
-              ? sumAvgPerForm / allScore.allEVG.length
-              : 0;
-          const totalSDPerForm =
-            allScore.allSD.length > 0
-              ? sumSDPerForm / allScore.allSD.length
-              : 0;
-          headData.totalAvg = totalAvgPerForm.toFixed(3);
-          headData.totalSD = totalSDPerForm.toFixed(3);
+        );
 
-          return {
-            formId: form.id,
-            formName: form.name, // ที่นี่ questions จะเป็นข้อมูลที่สมบูรณ์
-            totalAvgPerForm: totalAvgPerForm,
-            totalSDPerForm: totalSDPerForm,
-            totalAssesPerForm: AssessorsPerForm
-              ? AssessorsPerForm.find(
-                  (formPermiss) => formPermiss.formId === form.id
-                ).totalAssesPerForm
-              : 0,
-            assessorEvaluatedPerForm: amountOFAssessors,
-          };
-        })
-      );
-      // console.log(formResults);
-      headData.totalAssessors = AssessorsPerForm[0].totalAssessors;
-      return res.status(200).json({ headData, formResults });
-    }
-    //end
+        // รอให้ Promise ทั้งหมดเสร็จสิ้นและรวมจำนวนประเมิน
+        const amountOFAssessors = (
+          await Promise.all(amountOFAssessorsPromises)
+        ).reduce((total, length) => total + length, 0);
 
-    // console.log(formResults);
+        const totalAvgPerForm =
+          dataAVG.length > 0
+            ? dataAVG.reduce((sum, item) => sum + item, 0) / dataAVG.length
+            : 0;
+        const totalSDPerForm =
+          dataSD.length > 0
+            ? dataSD.reduce((sum, item) => sum + item, 0) / dataSD.length
+            : 0;
+
+        return {
+          formId: form.id,
+          formName: form.name,
+          totalAVGPerForm: totalAvgPerForm,
+          totalSDPerForm: totalSDPerForm,
+          totalAsserPerForm: assessorsMap.get(form.id) || 0,
+          evaluatedPerForm: amountOFAssessors,
+        };
+      })
+    );
+
+    // ดึงค่า AVG , SD เฉลี่ยแต่ละด้านมาบวกกัน
+    const totalStats =
+      formResults && formResults.length > 0
+        ? formResults.reduce(
+            (stats, data) => {
+              const avg = data.totalAVGPerForm || 0;
+              const sd = data.totalSDPerForm || 0;
+              return {
+                sumAvg: stats.sumAvg + avg,
+                sumSD: stats.sumSD + sd,
+              };
+            },
+            { sumAvg: 0, sumSD: 0 } // ค่าเริ่มต้น
+          )
+        : { sumAvg: 0, sumSD: 0 };
+
+    const average =
+      formResults && formResults.length > 0
+        ? totalStats.sumAvg / formResults.length
+        : 0;
+
+    const sd =
+      formResults && formResults.length > 0
+        ? totalStats.sumSD / formResults.length
+        : 0;
+    headData.totalAVG = average.toFixed(3);
+    headData.totalSD = sd.toFixed(3);
+
+    return res.status(200).json({ headData, formResults });
   } catch (error) {
     console.error("Error in find:", error);
     res.status(500).json({
@@ -413,7 +423,7 @@ const getResultEvaluateDetail = async (req, res) => {
     headData = {
       evaluatorName: evaluateData[0].evaluator.name,
       periodName: evaluateData[0].period.title,
-      allAssessorEvaluated: evaluateData.length,
+      allAssessorEvaluated: evaluateData[0].length,
       totalAvg: 0,
       totalSD: 0,
       success: {
@@ -436,11 +446,13 @@ const getResultEvaluateDetail = async (req, res) => {
       forms.map(async (form) => {
         let amountOFAssessors = 0;
         let sw = true;
+        const dataAVG = [];
+        const dataSD = [];
         const questions = await Promise.all(
-          form.questions.map(async (questions) => {
+          form.questions.map(async (question) => {
             const detail = await evaluateDetail.getScoreByQuestion(
               userId,
-              questions.id,
+              question.id,
               periodId
             );
             if (sw) {
@@ -462,52 +474,46 @@ const getResultEvaluateDetail = async (req, res) => {
                   ) / detail.length
                 : 0;
             const sd = Math.sqrt(variance);
-            allScore.allEVG.push(average);
-
-            allScore.allSD.push(sd);
-
+            dataAVG.push(average);
+            dataSD.push(sd);
             return {
-              questionId: questions.id,
-              questionName: questions.content,
-              average: average.toFixed(3),
-              sd: sd.toFixed(3),
+              questionId: question.id,
+              questionName: question.content,
+              average: average.toFixed(2),
+              standardDeviation: sd.toFixed(2),
             };
           })
         );
-        const sumAvgPerForm = allScore.allEVG.reduce(
-          (sum, item) => sum + item,
-          0
-        );
-        const sumSDPerForm = allScore.allSD.reduce(
-          (sum, item) => sum + item,
-          0
-        );
+        const sumAvgPerForm = dataAVG.reduce((sum, item) => sum + item, 0);
+        const sumSDPerForm = dataSD.reduce((sum, item) => sum + item, 0);
         const totalAvgPerForm =
-          allScore.allEVG.length > 0
-            ? sumAvgPerForm / allScore.allEVG.length
-            : 0;
+          dataAVG.length > 0 ? sumAvgPerForm / dataAVG.length : 0;
         const totalSDPerForm =
-          allScore.allSD.length > 0 ? sumSDPerForm / allScore.allSD.length : 0;
-        headData.totalAvg = totalAvgPerForm.toFixed(3);
-        headData.totalSD = totalSDPerForm.toFixed(3);
+          dataSD.length > 0 ? sumSDPerForm / dataSD.length : 0;
+        allScore.allEVG.push(totalAvgPerForm);
+        allScore.allSD.push(totalSDPerForm);
+        headData.totalAvg = totalAvgPerForm.toFixed(2);
+        headData.totalSD = totalSDPerForm.toFixed(2);
+
         return {
           formId: form.id,
-          formName: form.name,
-          questions: questions, // ที่นี่ questions จะเป็นข้อมูลที่สมบูรณ์
-          totalAvgPerForm: totalAvgPerForm.toFixed(3),
-          totalSDPerForm: totalSDPerForm.toFixed(3),
+          formName: form.name, // ที่นี่ questions จะเป็นข้อมูลที่สมบูรณ์
+          totalAvgPerForm: totalAvgPerForm.toFixed(2),
+          totalSDPerForm: totalSDPerForm.toFixed(2),
+          questions: questions,
         };
       })
     );
-    const sumAvg = allScore.allEVG.reduce((sum, item) => sum + item, 0);
-    const sumSD = allScore.allSD.reduce((sum, item) => sum + item, 0);
-
-    const totalAvg =
-      allScore.allEVG.length > 0 ? sumAvg / allScore.allEVG.length : 0;
-    const totalSD =
-      allScore.allSD.length > 0 ? sumSD / allScore.allSD.length : 0;
-    headData.totalAvg = totalAvg.toFixed(3);
-    headData.totalSD = totalSD.toFixed(3);
+    const totalAvg = allScore
+      ? allScore.allEVG.reduce((sum, item) => sum + item, 0) /
+        allScore.allEVG.length
+      : 0;
+    const totalSd = allScore
+      ? allScore.allSD.reduce((sum, item) => sum + item, 0) /
+        allScore.allSD.length
+      : 0;
+    headData.totalAvg = totalAvg.toFixed(2);
+    headData.totalSD = totalSd.toFixed(2);
 
     return res.status(200).json({ headData, formResults });
   } catch (error) {
