@@ -234,10 +234,10 @@ const getResultEvaluate = async (req, res) => {
         message: "ยังไม่มีการประเมิน",
       };
     } else {
+      headData.totalEvaluated = result.length;
       headData.success = true;
       headData.evaluatorName = result[0].evaluator.name;
       headData.periodName = result[0].period.title;
-      headData.allAssessorEvaluated = result.length;
     }
 
     const formResults = await Promise.all(
@@ -423,7 +423,6 @@ const getResultEvaluateDetail = async (req, res) => {
     headData = {
       evaluatorName: evaluateData[0].evaluator.name,
       periodName: evaluateData[0].period.title,
-      allAssessorEvaluated: evaluateData[0].length,
       totalAvg: 0,
       totalSD: 0,
       success: {
