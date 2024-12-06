@@ -16,6 +16,27 @@ const createDetailEval = async (evaluate_id, questions, tx) => {
   }
 };
 
+const getScoreByQuestion = async(userId,question_id,period_id)=>{
+  try {
+    return prisma.evaluateDetail.findMany({
+      where:{
+        evaluate:{
+          period_id,
+          evaluator_id:userId
+        },
+        question_id,
+      },
+      select:{
+        score:true
+      }
+    })
+  } catch (error) {
+    
+  }
+
+}
+
 module.exports = {
   createDetailEval,
+  getScoreByQuestion
 };

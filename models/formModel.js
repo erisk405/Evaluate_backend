@@ -13,15 +13,15 @@ const createForm = async (name) => {
     console.error({ message: error });
   }
 };
-const updateFormById = async (id,name) => {
+const updateFormById = async (id, name) => {
   try {
     return prisma.form.update({
-        where: {
-            id
-        },
-        data:{
-            name
-        }
+      where: {
+        id,
+      },
+      data: {
+        name,
+      },
     });
   } catch (error) {
     console.error({ message: error });
@@ -30,9 +30,9 @@ const updateFormById = async (id,name) => {
 const deleteFormById = async (id) => {
   try {
     return prisma.form.delete({
-        where: {
-            id
-        },
+      where: {
+        id,
+      },
     });
   } catch (error) {
     console.error({ message: error });
@@ -40,7 +40,11 @@ const deleteFormById = async (id) => {
 };
 const getAllform = async () => {
   try {
-    return prisma.form.findMany();
+    return prisma.form.findMany({
+     include:{
+      questions:true
+     }
+    });
   } catch (error) {
     console.error({ message: error });
   }
@@ -50,5 +54,5 @@ module.exports = {
   createForm,
   getAllform,
   updateFormById,
-  deleteFormById
+  deleteFormById,
 };

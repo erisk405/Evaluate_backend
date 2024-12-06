@@ -201,14 +201,10 @@ const getResultEvaluate = async (req, res) => {
       evaluatorName: null,
       periodName: null,
       allAssessorEvaluated: 0,
+      totalAssessors: 0,
       success: null,
     };
-    const resultData = {
-      evaluateScore: null,
-      assessorsHasPermiss: null,
-    };
     const period_id = req.params.period_id;
-    let amountAssessor;
     const forms = await form.getAllform();
     // กรณีที่ไม่มีฟอร์ม
     if (!forms || forms.length === 0) {
@@ -218,7 +214,7 @@ const getResultEvaluate = async (req, res) => {
     const AssessorsPerForm = await getAssessorsPerFormByEvaluator(evaluator_id);
     // console.log(AssessorsPerForm);
     if (AssessorsPerForm && AssessorsPerForm.length !== 0) {
-      resultData.assessorsHasPermiss = AssessorsPerForm;
+      // resultData.assessorsHasPermiss = AssessorsPerForm;
     }
 
     //ดึงผลที่ถุกประเมิน
@@ -233,59 +229,90 @@ const getResultEvaluate = async (req, res) => {
         message: "ยังไม่มีการประเมิน",
       };
     } else {
+      headData.success = {
+        success: true,
+        message: "มีการประเมิน",
+      };
       headData.evaluatorName = result[0].evaluator.name;
       headData.periodName = result[0].period.title;
       headData.allAssessorEvaluated = result.length;
-
-      const formResults = forms.map((form) => {
-        amountAssessor = 0;
-        const scores = [];
-
-        result.forEach((data) => {
+      const formResults = await Promise.all(
+        forms.map(async (form) => {
+          let amountOFAssessors = 0;
           let sw = true;
-          data.evaluateDetail.forEach((questions) => {
-            if (form.id == questions.formQuestion.form.id) {
+          const allScore = {
+            allEVG: [],
+            allSD: [],
+          };
+          const questions = await Promise.all(
+            form.questions.map(async (questions) => {
+              const detail = await evaluateDetail.getScoreByQuestion(
+                evaluator_id,
+                questions.id,
+                period_id
+              );
               if (sw) {
+                amountOFAssessors += detail.length;
                 sw = false;
-                amountAssessor++;
               }
-              scores.push(questions.score);
-            }
-          });
-          //end loop question
-        });
-        //end loop result
-        // คำนวณค่าเฉลี่ย
-        const totalScore = scores.reduce((sum, score) => sum + score, 0);
-        const average = scores.length > 0 ? totalScore / scores.length : 0;
 
-        // คำนวณ SD
-        const variance =
-          scores.length > 0
-            ? scores.reduce(
-                (sum, score) => sum + Math.pow(score - average, 2),
+              const totalScore = detail.reduce(
+                (sum, item) => sum + item.score,
                 0
-              ) / scores.length
-            : 0;
-        const sd = Math.sqrt(variance);
-        return {
-          formId: form.id,
-          formName: form.name,
-          average: average.toFixed(3),
-          SD: sd.toFixed(3),
-          amountAssessor: amountAssessor,
-        };
-      });
+              );
+              const average =
+                detail.length > 0 ? totalScore / detail.length : 0;
+              // คำนวณ SD
+              const variance =
+                detail.length > 0
+                  ? detail.reduce(
+                      (sum, item) => sum + Math.pow(item.score - average, 2),
+                      0
+                    ) / detail.length
+                  : 0;
+              const sd = Math.sqrt(variance);
+              allScore.allEVG.push(average);
 
-      if (formResults) {
-        resultData.evaluateScore = formResults;
-        headData.success = {
-          success: true,
-          message: "มีผลการประเมิน",
-        };
-      }
+              allScore.allSD.push(sd);
+            })
+          );
+          const sumAvgPerForm = allScore.allEVG.reduce(
+            (sum, item) => sum + item,
+            0
+          );
+          const sumSDPerForm = allScore.allSD.reduce(
+            (sum, item) => sum + item,
+            0
+          );
+          const totalAvgPerForm =
+            allScore.allEVG.length > 0
+              ? sumAvgPerForm / allScore.allEVG.length
+              : 0;
+          const totalSDPerForm =
+            allScore.allSD.length > 0
+              ? sumSDPerForm / allScore.allSD.length
+              : 0;
+          headData.totalAvg = totalAvgPerForm.toFixed(3);
+          headData.totalSD = totalSDPerForm.toFixed(3);
+
+          return {
+            formId: form.id,
+            formName: form.name, // ที่นี่ questions จะเป็นข้อมูลที่สมบูรณ์
+            totalAvgPerForm: totalAvgPerForm,
+            totalSDPerForm: totalSDPerForm,
+            totalAssesPerForm: AssessorsPerForm
+              ? AssessorsPerForm.find(
+                  (formPermiss) => formPermiss.formId === form.id
+                ).totalAssesPerForm
+              : 0,
+            assessorEvaluatedPerForm: amountOFAssessors,
+          };
+        })
+      );
+      // console.log(formResults);
+      headData.totalAssessors = AssessorsPerForm[0].totalAssessors;
+      return res.status(200).json({ headData, formResults });
     }
-    return res.status(200).json({ headData, resultData });
     //end
 
     // console.log(formResults);
@@ -373,6 +400,123 @@ const getEvaluatePerDepart = async (req, res) => {
   }
 };
 
+const getResultEvaluateDetail = async (req, res) => {
+  try {
+    const userId = req.params.userId;
+    const periodId = req.params.periodId;
+    const evaluateData = await evaluate.getResultEvaluateById(userId, periodId);
+    if (!evaluateData || evaluateData.length == 0) {
+      return res
+        .status(404)
+        .json({ message: "error not found evaluate for this evaluator" });
+    }
+    headData = {
+      evaluatorName: evaluateData[0].evaluator.name,
+      periodName: evaluateData[0].period.title,
+      allAssessorEvaluated: evaluateData.length,
+      totalAvg: 0,
+      totalSD: 0,
+      success: {
+        success: true,
+        message: "มีผลการประเมิน",
+      },
+    };
+
+    const forms = await form.getAllform();
+    // กรณีที่ไม่มีฟอร์ม
+    if (!forms || forms.length === 0) {
+      return res.status(404).json({ message: "not found form" });
+    }
+
+    const allScore = {
+      allEVG: [],
+      allSD: [],
+    };
+    const formResults = await Promise.all(
+      forms.map(async (form) => {
+        let amountOFAssessors = 0;
+        let sw = true;
+        const questions = await Promise.all(
+          form.questions.map(async (questions) => {
+            const detail = await evaluateDetail.getScoreByQuestion(
+              userId,
+              questions.id,
+              periodId
+            );
+            if (sw) {
+              amountOFAssessors += detail.length;
+              sw = false;
+            }
+
+            const totalScore = detail.reduce(
+              (sum, item) => sum + item.score,
+              0
+            );
+            const average = detail.length > 0 ? totalScore / detail.length : 0;
+            // คำนวณ SD
+            const variance =
+              detail.length > 0
+                ? detail.reduce(
+                    (sum, item) => sum + Math.pow(item.score - average, 2),
+                    0
+                  ) / detail.length
+                : 0;
+            const sd = Math.sqrt(variance);
+            allScore.allEVG.push(average);
+
+            allScore.allSD.push(sd);
+
+            return {
+              questionId: questions.id,
+              questionName: questions.content,
+              average: average.toFixed(3),
+              sd: sd.toFixed(3),
+            };
+          })
+        );
+        const sumAvgPerForm = allScore.allEVG.reduce(
+          (sum, item) => sum + item,
+          0
+        );
+        const sumSDPerForm = allScore.allSD.reduce(
+          (sum, item) => sum + item,
+          0
+        );
+        const totalAvgPerForm =
+          allScore.allEVG.length > 0
+            ? sumAvgPerForm / allScore.allEVG.length
+            : 0;
+        const totalSDPerForm =
+          allScore.allSD.length > 0 ? sumSDPerForm / allScore.allSD.length : 0;
+        headData.totalAvg = totalAvgPerForm.toFixed(3);
+        headData.totalSD = totalSDPerForm.toFixed(3);
+        return {
+          formId: form.id,
+          formName: form.name,
+          questions: questions, // ที่นี่ questions จะเป็นข้อมูลที่สมบูรณ์
+          totalAvgPerForm: totalAvgPerForm.toFixed(3),
+          totalSDPerForm: totalSDPerForm.toFixed(3),
+        };
+      })
+    );
+    const sumAvg = allScore.allEVG.reduce((sum, item) => sum + item, 0);
+    const sumSD = allScore.allSD.reduce((sum, item) => sum + item, 0);
+
+    const totalAvg =
+      allScore.allEVG.length > 0 ? sumAvg / allScore.allEVG.length : 0;
+    const totalSD =
+      allScore.allSD.length > 0 ? sumSD / allScore.allSD.length : 0;
+    headData.totalAvg = totalAvg.toFixed(3);
+    headData.totalSD = totalSD.toFixed(3);
+
+    return res.status(200).json({ headData, formResults });
+  } catch (error) {
+    return res.status(500).json({
+      message: "เกิดข้อผิดพลาดภายในระบบ",
+      error: error.message,
+    });
+  }
+};
 module.exports = {
   createEvaluate,
   findEvaluateUserContr,
@@ -380,4 +524,5 @@ module.exports = {
   getResultEvaluate,
   getAssessorsPerFormByEvaluator,
   getEvaluatePerDepart,
+  getResultEvaluateDetail,
 };
