@@ -75,15 +75,39 @@ const updatePeriod = async (req, res) => {
   try {
     const data = req.body;
     // console.log("data",data);
+    // แปลง ISO datetime string เป็น Date object และ validate
+    const startDate = period.validateDateTime(data.start);
+    const endDate = period.validateDateTime(data.end);
+  
+    // ตรวจสอบว่า start datetime ต้องมาก่อน end datetime
+    if (startDate >= endDate) {
+      return res.status(400).json({
+        success: false,
+        message: "Start datetime must be before end datetime"
+      });
+    }
+
+    // ตรวจสอบช่วงเวลาที่ซ้ำกัน
+    const overlappingPeriod = await period.checkPeriodOverlap(startDate, endDate);
+
+    if (overlappingPeriod) {
+      const overlappingTitle = overlappingPeriod.title;
+      return res.status(400).json({
+        success: false,
+        message: `Period overlaps with existing period: ${overlappingTitle}`
+      });
+    }
     const updated = await period.updatePeriod(data);
     if (!updated) {
       return res.status(404).json({ message: "don't update period" });
     }
-    res.status(201).json(updated);
+    res.status(200).json(updated);
   } catch (error) {
     console.error({ message: error });
   }
 };
+
+
 const getAllPeriods = async (req, res) => {
   try {
     const periods = await period.getPeriods();

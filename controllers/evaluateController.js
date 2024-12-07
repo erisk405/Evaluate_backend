@@ -275,7 +275,7 @@ const getResultEvaluate = async (req, res) => {
         // รอให้ Promise ทั้งหมดเสร็จสิ้นและรวมจำนวนประเมิน
         const amountOFAssessors = (
           await Promise.all(amountOFAssessorsPromises)
-        ).reduce((total, length) => total + length, 0);
+        );
 
         const totalAvgPerForm =
           dataAVG.length > 0
@@ -292,7 +292,7 @@ const getResultEvaluate = async (req, res) => {
           totalAVGPerForm: totalAvgPerForm,
           totalSDPerForm: totalSDPerForm,
           totalAsserPerForm: assessorsMap.get(form.id) || 0,
-          evaluatedPerForm: amountOFAssessors,
+          evaluatedPerForm: amountOFAssessors[0],
         };
       })
     );
@@ -322,8 +322,8 @@ const getResultEvaluate = async (req, res) => {
       formResults && formResults.length > 0
         ? totalStats.sumSD / formResults.length
         : 0;
-    headData.totalAVG = average.toFixed(3);
-    headData.totalSD = sd.toFixed(3);
+    headData.totalAVG = average;
+    headData.totalSD = sd;
 
     return res.status(200).json({ headData, formResults });
   } catch (error) {
@@ -478,8 +478,8 @@ const getResultEvaluateDetail = async (req, res) => {
             return {
               questionId: question.id,
               questionName: question.content,
-              average: average.toFixed(2),
-              standardDeviation: sd.toFixed(2),
+              average: average,
+              standardDeviation: sd,
             };
           })
         );
@@ -491,14 +491,14 @@ const getResultEvaluateDetail = async (req, res) => {
           dataSD.length > 0 ? sumSDPerForm / dataSD.length : 0;
         allScore.allEVG.push(totalAvgPerForm);
         allScore.allSD.push(totalSDPerForm);
-        headData.totalAvg = totalAvgPerForm.toFixed(2);
-        headData.totalSD = totalSDPerForm.toFixed(2);
+        headData.totalAvg = totalAvgPerForm;
+        headData.totalSD = totalSDPerForm;
 
         return {
           formId: form.id,
           formName: form.name, // ที่นี่ questions จะเป็นข้อมูลที่สมบูรณ์
-          totalAvgPerForm: totalAvgPerForm.toFixed(2),
-          totalSDPerForm: totalSDPerForm.toFixed(2),
+          totalAvgPerForm: totalAvgPerForm,
+          totalSDPerForm: totalSDPerForm,
           questions: questions,
         };
       })
@@ -511,8 +511,8 @@ const getResultEvaluateDetail = async (req, res) => {
       ? allScore.allSD.reduce((sum, item) => sum + item, 0) /
         allScore.allSD.length
       : 0;
-    headData.totalAvg = totalAvg.toFixed(2);
-    headData.totalSD = totalSd.toFixed(2);
+    headData.totalAvg = totalAvg;
+    headData.totalSD = totalSd;
 
     return res.status(200).json({ headData, formResults });
   } catch (error) {
