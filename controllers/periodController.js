@@ -90,12 +90,17 @@ const updatePeriod = async (req, res) => {
     // ตรวจสอบช่วงเวลาที่ซ้ำกัน
     const overlappingPeriod = await period.checkPeriodOverlap(startDate, endDate);
 
+    // console.log("overlappingPeriod",overlappingPeriod);
+  
     if (overlappingPeriod) {
       const overlappingTitle = overlappingPeriod.title;
-      return res.status(400).json({
-        success: false,
-        message: `Period overlaps with existing period: ${overlappingTitle}`
-      });
+      if(data.period_id !== overlappingPeriod.period_id){
+        return res.status(400).json({
+          success: false,
+          message: `Period overlaps with existing period: ${overlappingTitle}`
+        });
+      }
+      
     }
     const updated = await period.updatePeriod(data);
     if (!updated) {
