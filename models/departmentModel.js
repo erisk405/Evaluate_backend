@@ -182,6 +182,23 @@ const findDepartmentById = async (departmentId) => {
   }
 };
 
+const getDepartmentNameById = async(departId)=>{
+  try {
+    return prisma.department.findUnique({
+      where:{
+        id:departId
+      },
+      select:{
+        department_name:true
+      }
+    })
+    
+  } catch (error) {
+    console.error({ message: error.message });
+    throw new Error("Error fetching department name");
+  }
+}
+
 const findDepartmentByIdForAdmin = async (departmentId) => {
   try {
     // ดึงข้อมูล department พร้อมกับผู้ใช้
@@ -354,5 +371,6 @@ module.exports = {
   findDepartmentByIdForAdmin,
   getDepartmentsForAdmin,
   countEvaluatorOfDepartment,
-  checkEvaluationCompletion
+  checkEvaluationCompletion,
+  getDepartmentNameById
 };

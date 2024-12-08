@@ -388,13 +388,12 @@ const getEvaluatePerDepart = async (req, res) => {
           return total;
         }, 0);
         console.log(department.supervise);
-        
 
         return {
           id: department.id,
           image: department.image,
           department: department.department_name,
-          supervise:department.supervise,
+          supervise: department.supervise,
           totalUsers: countUser.length,
           totalFinished: countFinish,
           totalUnfinished: countUser.length - countFinish,
@@ -427,6 +426,28 @@ const calculateStatistics = (scores) => {
   return { average, sd };
 };
 
+const getScoreForDepartment = async (
+  userId,
+  questionId,
+  periodId,
+  departId
+) => {
+  const details = await evaluateDetail.getScoreByQuestionForDepartment(
+    userId,
+    questionId,
+    periodId,
+    departId
+  );
+  const departmentName = await department.getDepartmentNameById(departId);
+  const scores = details.map((item) => item.score);
+  const { average, sd } = calculateStatistics(scores);
+  return {
+    type: departmentName.department_name,
+    average: average,
+    sd: sd,
+  };
+};
+
 const getResultEvaluateDetail = async (req, res) => {
   try {
     const userId = req.params.userId;
@@ -440,6 +461,7 @@ const getResultEvaluateDetail = async (req, res) => {
     }
     const departmentId = evaluateData[0].evaluator.department.id;
     const departmentName = evaluateData[0].evaluator.department.department_name;
+    let supervise = [];
 
     const headData = {
       evaluatorName: evaluateData[0].evaluator.name,
@@ -454,6 +476,10 @@ const getResultEvaluateDetail = async (req, res) => {
         message: "มีผลการประเมิน",
       },
     };
+    if (headData.roleLevel === "LEVEL_3") {
+      supervise = await superviseModel.getSuperviseByUserId(userId);
+      // console.log("supervise",supervise);
+    }
 
     const forms = await form.getAllform();
     if (!forms || forms.length === 0) {
@@ -484,30 +510,33 @@ const getResultEvaluateDetail = async (req, res) => {
                 sd: sd,
               });
             } else if (headData.roleLevel === "LEVEL_2") {
-              const details =
-                await evaluateDetail.getScoreByQuestionForDepartment(
-                  userId,
-                  question.id,
-                  periodId,
-                  departmentId
-                );
-                console.log("departmentScore",details);
-                
-              await evaluateDetail.getScoreByQuestionForExecutive(
+              const scoreDepart = await getScoreForDepartment(
                 userId,
                 question.id,
-                periodId
+                periodId,
+                departmentId
               );
-              const scores = details.map((item) => item.score);
-              const { average, sd } = calculateStatistics(scores);
-              console.log(average);
-              
-              score.push({
-                type: departmentName,
-                average: average,
-                sd: sd,
-              });
+              if (scoreDepart) {
+                // console.log("scoreDepart",scoreDepart);
+                score.push(scoreDepart);
+              }
+            } else if (headData.roleLevel === "LEVEL_3") {
+              if (supervise.length > 0) {
+                for (const data of supervise) {
+                  const scoreDepart = await getScoreForDepartment(
+                    userId,
+                    question.id,
+                    periodId,
+                    data.department.id
+                  );
+                  if (scoreDepart) {
+                    // console.log("scoreDepart", scoreDepart);
+                    score.push(scoreDepart);
+                  }
+                }
+              }
             }
+
             if (
               headData.roleLevel === "LEVEL_2" ||
               headData.roleLevel === "LEVEL_3"
@@ -520,25 +549,32 @@ const getResultEvaluateDetail = async (req, res) => {
                 );
               const scores = details.map((item) => item.score);
               const { average, sd } = calculateStatistics(scores);
-              console.log("Executive",details);
+              console.log("Executive", details);
               score.push({
                 type: "Executive",
                 average: average,
                 sd: sd,
               });
             }
-            const average =
-              score.reduce((sum, item) => (sum += item.average), 0) /
-              score.length;
-            const standardDeviation =
-              score.reduce((sum, item) => (sum += item.sd), 0) / score.length;
+
+            const { totalAverage, totalSd } = score.reduce(
+              (acc, item) => {
+                acc.totalAverage += item.average;
+                acc.totalSd += item.sd;
+                return acc;
+              },
+              { totalAverage: 0, totalSd: 0 }
+            );
+            const resultAverage = totalAverage / score.length;
+            const resultSd = totalSd / score.length;
+
             return {
               questionId: question.id,
               questionName: question.content,
               scores: score,
               sumScore: {
-                average: average,
-                standardDeviation: standardDeviation,
+                average: resultAverage,
+                standardDeviation: resultSd,
               },
             };
           })
