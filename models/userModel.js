@@ -33,6 +33,21 @@ const updateUserName = async (uid, name) => {
     console.error({ message: error });
   }
 };
+const updateUserPrefix = async (uid,prefix_id)=>{
+  try {
+    return prisma.user.update({
+      where: {
+        id: uid,
+      },
+      data: {
+        prefix_id,
+      },
+    });
+  } catch (error) {
+    console.log("Error on updateUserPrefix !!");
+    console.error({ message: error });
+  }
+}
 const updateUserEmail = async (uid, email) => {
   try {
     return prisma.user.update({
@@ -78,6 +93,7 @@ const myProfile = async (userId) => {
     },
     select: {
       id: true,
+      prefix:true,
       name: true,
       email: true,
       phone: true,
@@ -374,4 +390,5 @@ module.exports = {
   countAssessors,
   countAssessorsOutgroup,
   findPermissionByUserId,
+  updateUserPrefix
 };

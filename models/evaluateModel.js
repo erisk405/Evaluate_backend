@@ -69,6 +69,18 @@ const getResultEvaluateById = async (evaluator_id, period_id) => {
         evaluator: {
           select: {
             name: true,
+            role:{
+              select:{
+                role_name:true,
+                role_level:true
+              }
+            },
+            department:{
+              select:{
+                department_name:true,
+                id:true
+              }
+            }
           },
         },
         period: {

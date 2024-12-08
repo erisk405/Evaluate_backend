@@ -68,6 +68,14 @@ const getSupervises = async () => {
           select:{
             id:true,
             name:true,
+            role:true,
+            image:true,
+            department:{
+              select:{
+                id:true,
+                department_name:true
+              }
+            }
           }
         },
         department:{
@@ -82,11 +90,16 @@ const getSupervises = async () => {
     console.error({ message: error });
   }
 };
-const countSuperviseByDepartmentId = async(department_id)=>{
+const countSuperviseByDepartmentId = async(userId,department_id)=>{
   try {
     return prisma.supervise.findMany({
       where:{
-        department_id
+        department_id,
+        user:{
+          id:{
+            not:userId
+          }
+        }
       }
       ,select:{
         user:{

@@ -31,12 +31,69 @@ const getScoreByQuestion = async(userId,question_id,period_id)=>{
       }
     })
   } catch (error) {
+    console.error("Error in createDetailEval:", error);
+    throw error;
+  }
+
+}
+const getScoreByQuestionForExecutive = async(userId,question_id,period_id)=>{
+  try {
+    return prisma.evaluateDetail.findMany({
+      where:{
+        evaluate:{
+          period_id,
+          evaluator_id:userId,
+          assessor:{
+            role:{
+             NOT:{
+              role_level:"LEVEL_1"
+             }
+            }
+          }
+        },
+        question_id,
+      },
+      select:{
+        score:true
+      }
+    })
+  } catch (error) {
     
+  }
+
+}
+const getScoreByQuestionForDepartment = async(userId,question_id,period_id,department_id)=>{
+  try {
+    return prisma.evaluateDetail.findMany({
+      where:{
+        evaluate:{
+          period_id,
+          evaluator_id:userId,
+          assessor:{
+            // role:{
+            //  NOT:{
+            //   role_level:"LEVEL_1"
+            //  }
+            // }
+            department_id:department_id
+          }
+        },
+        question_id,
+      },
+      select:{
+        score:true
+      }
+    })
+  } catch (error) {
+    console.error("Error in createDetailEval:", error);
+    throw error;
   }
 
 }
 
 module.exports = {
   createDetailEval,
-  getScoreByQuestion
+  getScoreByQuestion,
+  getScoreByQuestionForExecutive,
+  getScoreByQuestionForDepartment
 };

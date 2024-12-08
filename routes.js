@@ -61,6 +61,7 @@ router.get("/userProfile",middleware.verifyToken,userController.findUser);
 router.put("/userProfile",middleware.verifyToken,middleware.verifyAdmin,userController.updateProfileUserByAdmin);
 
 router.get("/myProfile",middleware.verifyToken,userController.getMyProfile);
+router.put("/myProfile",middleware.verifyToken,userController.updateNameAndPrefix);
 router.put("/usersDepartment",middleware.verifyToken,userController.setDepartment);
 router.put("/usersRole/:id",middleware.verifyToken,middleware.verifyAdmin,userController.setUserRole);
 router.put("/usersImage", upload.single('image'), middleware.verifyToken, userController.updateUserImage);

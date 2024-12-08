@@ -87,7 +87,6 @@ const updateProfileUserByAdmin = async (req, res) => {
     if (!updateUserName) {
       return res.status(404).json({ message: "updateUserName error update" });
     }
-
     // แก้ไข อีเมลล์
     const updateUserEmail = await User.updateUserEmail(
       updateProfile.userId,
@@ -97,6 +96,27 @@ const updateProfileUserByAdmin = async (req, res) => {
       return res.status(404).json({ message: "updateUserEmail error update" });
     }
     res.status(200).json({ message: "update success !!!" });
+  } catch (error) {
+    console.error({ message: error });
+  }
+};
+
+const updateNameAndPrefix = async (req, res) => {
+  try {
+    const userId = req.userId;
+    const {name,prefixId} = req.body;
+
+    const nameUpdated = await User.updateUserName(userId,name);
+    if(!nameUpdated){
+      res.status(500).json("don't update User'name ");
+      throw error;
+    }
+    const prefixUpdated = await User.updateUserPrefix(userId,prefixId);
+    if(!prefixUpdated){
+      res.status(500).json("don't update User'prefix ");
+      throw error;
+    }
+    res.status(200).json({message:"Success updated user prefix and name.",nameUpdated,prefixUpdated});
   } catch (error) {
     console.error({ message: error });
   }
@@ -188,4 +208,5 @@ module.exports = {
   findUserEmptyDepartment,
   setUserstoDepartment,
   updateProfileUserByAdmin,
+  updateNameAndPrefix
 };

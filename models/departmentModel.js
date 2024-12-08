@@ -311,6 +311,26 @@ const checkEvaluationCompletion = async()=>{
             id:true,
             name:true
           }
+        },
+        supervise:{
+          select:{
+            supervise_id:true,
+            user:{
+              select:{
+                id:true,
+                name:true,
+                image:true,
+                role:true,
+                department:{
+                  select:{
+                    id:true,
+                    department_name:true
+                  }
+                }
+              }
+            }
+            
+          }
         }
       },
       

@@ -89,6 +89,8 @@ const findAllEluatedUserContr = async (req, res) => {
     const evaluatorOfDepart = await department.countEvaluatorOfDepartment(
       assessor_id
     );
+    // console.log(evaluatorOfDepart);
+
     const report = [];
 
     if (evaluatorOfDepart && evaluatorOfDepart.length > 0) {
@@ -102,6 +104,7 @@ const findAllEluatedUserContr = async (req, res) => {
               period_id
             );
             const supervise = await superviseModel.countSuperviseByDepartmentId(
+              assessor_id,
               department.id
             );
 
@@ -273,9 +276,7 @@ const getResultEvaluate = async (req, res) => {
         );
 
         // รอให้ Promise ทั้งหมดเสร็จสิ้นและรวมจำนวนประเมิน
-        const amountOFAssessors = (
-          await Promise.all(amountOFAssessorsPromises)
-        );
+        const amountOFAssessors = await Promise.all(amountOFAssessorsPromises);
 
         const totalAvgPerForm =
           dataAVG.length > 0
@@ -386,11 +387,14 @@ const getEvaluatePerDepart = async (req, res) => {
           }
           return total;
         }, 0);
+        console.log(department.supervise);
+        
 
         return {
           id: department.id,
           image: department.image,
           department: department.department_name,
+          supervise:department.supervise,
           totalUsers: countUser.length,
           totalFinished: countFinish,
           totalUnfinished: countUser.length - countFinish,
@@ -410,19 +414,39 @@ const getEvaluatePerDepart = async (req, res) => {
   }
 };
 
+const calculateStatistics = (scores) => {
+  if (!scores.length) return { average: 0, sd: 0 };
+
+  const sum = scores.reduce((a, b) => a + b, 0);
+  const average = sum / scores.length;
+
+  const variance =
+    scores.reduce((a, b) => a + Math.pow(b - average, 2), 0) / scores.length;
+  const sd = Math.sqrt(variance);
+
+  return { average, sd };
+};
+
 const getResultEvaluateDetail = async (req, res) => {
   try {
     const userId = req.params.userId;
     const periodId = req.params.periodId;
     const evaluateData = await evaluate.getResultEvaluateById(userId, periodId);
-    if (!evaluateData || evaluateData.length == 0) {
-      return res
-        .status(404)
-        .json({ message: "error not found evaluate for this evaluator" });
+
+    if (!evaluateData || evaluateData.length === 0) {
+      return res.status(404).json({
+        message: "error not found evaluate for this evaluator",
+      });
     }
-    headData = {
+    const departmentId = evaluateData[0].evaluator.department.id;
+    const departmentName = evaluateData[0].evaluator.department.department_name;
+
+    const headData = {
       evaluatorName: evaluateData[0].evaluator.name,
       periodName: evaluateData[0].period.title,
+      roleName: evaluateData[0].evaluator.role.role_name,
+      roleLevel: evaluateData[0].evaluator.role.role_level,
+      department: departmentName,
       totalAvg: 0,
       totalSD: 0,
       success: {
@@ -432,87 +456,113 @@ const getResultEvaluateDetail = async (req, res) => {
     };
 
     const forms = await form.getAllform();
-    // กรณีที่ไม่มีฟอร์ม
     if (!forms || forms.length === 0) {
       return res.status(404).json({ message: "not found form" });
     }
 
-    const allScore = {
-      allEVG: [],
-      allSD: [],
-    };
+    const allScores = [];
     const formResults = await Promise.all(
       forms.map(async (form) => {
-        let amountOFAssessors = 0;
-        let sw = true;
-        const dataAVG = [];
-        const dataSD = [];
         const questions = await Promise.all(
           form.questions.map(async (question) => {
-            const detail = await evaluateDetail.getScoreByQuestion(
-              userId,
-              question.id,
-              periodId
-            );
-            if (sw) {
-              amountOFAssessors += detail.length;
-              sw = false;
+            const score = [];
+            if (
+              headData.roleLevel === "LEVEL_1" ||
+              headData.roleLevel === "LEVEL_4"
+            ) {
+              const details = await evaluateDetail.getScoreByQuestion(
+                userId,
+                question.id,
+                periodId
+              );
+              // console.log(details);
+              const scores = details.map((item) => item.score);
+              const { average, sd } = calculateStatistics(scores);
+              score.push({
+                type: "normal",
+                average: average,
+                sd: sd,
+              });
+            } else if (headData.roleLevel === "LEVEL_2") {
+              const details =
+                await evaluateDetail.getScoreByQuestionForDepartment(
+                  userId,
+                  question.id,
+                  periodId,
+                  departmentId
+                );
+                console.log("departmentScore",details);
+                
+              await evaluateDetail.getScoreByQuestionForExecutive(
+                userId,
+                question.id,
+                periodId
+              );
+              const scores = details.map((item) => item.score);
+              const { average, sd } = calculateStatistics(scores);
+              console.log(average);
+              
+              score.push({
+                type: departmentName,
+                average: average,
+                sd: sd,
+              });
             }
-
-            const totalScore = detail.reduce(
-              (sum, item) => sum + item.score,
-              0
-            );
-            const average = detail.length > 0 ? totalScore / detail.length : 0;
-            // คำนวณ SD
-            const variance =
-              detail.length > 0
-                ? detail.reduce(
-                    (sum, item) => sum + Math.pow(item.score - average, 2),
-                    0
-                  ) / detail.length
-                : 0;
-            const sd = Math.sqrt(variance);
-            dataAVG.push(average);
-            dataSD.push(sd);
+            if (
+              headData.roleLevel === "LEVEL_2" ||
+              headData.roleLevel === "LEVEL_3"
+            ) {
+              const details =
+                await evaluateDetail.getScoreByQuestionForExecutive(
+                  userId,
+                  question.id,
+                  periodId
+                );
+              const scores = details.map((item) => item.score);
+              const { average, sd } = calculateStatistics(scores);
+              console.log("Executive",details);
+              score.push({
+                type: "Executive",
+                average: average,
+                sd: sd,
+              });
+            }
+            const average =
+              score.reduce((sum, item) => (sum += item.average), 0) /
+              score.length;
+            const standardDeviation =
+              score.reduce((sum, item) => (sum += item.sd), 0) / score.length;
             return {
               questionId: question.id,
               questionName: question.content,
-              average: average,
-              standardDeviation: sd,
+              scores: score,
+              sumScore: {
+                average: average,
+                standardDeviation: standardDeviation,
+              },
             };
           })
         );
-        const sumAvgPerForm = dataAVG.reduce((sum, item) => sum + item, 0);
-        const sumSDPerForm = dataSD.reduce((sum, item) => sum + item, 0);
-        const totalAvgPerForm =
-          dataAVG.length > 0 ? sumAvgPerForm / dataAVG.length : 0;
-        const totalSDPerForm =
-          dataSD.length > 0 ? sumSDPerForm / dataSD.length : 0;
-        allScore.allEVG.push(totalAvgPerForm);
-        allScore.allSD.push(totalSDPerForm);
-        headData.totalAvg = totalAvgPerForm;
-        headData.totalSD = totalSDPerForm;
+
+        const formScores = questions.map((q) => q.sumScore.average);
+        const { average: totalAvgPerForm, sd: totalSDPerForm } =
+          calculateStatistics(formScores);
+
+        allScores.push(totalAvgPerForm);
 
         return {
           formId: form.id,
-          formName: form.name, // ที่นี่ questions จะเป็นข้อมูลที่สมบูรณ์
-          totalAvgPerForm: totalAvgPerForm,
-          totalSDPerForm: totalSDPerForm,
-          questions: questions,
+          formName: form.name,
+          totalAvgPerForm,
+          totalSDPerForm,
+          questions,
         };
       })
     );
-    const totalAvg = allScore
-      ? allScore.allEVG.reduce((sum, item) => sum + item, 0) /
-        allScore.allEVG.length
-      : 0;
-    const totalSd = allScore
-      ? allScore.allSD.reduce((sum, item) => sum + item, 0) /
-        allScore.allSD.length
-      : 0;
+
+    const { average: totalAvg, sd: totalSD } = calculateStatistics(allScores);
     headData.totalAvg = totalAvg;
-    headData.totalSD = totalSd;
+    headData.totalSD = totalSD;
 
     return res.status(200).json({ headData, formResults });
   } catch (error) {
@@ -522,6 +572,7 @@ const getResultEvaluateDetail = async (req, res) => {
     });
   }
 };
+
 module.exports = {
   createEvaluate,
   findEvaluateUserContr,
