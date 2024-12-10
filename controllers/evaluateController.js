@@ -63,11 +63,9 @@ const createEvaluate = async (req, res) => {
 const findEvaluateUserContr = async (req, res) => {
   try {
     const assessor_id = req.params.assessor_id;
-    const eval_depart_id = req.params.eval_depart_id;
     const period_id = req.params.period_id;
     const founded = await evaluate.findUserEvaluate(
       assessor_id,
-      eval_depart_id,
       period_id
     );
 
@@ -151,6 +149,7 @@ const getAssessorsPerFormByEvaluator = async (userId) => {
           permission.assessorRole.id,
           userId
         ); // เฉพาะ ingroup
+        
         const assessorOutgroup = await user.countAssessorsOutgroup(
           permission.assessorRole.id,
           userId
@@ -167,6 +166,8 @@ const getAssessorsPerFormByEvaluator = async (userId) => {
         }));
       })
     );
+    // console.log("formUse",formUse);
+    
 
     const flattenedFormUse = formUse.flat();
     const combinedForms = Object.values(

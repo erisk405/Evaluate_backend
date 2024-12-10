@@ -29,12 +29,11 @@ const deleteEvaluate = async (evaluate_id) => {
     console.error({ message: error });
   }
 };
-const findUserEvaluate = async (assessor_id, eval_depart_id, period_id) => {
+const findUserEvaluate = async (assessor_id, period_id) => {
   try {
     return prisma.evaluate.findMany({
       where: {
         assessor_id,
-        eval_depart_id,
         period_id,
       },
       select: {
