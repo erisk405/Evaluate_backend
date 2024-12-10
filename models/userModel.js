@@ -236,6 +236,7 @@ const updateImage = async (userId, imageId) => {
       select: {
         id: true,
         image: true,
+        prefix:true,
         email: true,
         department: true,
         name: true,
