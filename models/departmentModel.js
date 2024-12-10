@@ -142,14 +142,12 @@ const findDepartmentById = async (departmentId) => {
                 role_level: true,
               },
             },
-            sepervise:{
+            supervise:{
               select: {
                 supervise_id: true,
                 department_id:true
                 },
               },
-
-            
           },
         },
         supervise: {

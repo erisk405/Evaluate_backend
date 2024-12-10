@@ -532,7 +532,7 @@ const getResultEvaluateDetail = async (req, res) => {
                     data.department.id
                   );
                   if (scoreDepart.average>0) {
-                    console.log("scoreDepart", scoreDepart);
+                    // console.log("scoreDepart", scoreDepart);
                     score.push(scoreDepart);
                   }
                 }
@@ -551,7 +551,7 @@ const getResultEvaluateDetail = async (req, res) => {
                 );
               const scores = details.map((item) => item.score);
               const { average, sd } = calculateStatistics(scores);
-              console.log("Executive", details);
+              // console.log("Executive", details);
               if(details.length >0){
                 score.push({
                   type: "Executive",
@@ -583,8 +583,10 @@ const getResultEvaluateDetail = async (req, res) => {
             };
           })
         );
-
+        
         const formScores = questions.map((q) => q.sumScore.average);
+        console.log(formScores);
+        
         const { totalAverage, totalSd } = formScores.reduce(
           (acc, item) => {
             acc.totalAverage += item.average;
@@ -593,6 +595,8 @@ const getResultEvaluateDetail = async (req, res) => {
           },
           { totalAverage: 0, totalSd: 0 }
         );
+        console.log(totalAverage);
+        
         // const { average: totalAvgPerForm, sd: totalSDPerForm } =
         //   calculateStatistics(formScores);
 

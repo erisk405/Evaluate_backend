@@ -34,7 +34,7 @@ model User {
   image               Image?        @relation("userImage", fields: [image_id], references: [id])
   roleRequests        RoleRequest[] @relation("UserRoleRequests")
 
-  sepervise Supervise[] @relation("UserSupervise")
+  supervise Supervise[] @relation("UserSupervise")
 
   history History[]
 }
