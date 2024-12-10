@@ -29,7 +29,34 @@ const deleteEvaluate = async (evaluate_id) => {
     console.error({ message: error });
   }
 };
-const findUserEvaluate = async (assessor_id, department_id, period_id) => {
+const findUserEvaluate = async (assessor_id, period_id) => {
+  try {
+    return prisma.evaluate.findMany({
+      where: {
+        assessor_id,
+        period_id,
+      },
+      select: {
+        period: {
+          select: {
+            period_id: true,
+            title: true,
+          },
+        },
+
+        evaluator: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+    });
+  } catch (error) {
+    console.error({ message: error });
+  }
+};
+const findUserEvaluateForDepartment = async (assessor_id, department_id, period_id) => {
   try {
     return prisma.evaluate.findMany({
       where: {
@@ -131,4 +158,5 @@ module.exports = {
   deleteEvaluate,
   findUserEvaluate,
   getResultEvaluateById,
+  findUserEvaluateForDepartment
 };

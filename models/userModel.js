@@ -265,6 +265,9 @@ const countAssessors = async (assessorRoleId, userId) => {
     const assessorCount = await prisma.user.count({
       where: {
         role_id: assessorRoleId,
+        id:{
+          not:userId
+        },
         department_id: userDepartment.department_id, // นับเฉพาะ ingroup
       },
     });

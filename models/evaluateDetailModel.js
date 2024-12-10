@@ -70,11 +70,6 @@ const getScoreByQuestionForDepartment = async(userId,question_id,period_id,depar
           period_id,
           evaluator_id:userId,
           assessor:{
-            // role:{
-            //  NOT:{
-            //   role_level:"LEVEL_1"
-            //  }
-            // }
             department_id:department_id
           }
         },

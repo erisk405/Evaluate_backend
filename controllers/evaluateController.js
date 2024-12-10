@@ -96,7 +96,7 @@ const findAllEluatedUserContr = async (req, res) => {
       await Promise.all(
         evaluatorOfDepart.map(async (department) => {
           try {
-            const founded = await evaluate.findUserEvaluate(
+            const founded = await evaluate.findUserEvaluateForDepartment(
               assessor_id,
               department.id,
               period_id
@@ -219,7 +219,7 @@ const getResultEvaluate = async (req, res) => {
 
     // สร้างแผนที่ของ AssessorsPerForm เพื่อการค้นหาที่รวดเร็ว
     const AssessorsPerForm = await getAssessorsPerFormByEvaluator(evaluator_id);
-    // console.log(AssessorsPerForm);
+    console.log(AssessorsPerForm);
 
     const assessorsMap = new Map(
       AssessorsPerForm?.map((item) => [item.formId, item.totalAssesPerForm])
@@ -519,8 +519,7 @@ const getResultEvaluateDetail = async (req, res) => {
                 periodId,
                 departmentId
               );
-              if (scoreDepart) {
-                // console.log("scoreDepart",scoreDepart);
+              if (scoreDepart.average>0) {
                 score.push(scoreDepart);
               }
             } else if (headData.roleLevel === "LEVEL_3") {
@@ -532,8 +531,8 @@ const getResultEvaluateDetail = async (req, res) => {
                     periodId,
                     data.department.id
                   );
-                  if (scoreDepart) {
-                    // console.log("scoreDepart", scoreDepart);
+                  if (scoreDepart.average>0) {
+                    console.log("scoreDepart", scoreDepart);
                     score.push(scoreDepart);
                   }
                 }
@@ -553,11 +552,13 @@ const getResultEvaluateDetail = async (req, res) => {
               const scores = details.map((item) => item.score);
               const { average, sd } = calculateStatistics(scores);
               console.log("Executive", details);
-              score.push({
-                type: "Executive",
-                average: average,
-                sd: sd,
-              });
+              if(details.length >0){
+                score.push({
+                  type: "Executive",
+                  average: average,
+                  sd: sd,
+                });
+              }
             }
 
             const { totalAverage, totalSd } = score.reduce(
@@ -584,16 +585,24 @@ const getResultEvaluateDetail = async (req, res) => {
         );
 
         const formScores = questions.map((q) => q.sumScore.average);
-        const { average: totalAvgPerForm, sd: totalSDPerForm } =
-          calculateStatistics(formScores);
+        const { totalAverage, totalSd } = formScores.reduce(
+          (acc, item) => {
+            acc.totalAverage += item.average;
+            acc.totalSd += item.sd;
+            return acc;
+          },
+          { totalAverage: 0, totalSd: 0 }
+        );
+        // const { average: totalAvgPerForm, sd: totalSDPerForm } =
+        //   calculateStatistics(formScores);
 
-        allScores.push(totalAvgPerForm);
-
+        allScores.push(totalAverage);
+        // return per Form
         return {
           formId: form.id,
           formName: form.name,
-          totalAvgPerForm,
-          totalSDPerForm,
+          totalAvgPerForm:totalAverage,
+          totalSDPerForm:totalSd,
           questions,
         };
       })
