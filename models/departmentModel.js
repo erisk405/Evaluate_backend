@@ -145,29 +145,11 @@ const findDepartmentById = async (departmentId) => {
             sepervise:{
               select: {
                 supervise_id: true,
-                user: {
-                  select: {
-                    id: true,
-                    name: true,
-                    image: true,
-                    role: {
-                      select: {
-                        id: true,
-                        role_name: true,
-                      },
-                    },
-                    department: {
-                      select: {
-                        id: true,
-                        department_name: true,
-                      },
-                    },
-                  },
+                department_id:true
                 },
-                department:true
               },
 
-            }
+            
           },
         },
         supervise: {
