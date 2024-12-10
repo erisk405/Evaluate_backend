@@ -98,14 +98,18 @@ const countSuperviseByDepartmentId = async(userId,department_id)=>{
         user:{
           id:{
             not:userId
+          },
+          department_id:{
+            not:department_id
           }
         }
+       
       }
       ,select:{
         user:{
           select:{
             id:true,
-            name:true
+            name:true,
           }
         }
       }

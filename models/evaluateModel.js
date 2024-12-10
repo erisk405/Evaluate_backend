@@ -29,12 +29,28 @@ const deleteEvaluate = async (evaluate_id) => {
     console.error({ message: error });
   }
 };
-const findUserEvaluate = async (assessor_id, period_id) => {
+const findUserEvaluate = async (assessor_id, department_id, period_id) => {
   try {
     return prisma.evaluate.findMany({
       where: {
         assessor_id,
         period_id,
+        OR: [
+          {
+            evaluator: {
+              department_id,
+            },
+          },
+          {
+            evaluator:{
+              sepervise:{
+                some:{
+                  department_id,
+                }
+              }
+            }
+          }
+        ],
       },
       select: {
         period: {
@@ -68,18 +84,18 @@ const getResultEvaluateById = async (evaluator_id, period_id) => {
         evaluator: {
           select: {
             name: true,
-            role:{
-              select:{
-                role_name:true,
-                role_level:true
-              }
+            role: {
+              select: {
+                role_name: true,
+                role_level: true,
+              },
             },
-            department:{
-              select:{
-                department_name:true,
-                id:true
-              }
-            }
+            department: {
+              select: {
+                department_name: true,
+                id: true,
+              },
+            },
           },
         },
         period: {
@@ -109,8 +125,6 @@ const getResultEvaluateById = async (evaluator_id, period_id) => {
     console.error({ message: error });
   }
 };
-
-
 
 module.exports = {
   createEvaluate,

@@ -105,13 +105,15 @@ const findAllEluatedUserContr = async (req, res) => {
               assessor_id,
               department.id
             );
+            
 
             const data = {
               department_id: department.id,
               department_name: department.department_name,
               evaluator: department.user.length + supervise.length,
-              // evaluatorData: department.user, // Use _count instead of user.length
               evaluated: founded.length,
+              userEvaluated:founded,
+              supervise:supervise
               // evaluatedData: founded,
             };
 
