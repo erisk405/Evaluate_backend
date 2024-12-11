@@ -91,16 +91,16 @@ const countEvaluatorOfDepartment = async (assessor_id) => {
       select: {
         id: true,
         department_name: true,
-        user:{
-          where:{
-            NOT:{
-              id:assessor_id
-            }
+        user: {
+          where: {
+            NOT: {
+              id: assessor_id,
+            },
           },
-          select:{
-            id:true,
-            name:true
-          }
+          select: {
+            id: true,
+            name: true,
+          },
         },
       },
     });
@@ -128,8 +128,6 @@ const findDepartmentById = async (departmentId) => {
         department_name: true,
         image_id: true,
         user: {
-          // skip: pageIndex * pageSize,
-          // take: pageSize,
           select: {
             id: true,
             name: true,
@@ -142,12 +140,12 @@ const findDepartmentById = async (departmentId) => {
                 role_level: true,
               },
             },
-            supervise:{
+            supervise: {
               select: {
                 supervise_id: true,
-                department_id:true
-                },
+                department_id: true,
               },
+            },
           },
         },
         supervise: {
@@ -170,6 +168,12 @@ const findDepartmentById = async (departmentId) => {
                     department_name: true,
                   },
                 },
+                supervise: {
+                  select: {
+                    supervise_id: true,
+                    department_id: true,
+                  },
+                },
               },
             },
           },
@@ -188,22 +192,21 @@ const findDepartmentById = async (departmentId) => {
   }
 };
 
-const getDepartmentNameById = async(departId)=>{
+const getDepartmentNameById = async (departId) => {
   try {
     return prisma.department.findUnique({
-      where:{
-        id:departId
+      where: {
+        id: departId,
       },
-      select:{
-        department_name:true
-      }
-    })
-    
+      select: {
+        department_name: true,
+      },
+    });
   } catch (error) {
     console.error({ message: error.message });
     throw new Error("Error fetching department name");
   }
-}
+};
 
 const findDepartmentByIdForAdmin = async (departmentId) => {
   try {
@@ -322,48 +325,45 @@ const updateDepartment = async (
   }
 };
 
-const checkEvaluationCompletion = async()=>{
+const checkEvaluationCompletion = async () => {
   try {
     const departments = await prisma.department.findMany({
-      select:{
-        id:true,
-        department_name:true,
-        image:true,
-        user:{
-          select:{
-            id:true,
-            name:true
-          }
+      select: {
+        id: true,
+        department_name: true,
+        image: true,
+        user: {
+          select: {
+            id: true,
+            name: true,
+          },
         },
-        supervise:{
-          select:{
-            supervise_id:true,
-            user:{
-              select:{
-                id:true,
-                name:true,
-                image:true,
-                role:true,
-                department:{
-                  select:{
-                    id:true,
-                    department_name:true
-                  }
-                }
-              }
-            }
-            
-          }
-        }
+        supervise: {
+          select: {
+            supervise_id: true,
+            user: {
+              select: {
+                id: true,
+                name: true,
+                image: true,
+                role: true,
+                department: {
+                  select: {
+                    id: true,
+                    department_name: true,
+                  },
+                },
+              },
+            },
+          },
+        },
       },
-      
     });
     return departments;
   } catch (error) {
     console.error({ message: error.message });
-    
   }
-}
+};
 
 module.exports = {
   createDepartment,
@@ -378,5 +378,5 @@ module.exports = {
   getDepartmentsForAdmin,
   countEvaluatorOfDepartment,
   checkEvaluationCompletion,
-  getDepartmentNameById
+  getDepartmentNameById,
 };

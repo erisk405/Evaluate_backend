@@ -70,7 +70,7 @@ const findUserEvaluateForDepartment = async (assessor_id, department_id, period_
           },
           {
             evaluator:{
-              sepervise:{
+              supervise:{
                 some:{
                   department_id,
                 }

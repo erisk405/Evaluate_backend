@@ -104,19 +104,25 @@ const updateProfileUserByAdmin = async (req, res) => {
 const updateNameAndPrefix = async (req, res) => {
   try {
     const userId = req.userId;
-    const {name,prefixId} = req.body;
+    const { name, prefixId } = req.body;
 
-    const nameUpdated = await User.updateUserName(userId,name);
-    if(!nameUpdated){
+    const nameUpdated = await User.updateUserName(userId, name);
+    if (!nameUpdated) {
       res.status(500).json("don't update User'name ");
       throw error;
     }
-    const prefixUpdated = await User.updateUserPrefix(userId,prefixId);
-    if(!prefixUpdated){
+    const prefixUpdated = await User.updateUserPrefix(userId, prefixId);
+    if (!prefixUpdated) {
       res.status(500).json("don't update User'prefix ");
       throw error;
     }
-    res.status(200).json({message:"Success updated user prefix and name.",nameUpdated,prefixUpdated});
+    res
+      .status(200)
+      .json({
+        message: "Success updated user prefix and name.",
+        nameUpdated,
+        prefixUpdated,
+      });
   } catch (error) {
     console.error({ message: error });
   }
@@ -208,5 +214,5 @@ module.exports = {
   findUserEmptyDepartment,
   setUserstoDepartment,
   updateProfileUserByAdmin,
-  updateNameAndPrefix
+  updateNameAndPrefix,
 };
