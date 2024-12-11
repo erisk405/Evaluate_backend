@@ -584,29 +584,23 @@ const getResultEvaluateDetail = async (req, res) => {
           })
         );
         
-        const formScores = questions.map((q) => q.sumScore.average);
-        console.log(formScores);
+        const sumAvg = (questions.map((q) => q.sumScore.average));
+        const sumSd = (questions.map((q) => q.sumScore.standardDeviation));
+        console.log(questions);
         
-        const { totalAverage, totalSd } = formScores.reduce(
-          (acc, item) => {
-            acc.totalAverage += item.average;
-            acc.totalSd += item.sd;
-            return acc;
-          },
-          { totalAverage: 0, totalSd: 0 }
-        );
-        console.log(totalAverage);
+        const formScoreAvg =  sumAvg ? sumAvg.reduce((acc,item)=>acc+item,0)/sumAvg.length : 0;
+        const formScoreSd =  sumSd ? sumSd.reduce((acc,item)=>acc+item,0)/sumSd.length : 0;
         
         // const { average: totalAvgPerForm, sd: totalSDPerForm } =
-        //   calculateStatistics(formScores);
+        //   calculateStatistics(formScoresAvg);
 
-        allScores.push(totalAverage);
+        allScores.push(formScoreAvg);
         // return per Form
         return {
           formId: form.id,
           formName: form.name,
-          totalAvgPerForm:totalAverage,
-          totalSDPerForm:totalSd,
+          totalAvgPerForm:formScoreAvg,
+          totalSDPerForm:formScoreSd,
           questions,
         };
       })
