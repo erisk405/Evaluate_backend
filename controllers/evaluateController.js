@@ -242,7 +242,7 @@ const getResultEvaluate = async (req, res) => {
       roleLevel = result[0].evaluator.role.role_level;
       headData.totalEvaluated = result.length;
       headData.success = true;
-      headData.evaluatorName = result[0].evaluator.name;
+      headData.evaluatorName = result[0].evaluator.prefix.prefix_name+result[0].evaluator.name;
       headData.periodName = result[0].period.title;
     }
     const departments = await department.getDepartments();
@@ -344,16 +344,23 @@ const getEvaluatePerDepart = async (req, res) => {
 
     const departmentResults = await Promise.all(
       departments.map(async (department) => {
+        const unfinishUsers = [];
         const countUser = await Promise.all(
           department.user.map(async (userfind) => {
             const userId = userfind.id;
             const users = await user.findPermissionByUserId(userId, period_id);
+            // console.log(users);
+            
+            // const allUserPermiss = users.map((user) => user.)
+            
             const totalCount = users.role.permissionsAsAssessor.reduce(
               (total, item) => {
                 return total + item.evaluatorRole._count.user;
               },
               0
             );
+            
+            
             const countReceived = users.evaluationsReceived.length;
             let finishCk = true;
             if (totalCount == 0) {
@@ -361,9 +368,15 @@ const getEvaluatePerDepart = async (req, res) => {
             } else if (countReceived < totalCount) {
               finishCk = false;
             }
+            if(finishCk == false){
+              unfinishUsers.push({
+                id:users.id,
+                name:users.prefix.prefix_name+users.name,
+              });
+            }
             const userData = {
               id: users.id,
-              name: users.name,
+              name: users.prefix.prefix_name+ " " +users.name,
               finished: finishCk,
               countReceived: countReceived,
               totalCount: totalCount,
@@ -391,6 +404,7 @@ const getEvaluatePerDepart = async (req, res) => {
           totalUsers: countUser.length,
           totalFinished: countFinish,
           totalUnfinished: countUser.length - countFinish,
+          unfinishUsers:unfinishUsers
         };
       })
     );
@@ -468,12 +482,11 @@ const getResultEvaluateDetail = async (req, res) => {
         message: "error not found evaluate for this evaluator",
       });
     }
-    const departmentId = evaluateData[0].evaluator.department.id;
     const departmentName = evaluateData[0].evaluator.department.department_name;
-   
+    
 
     const headData = {
-      evaluatorName: evaluateData[0].evaluator.name,
+      evaluatorName: evaluateData[0].evaluator.prefix.prefix_name+evaluateData[0].evaluator.name,
       periodName: evaluateData[0].period.title,
       roleName: evaluateData[0].evaluator.role.role_name,
       roleLevel: evaluateData[0].evaluator.role.role_level,

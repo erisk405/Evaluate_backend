@@ -95,6 +95,7 @@ const getAllUsers = async () => {
   return prisma.user.findMany({
     select: {
       id: true,
+      prefix:true,
       name: true,
       role: true,
       email: true,
@@ -165,6 +166,7 @@ const findUserById = async (id) => {
     where: { id: id },
     select: {
       id: true,
+      prefix:true,
       name: true,
       email: true,
       image: true,
@@ -184,6 +186,7 @@ const findUserEmptyDepartment = async () => {
     },
     select: {
       id: true,
+      prefix:true,
       name: true,
       image: true,
       role: true,
@@ -328,6 +331,11 @@ const findPermissionByUserId = async (userId,period_id) => {
         id: userId,
       },
       select: {
+        prefix:{
+          select:{
+            prefix_name:true
+          }
+        },
         id: true,
         name: true,
         role: {
@@ -339,6 +347,7 @@ const findPermissionByUserId = async (userId,period_id) => {
                 permissionForm:{
                   some:{}
                 }
+                
               },
               select: {
                 permission_id: true,
@@ -360,8 +369,8 @@ const findPermissionByUserId = async (userId,period_id) => {
                 },
               },
             },
-            
           },
+          
         },
         evaluationsReceived: {
           // Get the users that the current user has evaluated\

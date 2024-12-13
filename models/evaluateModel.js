@@ -48,6 +48,7 @@ const findUserEvaluate = async (assessor_id, period_id) => {
         evaluator: {
           select: {
             id: true,
+            prefix:true,
             name: true,
           },
         },
@@ -111,6 +112,11 @@ const getResultEvaluateById = async (evaluator_id, period_id) => {
       select: {
         evaluator: {
           select: {
+            prefix:{
+              select:{
+                prefix_name:true
+              }
+            },
             name: true,
             role: {
               select: {

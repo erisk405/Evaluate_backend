@@ -95,10 +95,11 @@ router.get("/period/:period_id",middleware.verifyToken,middleware.verifyAdmin,pe
 router.delete("/period/:period_id",middleware.verifyToken,middleware.verifyAdmin,periodController.deletePeriod);
 //-------------period------------------------------->>>
 
-//-------------evaluate------------------------------->>>
+//-------------evaluate for Admin ------------------------------->>>
 
 router.get("/resultEvaluatePerDepart/:period_id",middleware.verifyToken,middleware.verifyAdmin,evaluateController.getEvaluatePerDepart);
-//-------------evaluate------------------------------->>>
+
+//-------------evaluate for Admin ------------------------------->>>
 
 //-------------evaluate For User------------------------------->>>
 router.post("/evaluate",middleware.verifyToken,evaluateController.createEvaluate);

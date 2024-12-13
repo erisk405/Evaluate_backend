@@ -39,6 +39,11 @@ const getDepartmentsForAdmin = async () => {
         user: {
           select: {
             id: true,
+            prefix:{
+              select:{
+                prefix_name:true
+              }
+            },
             name: true,
             department: true,
             image: true,
@@ -130,6 +135,11 @@ const findDepartmentById = async (departmentId) => {
         user: {
           select: {
             id: true,
+            prefix:{
+              select:{
+                prefix_name:true
+              }
+            },
             name: true,
             department: true,
             image: true,

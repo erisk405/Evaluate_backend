@@ -67,6 +67,7 @@ const getSupervises = async () => {
         user:{
           select:{
             id:true,
+            prefix:true,
             name:true,
             role:true,
             image:true,
