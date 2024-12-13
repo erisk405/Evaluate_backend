@@ -37,6 +37,7 @@ const findUserEvaluate = async (assessor_id, period_id) => {
         period_id,
       },
       select: {
+        id:true,
         period: {
           select: {
             period_id: true,

@@ -62,7 +62,7 @@ const createEvaluate = async (req, res) => {
 };
 const findEvaluateUserContr = async (req, res) => {
   try {
-    const assessor_id = req.params.assessor_id;
+    const assessor_id = req.userId;
     const period_id = req.params.period_id;
     const founded = await evaluate.findUserEvaluate(assessor_id, period_id);
 
@@ -79,7 +79,7 @@ const findEvaluateUserContr = async (req, res) => {
 
 const findAllEluatedUserContr = async (req, res) => {
   try {
-    const assessor_id = req.params.assessor_id;
+    const assessor_id = req.userId;
     const period_id = req.params.period_id;
     const evaluatorOfDepart = await department.countEvaluatorOfDepartment(
       assessor_id
@@ -197,7 +197,7 @@ const getAssessorsPerFormByEvaluator = async (userId) => {
 
 const getResultEvaluate = async (req, res) => {
   try {
-    const evaluator_id = req.params.evaluator_id;
+    const evaluator_id = req.userId;
     const period_id = req.params.period_id;
     let roleLevel = "";
     const headData = {
@@ -459,7 +459,7 @@ const getScoreForDepartment = async (
 
 const getResultEvaluateDetail = async (req, res) => {
   try {
-    const userId = req.params.userId;
+    const userId = req.userId;
     const periodId = req.params.periodId;
     const evaluateData = await evaluate.getResultEvaluateById(userId, periodId);
 

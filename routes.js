@@ -102,10 +102,10 @@ router.get("/resultEvaluatePerDepart/:period_id",middleware.verifyToken,middlewa
 
 //-------------evaluate For User------------------------------->>>
 router.post("/evaluate",middleware.verifyToken,evaluateController.createEvaluate);
-router.get("/findUserEval/:assessor_id/:period_id",middleware.verifyToken,evaluateController.findEvaluateUserContr);
-router.get("/countUserEvaluated/:assessor_id/:period_id",middleware.verifyToken,evaluateController.findAllEluatedUserContr);
-router.get("/resultEvaluate/:evaluator_id/:period_id",middleware.verifyToken,evaluateController.getResultEvaluate);
-router.get("/resultEvaluateDetail/:userId/:periodId",middleware.verifyToken,evaluateController.getResultEvaluateDetail);
+router.get("/findUserEval/:period_id",middleware.verifyToken,evaluateController.findEvaluateUserContr);
+router.get("/countUserEvaluated/:period_id",middleware.verifyToken,evaluateController.findAllEluatedUserContr);
+router.get("/resultEvaluate/:period_id",middleware.verifyToken,evaluateController.getResultEvaluate);
+router.get("/resultEvaluateDetail/:periodId",middleware.verifyToken,evaluateController.getResultEvaluateDetail);
 //-------------evaluate For User------------------------------->>>
 
 module.exports = router
