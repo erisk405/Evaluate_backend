@@ -625,8 +625,6 @@ const getResultEvaluateDetail = async (req, res) => {
           })
         );
         // กลุ่มข้อมูลตาม type
-        console.log(total);
-        
         const groupedData = total.reduce((acc, item) => {
           if (!acc[item.type]) acc[item.type] = [];
           acc[item.type].push(...item.scores); // รวมคะแนนในอาร์เรย์เดียว
