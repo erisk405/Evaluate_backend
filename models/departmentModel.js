@@ -335,6 +335,29 @@ const updateDepartment = async (
   }
 };
 
+const findDepartWhereHaveRoleLevel1 = async ()=>{
+  try {
+    return prisma.department.findMany({
+      where:{
+        user:{
+          some:{
+            role:{
+              role_level:"LEVEL_1"
+            }
+          }
+        }
+      },select:{
+        id:true,
+        department_name:true
+      }
+    })
+    
+  } catch (error) {
+    console.error({ message: error.message });
+    throw new Error("error date base");
+  }
+}
+
 const checkEvaluationCompletion = async () => {
   try {
     const departments = await prisma.department.findMany({
@@ -389,4 +412,5 @@ module.exports = {
   countEvaluatorOfDepartment,
   checkEvaluationCompletion,
   getDepartmentNameById,
+  findDepartWhereHaveRoleLevel1
 };

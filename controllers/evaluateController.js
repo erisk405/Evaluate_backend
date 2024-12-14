@@ -7,6 +7,7 @@ const user = require("../models/userModel");
 const permission = require("../models/permissionModel");
 const period = require("../models/periodModel");
 const { PrismaClient } = require("@prisma/client");
+const { makeStrictEnum } = require("@prisma/client/runtime/library");
 const prisma = new PrismaClient();
 
 const createEvaluate = async (req, res) => {
@@ -242,7 +243,8 @@ const getResultEvaluate = async (req, res) => {
       roleLevel = result[0].evaluator.role.role_level;
       headData.totalEvaluated = result.length;
       headData.success = true;
-      headData.evaluatorName = result[0].evaluator.prefix.prefix_name+result[0].evaluator.name;
+      headData.evaluatorName =
+        result[0].evaluator.prefix.prefix_name + result[0].evaluator.name;
       headData.periodName = result[0].period.title;
     }
     const departments = await department.getDepartments();
@@ -253,7 +255,7 @@ const getResultEvaluate = async (req, res) => {
         await Promise.all(
           form.questions.map(async (question) => {
             const scorePerQuestions = [];
-            if(roleLevel){
+            if (roleLevel) {
               if (roleLevel === "LEVEL_1" || roleLevel === "LEVEL_4") {
                 const details = await evaluateDetail.getScoreByQuestion(
                   evaluator_id,
@@ -262,7 +264,7 @@ const getResultEvaluate = async (req, res) => {
                 );
                 const scores = details.map((item) => item.score);
                 scorePerQuestions.push(scores);
-              }else if (roleLevel === "LEVEL_3" || roleLevel === "LEVEL_2") {
+              } else if (roleLevel === "LEVEL_3" || roleLevel === "LEVEL_2") {
                 if (departments.length > 0) {
                   for (const depart of departments) {
                     const scoreDepart = await getScoreForDepartment(
@@ -289,7 +291,7 @@ const getResultEvaluate = async (req, res) => {
                 scorePerQuestions.push(scores);
               }
             }
-            
+
             const flattenedScores = scorePerQuestions.flat();
 
             scorePerForm.push(flattenedScores);
@@ -298,9 +300,9 @@ const getResultEvaluate = async (req, res) => {
 
         const flattenedScoresPerForm = scorePerForm.flat();
         console.log(scorePerForm);
-        const assessEvaluatePerForm = scorePerForm[0].length
+        const assessEvaluatePerForm = scorePerForm[0].length;
         allScores.push(flattenedScoresPerForm);
-        const { mean, standardDeviation } = calculateStatisticByflateArray(
+        const { mean, standardDeviation } = calculateStatistics(
           flattenedScoresPerForm
         );
 
@@ -315,8 +317,7 @@ const getResultEvaluate = async (req, res) => {
       })
     );
     const flattenedScore = allScores.flat();
-    const { mean, standardDeviation } =
-      calculateStatisticByflateArray(flattenedScore);
+    const { mean, standardDeviation } = calculateStatistics(flattenedScore);
 
     headData.totalAVG = mean || 0;
     headData.totalSD = standardDeviation || 0;
@@ -350,17 +351,16 @@ const getEvaluatePerDepart = async (req, res) => {
             const userId = userfind.id;
             const users = await user.findPermissionByUserId(userId, period_id);
             // console.log(users);
-            
+
             // const allUserPermiss = users.map((user) => user.)
-            
+
             const totalCount = users.role.permissionsAsAssessor.reduce(
               (total, item) => {
                 return total + item.evaluatorRole._count.user;
               },
               0
             );
-            
-            
+
             const countReceived = users.evaluationsReceived.length;
             let finishCk = true;
             if (totalCount == 0) {
@@ -368,15 +368,15 @@ const getEvaluatePerDepart = async (req, res) => {
             } else if (countReceived < totalCount) {
               finishCk = false;
             }
-            if(finishCk == false){
+            if (finishCk == false) {
               unfinishUsers.push({
-                id:users.id,
-                name:users.prefix.prefix_name+users.name,
+                id: users.id,
+                name: users.prefix.prefix_name + users.name,
               });
             }
             const userData = {
               id: users.id,
-              name: users.prefix.prefix_name+ " " +users.name,
+              name: users.prefix.prefix_name + " " + users.name,
               finished: finishCk,
               countReceived: countReceived,
               totalCount: totalCount,
@@ -404,7 +404,7 @@ const getEvaluatePerDepart = async (req, res) => {
           totalUsers: countUser.length,
           totalFinished: countFinish,
           totalUnfinished: countUser.length - countFinish,
-          unfinishUsers:unfinishUsers
+          unfinishUsers: unfinishUsers,
         };
       })
     );
@@ -422,29 +422,29 @@ const getEvaluatePerDepart = async (req, res) => {
 };
 
 const calculateStatistics = (scores) => {
-  if (!scores.length) return { average: 0, sd: 0 };
+  if (!scores.length) return { mean: 0, standardDeviation: 0 };
 
   const sum = scores.reduce((a, b) => a + b, 0);
-  const average = sum / scores.length;
+  const mean = sum / scores.length;
 
   const variance =
-    scores.reduce((a, b) => a + Math.pow(b - average, 2), 0) / scores.length;
-  const sd = Math.sqrt(variance);
-
-  return { average, sd };
-};
-
-const calculateStatisticByflateArray = (flateScroe) => {
-  const mean =
-    flateScroe.reduce((sum, score) => sum + score, 0) / flateScroe.length;
-  // Calculate Standard Deviation
-  const variance =
-    flateScroe.reduce((sum, score) => sum + Math.pow(score - mean, 2), 0) /
-    flateScroe.length;
+    scores.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / scores.length;
   const standardDeviation = Math.sqrt(variance);
 
-  return { mean: mean, standardDeviation: standardDeviation };
+  return { mean, standardDeviation };
 };
+
+// const calculateStatistics = (flateScroe) => {
+//   const mean =
+//     flateScroe.reduce((sum, score) => sum + score, 0) / flateScroe.length;
+//   // Calculate Standard Deviation
+//   const variance =
+//     flateScroe.reduce((sum, score) => sum + Math.pow(score - mean, 2), 0) /
+//     flateScroe.length;
+//   const standardDeviation = Math.sqrt(variance);
+
+//   return { mean: mean, standardDeviation: standardDeviation };
+// };
 
 const getScoreForDepartment = async (
   userId,
@@ -458,15 +458,15 @@ const getScoreForDepartment = async (
     periodId,
     departId
   );
-  
+
   const departmentName = await department.getDepartmentNameById(departId);
   const scores = details.map((item) => item.score);
 
-  const { average, sd } = calculateStatistics(scores);
+  const { mean, standardDeviation } = calculateStatistics(scores);
   return {
     type: departmentName.department_name,
-    average: average,
-    sd: sd,
+    average: mean,
+    sd: standardDeviation,
     scores: scores,
   };
 };
@@ -483,10 +483,11 @@ const getResultEvaluateDetail = async (req, res) => {
       });
     }
     const departmentName = evaluateData[0].evaluator.department.department_name;
-    
 
     const headData = {
-      evaluatorName: evaluateData[0].evaluator.prefix.prefix_name+evaluateData[0].evaluator.name,
+      evaluatorName:
+        evaluateData[0].evaluator.prefix.prefix_name +
+        evaluateData[0].evaluator.name,
       periodName: evaluateData[0].period.title,
       roleName: evaluateData[0].evaluator.role.role_name,
       roleLevel: evaluateData[0].evaluator.role.role_level,
@@ -502,15 +503,19 @@ const getResultEvaluateDetail = async (req, res) => {
     if (!forms || forms.length === 0) {
       return res.status(404).json({ message: "not found form" });
     }
-    const departments = await department.getDepartments();
+    const departmentHaveRoleLevel1 =
+      await department.findDepartWhereHaveRoleLevel1();
+
     const allScores = [];
     const formResults = await Promise.all(
       forms.map(async (form) => {
         const scorePerForm = [];
+        const total = [];
         const questions = await Promise.all(
           form.questions.map(async (question) => {
             const score = [];
             const scorePerQuestions = [];
+
             if (
               headData.roleLevel === "LEVEL_1" ||
               headData.roleLevel === "LEVEL_4"
@@ -523,15 +528,23 @@ const getResultEvaluateDetail = async (req, res) => {
               // console.log(details);
               const scores = details.map((item) => item.score);
               scorePerQuestions.push(scores);
-              const { average, sd } = calculateStatistics(scores);
-              score.push({
-                type: "normal",
-                average: average,
-                sd: sd,
-              });
-            }else if (headData.roleLevel === "LEVEL_3" || headData.roleLevel === "LEVEL_2" ) {
-              if (departments.length > 0) {
-                for (const depart of departments) {
+              const { mean, standardDeviation } = calculateStatistics(scores);
+              const flattenedScores = scorePerQuestions.flat();
+              scorePerForm.push(flattenedScores);
+              return {
+                questionId: question.id,
+                questionName: question.content,
+                sumScore: {
+                  average: mean,
+                  standardDeviation: standardDeviation,
+                },
+              };
+            } else if (
+              headData.roleLevel === "LEVEL_3" ||
+              headData.roleLevel === "LEVEL_2"
+            ) {
+              if (departmentHaveRoleLevel1.length > 0) {
+                for (const depart of departmentHaveRoleLevel1) {
                   const scoreDepart = await getScoreForDepartment(
                     userId,
                     question.id,
@@ -539,10 +552,13 @@ const getResultEvaluateDetail = async (req, res) => {
                     depart.id
                   );
                   // console.log(scoreDepart.scores);
-
                   if (scoreDepart.average > 0) {
-                    // console.log("scoreDepart", scoreDepart);
                     scorePerQuestions.push(scoreDepart.scores);
+                    
+                    total.push({
+                      type: scoreDepart.type,
+                      scores: scoreDepart.scores,
+                    });
                     score.push({
                       type: scoreDepart.type,
                       average: scoreDepart.average,
@@ -551,12 +567,6 @@ const getResultEvaluateDetail = async (req, res) => {
                   }
                 }
               }
-            }
-
-            if (
-              headData.roleLevel === "LEVEL_2" ||
-              headData.roleLevel === "LEVEL_3"
-            ) {
               const details =
                 await evaluateDetail.getScoreByQuestionForExecutive(
                   userId,
@@ -565,44 +575,85 @@ const getResultEvaluateDetail = async (req, res) => {
                 );
               const scores = details.map((item) => item.score);
               scorePerQuestions.push(scores);
-              const { average, sd } = calculateStatistics(scores);
+             
+              const { mean, standardDeviation } = calculateStatistics(scores);
               // console.log("Executive", details);
               if (details.length > 0) {
+                total.push({
+                  type: "Executive",
+                  scores: scores,
+                });
                 score.push({
                   type: "Executive",
-                  average: average,
-                  sd: sd,
+                  average: mean,
+                  sd: standardDeviation,
                 });
               }
             }
-            // console.log("scorePerQuestions", scorePerQuestions);
+            // console.log("scorePerQuestions",scorePerQuestions);
+
             const flattenedScores = scorePerQuestions.flat();
             scorePerForm.push(flattenedScores);
-            // Calculate Mean
+
             const { mean, standardDeviation } =
-              calculateStatisticByflateArray(flattenedScores);
-            return {
-              questionId: question.id,
-              questionName: question.content,
-              scores: score,
-              sumScore: {
-                average: mean,
-                standardDeviation: standardDeviation,
-              },
-            };
+              calculateStatistics(flattenedScores);
+            const scoreTypes = new Set(score.map((score) => score.type));
+            const missingDepartments = departmentHaveRoleLevel1.filter(
+              (dep) => !scoreTypes.has(dep.department_name)
+            ).length;
+            if (missingDepartments == 0) {
+              return {
+                questionId: question.id,
+                questionName: question.content,
+                // missingDepartments:missingDepartments,
+                sumScore: {
+                  average: mean,
+                  standardDeviation: standardDeviation,
+                },
+              };
+            } else {
+              return {
+                questionId: question.id,
+                questionName: question.content,
+                scores: score,
+                sumScore: {
+                  average: mean,
+                  standardDeviation: standardDeviation,
+                },
+              };
+            }
           })
         );
-        // console.log("scorePerForm",scorePerForm);
+        // กลุ่มข้อมูลตาม type
+        console.log(total);
         
+        const groupedData = total.reduce((acc, item) => {
+          if (!acc[item.type]) acc[item.type] = [];
+          acc[item.type].push(...item.scores); // รวมคะแนนในอาร์เรย์เดียว
+          return acc;
+        }, {});
+        // console.log(groupedData);
+        
+        const results = Object.keys(groupedData).map((type) => {
+          const scores = groupedData[type];
+          const { mean, standardDeviation } = calculateStatistics(scores);
+          return {
+            total:type,
+            average:mean,
+            sd:standardDeviation,
+          };
+        });
+
         const flateScorePerForm = scorePerForm.flat();
         allScores.push(flateScorePerForm);
 
         const { mean, standardDeviation } =
-          calculateStatisticByflateArray(flateScorePerForm);
+          calculateStatistics(flateScorePerForm);
 
         return {
           formId: form.id,
           formName: form.name,
+          total: results,
           totalAvgPerForm: mean,
           totalSDPerForm: standardDeviation,
           questions,
@@ -610,14 +661,15 @@ const getResultEvaluateDetail = async (req, res) => {
       })
     );
     const flateScoreAll = allScores.flat();
-    const { mean, standardDeviation } =
-      calculateStatisticByflateArray(flateScoreAll);
+    const { mean, standardDeviation } = calculateStatistics(flateScoreAll);
 
     headData.totalAvg = mean;
     headData.totalSD = standardDeviation;
 
     return res.status(200).json({ headData, formResults });
   } catch (error) {
+    console.log(error);
+
     return res.status(500).json({
       message: "เกิดข้อผิดพลาดภายในระบบ",
       error: error.message,
