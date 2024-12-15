@@ -7,7 +7,6 @@ const user = require("../models/userModel");
 const permission = require("../models/permissionModel");
 const period = require("../models/periodModel");
 const { PrismaClient } = require("@prisma/client");
-const { makeStrictEnum } = require("@prisma/client/runtime/library");
 const prisma = new PrismaClient();
 
 const createEvaluate = async (req, res) => {
@@ -434,18 +433,6 @@ const calculateStatistics = (scores) => {
   return { mean, standardDeviation };
 };
 
-// const calculateStatistics = (flateScroe) => {
-//   const mean =
-//     flateScroe.reduce((sum, score) => sum + score, 0) / flateScroe.length;
-//   // Calculate Standard Deviation
-//   const variance =
-//     flateScroe.reduce((sum, score) => sum + Math.pow(score - mean, 2), 0) /
-//     flateScroe.length;
-//   const standardDeviation = Math.sqrt(variance);
-
-//   return { mean: mean, standardDeviation: standardDeviation };
-// };
-
 const getScoreForDepartment = async (
   userId,
   questionId,
@@ -554,7 +541,7 @@ const getResultEvaluateDetail = async (req, res) => {
                   // console.log(scoreDepart.scores);
                   if (scoreDepart.average > 0) {
                     scorePerQuestions.push(scoreDepart.scores);
-                    
+
                     total.push({
                       type: scoreDepart.type,
                       scores: scoreDepart.scores,
@@ -575,7 +562,7 @@ const getResultEvaluateDetail = async (req, res) => {
                 );
               const scores = details.map((item) => item.score);
               scorePerQuestions.push(scores);
-             
+
               const { mean, standardDeviation } = calculateStatistics(scores);
               // console.log("Executive", details);
               if (details.length > 0) {
@@ -631,14 +618,14 @@ const getResultEvaluateDetail = async (req, res) => {
           return acc;
         }, {});
         // console.log(groupedData);
-        
+
         const results = Object.keys(groupedData).map((type) => {
           const scores = groupedData[type];
           const { mean, standardDeviation } = calculateStatistics(scores);
           return {
-            total:type,
-            average:mean,
-            sd:standardDeviation,
+            total: type,
+            average: mean,
+            sd: standardDeviation,
           };
         });
 
@@ -675,6 +662,82 @@ const getResultEvaluateDetail = async (req, res) => {
   }
 };
 
+const findTotalResultEvaluateByUserId = async (userId, periodId) => {
+  try {
+    const score = await evaluate.getResultEvaluateById(userId, periodId);
+    const resultScore = score
+      .reduce((acc, item) => {
+        if (!acc["evaluateDetail"]) acc["evaluateDetail"] = [];
+        acc["evaluateDetail"].push(...item.evaluateDetail); // รวมคะแนนในอาร์เรย์เดียว
+        return acc["evaluateDetail"];
+      }, [])
+      .map((item) => item.score);
+    const { mean, standardDeviation } = calculateStatistics(resultScore);
+    return { mean, standardDeviation };
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+const calculateScoreByMean = (mean)=>{
+  let score = 0;
+  if(mean >= 4.50){
+    score = 10;
+  }else if(mean >= 3.50 && mean <= 4.49){
+    score = 9
+  }else if(mean >= 2.50 && mean <= 3.49){
+    score = 8
+  }else if(mean >= 1.50 && mean <= 2.49){
+    score = 7
+  }else{
+    score = 6
+  }
+  return score
+}
+
+const getAllResultEvaluateOverview = async (req, res) => {
+  try {
+    const period_id = req.params.periodId;
+    const allUsers = await user.getAllUsers();
+    const users = allUsers
+      .filter((user) => user.role.role_name !== "admin")
+      .map((user) => ({
+        id: user.id,
+        name: user.prefix.prefix_name + user.name,
+        departmentId: user.department ? user.department.id : null,
+        departmentName: user.department
+          ? user.department.department_name
+          : null,
+      }));
+    if (users) {
+      const resultUser = await Promise.all(
+        users.map(async (user) => {
+          // ดึงผลเฉลี่ย และ ส่วนเบี่ยงเบน ภาพรวม ของแต่ละคน  
+          const { mean, standardDeviation } =
+            await findTotalResultEvaluateByUserId(
+              user.id,
+              period_id
+            );
+          return {
+            user: user,
+            mean,
+            standardDeviation,
+            score:calculateScoreByMean(mean)
+          };
+        })
+      );
+
+      res.status(200).json(resultUser);
+    }
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      message: "เกิดข้อผิดพลาดภายในระบบ",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   createEvaluate,
   findEvaluateUserContr,
@@ -683,4 +746,6 @@ module.exports = {
   getAssessorsPerFormByEvaluator,
   getEvaluatePerDepart,
   getResultEvaluateDetail,
+  getAllResultEvaluateOverview,
+  calculateScoreByMean
 };

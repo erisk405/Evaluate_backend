@@ -107,6 +107,7 @@ router.get("/findUserEval/:period_id",middleware.verifyToken,evaluateController.
 router.get("/countUserEvaluated/:period_id",middleware.verifyToken,evaluateController.findAllEluatedUserContr);
 router.get("/resultEvaluate/:period_id",middleware.verifyToken,evaluateController.getResultEvaluate);
 router.get("/resultEvaluateDetail/:periodId",middleware.verifyToken,evaluateController.getResultEvaluateDetail);
+router.get("/allResultEvaluateOverview/:periodId",middleware.verifyToken,evaluateController.getAllResultEvaluateOverview);
 //-------------evaluate For User------------------------------->>>
 
 module.exports = router
