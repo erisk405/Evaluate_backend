@@ -667,9 +667,7 @@ const findTotalResultEvaluateByUserId = async (userId, periodId) => {
     const score = await evaluate.getResultEvaluateById(userId, periodId);
     const resultScore = score
       .reduce((acc, item) => {
-        if (!acc["evaluateDetail"]) acc["evaluateDetail"] = [];
-        acc["evaluateDetail"].push(...item.evaluateDetail); // รวมคะแนนในอาร์เรย์เดียว
-        return acc["evaluateDetail"];
+        return acc.concat(item.evaluateDetail); // รวม evaluateDetail ของแต่ละ การประเมิน แล้ว map เอาแค่ score
       }, [])
       .map((item) => item.score);
     const { mean, standardDeviation } = calculateStatistics(resultScore);
@@ -679,21 +677,21 @@ const findTotalResultEvaluateByUserId = async (userId, periodId) => {
   }
 };
 
-const calculateScoreByMean = (mean)=>{
+const calculateScoreByMean = (mean) => {
   let score = 0;
-  if(mean >= 4.50){
+  if (mean >= 4.5) {
     score = 10;
-  }else if(mean >= 3.50 && mean <= 4.49){
-    score = 9
-  }else if(mean >= 2.50 && mean <= 3.49){
-    score = 8
-  }else if(mean >= 1.50 && mean <= 2.49){
-    score = 7
-  }else{
-    score = 6
+  } else if (mean >= 3.5 && mean <= 4.49) {
+    score = 9;
+  } else if (mean >= 2.5 && mean <= 3.49) {
+    score = 8;
+  } else if (mean >= 1.5 && mean <= 2.49) {
+    score = 7;
+  } else {
+    score = 6;
   }
-  return score
-}
+  return score;
+};
 
 const getAllResultEvaluateOverview = async (req, res) => {
   try {
@@ -709,20 +707,18 @@ const getAllResultEvaluateOverview = async (req, res) => {
           ? user.department.department_name
           : null,
       }));
+
     if (users) {
       const resultUser = await Promise.all(
         users.map(async (user) => {
-          // ดึงผลเฉลี่ย และ ส่วนเบี่ยงเบน ภาพรวม ของแต่ละคน  
+          // ดึงผลเฉลี่ย และ ส่วนเบี่ยงเบน ภาพรวม ของแต่ละคน
           const { mean, standardDeviation } =
-            await findTotalResultEvaluateByUserId(
-              user.id,
-              period_id
-            );
+            await findTotalResultEvaluateByUserId(user.id, period_id);
           return {
             user: user,
             mean,
             standardDeviation,
-            score:calculateScoreByMean(mean)
+            score: calculateScoreByMean(mean),
           };
         })
       );
@@ -747,5 +743,5 @@ module.exports = {
   getEvaluatePerDepart,
   getResultEvaluateDetail,
   getAllResultEvaluateOverview,
-  calculateScoreByMean
+  calculateScoreByMean,
 };
