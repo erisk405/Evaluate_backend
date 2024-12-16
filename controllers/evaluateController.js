@@ -695,27 +695,55 @@ const calculateScoreByMean = (mean) => {
 
 const getAllResultEvaluateOverview = async (req, res) => {
   try {
+    const userId = req.userId;
+    const userDetail = await user.findUserById(userId);
     const period_id = req.params.periodId;
     const allUsers = await user.getAllUsers();
-    const users = allUsers
-      .filter((user) => user.role.role_name !== "admin")
-      .map((user) => ({
-        id: user.id,
-        name: user.prefix.prefix_name + user.name,
-        departmentId: user.department ? user.department.id : null,
-        departmentName: user.department
-          ? user.department.department_name
-          : null,
-      }));
+    let filterUsers = [];
+    const role_level = userDetail.role.role_level;
+    
+    if (role_level) {
+      if (role_level === "LEVEL_2") {
+        filterUsers = allUsers.filter(
+          (user) => user.department?.id === userDetail.department_id && user.role?.role_level === "LEVEL_1"
+        );
+      } else if (role_level === "LEVEL_3") {
+        const supervises = userDetail.supervise;
+        if (supervises) {
+          supervises.forEach((data) => {
+            allUsers.map((user) => {
+              if (user.department?.id === data.department_id && 
+                user.role?.role_level === "LEVEL_1" ||
+                  user.role?.role_level === "LEVEL_2"
+                )filterUsers.push(user);
+            });
+          });
+        }
+      }else{
+        filterUsers = allUsers.filter((user)=>user.role?.role_name !== "admin" && user.department?.id);
+      }
+    }
+    console.log(userDetail.name);
+    console.log(role_level);
+    console.log("show :",filterUsers.length," lists");
+    
+    
+    filterUsers = filterUsers.map((user)=>({
+      id:user.id,
+      name:user.prefix.prefix_name+user.name,
+      departmentId:user.department.id,
+      departmentName:user.department.department_name,
+      roleName:user.role.role_name
+    }));
 
-    if (users) {
+    if (filterUsers) {
       const resultUser = await Promise.all(
-        users.map(async (user) => {
+        filterUsers.map(async (user) => {
           // ดึงผลเฉลี่ย และ ส่วนเบี่ยงเบน ภาพรวม ของแต่ละคน
           const { mean, standardDeviation } =
             await findTotalResultEvaluateByUserId(user.id, period_id);
           return {
-            user: user,
+            user:user,
             mean,
             standardDeviation,
             score: calculateScoreByMean(mean),
@@ -723,7 +751,7 @@ const getAllResultEvaluateOverview = async (req, res) => {
         })
       );
 
-      res.status(200).json(resultUser);
+      return res.status(200).json(resultUser);
     }
   } catch (error) {
     console.log(error);

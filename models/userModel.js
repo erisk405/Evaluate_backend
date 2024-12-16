@@ -170,6 +170,9 @@ const findUserById = async (id) => {
       name: true,
       email: true,
       image: true,
+      role:true,
+      supervise:true,
+      department_id:true
     },
   });
 };
