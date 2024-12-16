@@ -37,7 +37,7 @@ const findUserEvaluate = async (assessor_id, period_id) => {
         period_id,
       },
       select: {
-        id:true,
+        id: true,
         period: {
           select: {
             period_id: true,
@@ -48,7 +48,7 @@ const findUserEvaluate = async (assessor_id, period_id) => {
         evaluator: {
           select: {
             id: true,
-            prefix:true,
+            prefix: true,
             name: true,
           },
         },
@@ -58,7 +58,11 @@ const findUserEvaluate = async (assessor_id, period_id) => {
     console.error({ message: error });
   }
 };
-const findUserEvaluateForDepartment = async (assessor_id, department_id, period_id) => {
+const findUserEvaluateForDepartment = async (
+  assessor_id,
+  department_id,
+  period_id
+) => {
   try {
     return prisma.evaluate.findMany({
       where: {
@@ -71,14 +75,14 @@ const findUserEvaluateForDepartment = async (assessor_id, department_id, period_
             },
           },
           {
-            evaluator:{
-              supervise:{
-                some:{
+            evaluator: {
+              supervise: {
+                some: {
                   department_id,
-                }
-              }
-            }
-          }
+                },
+              },
+            },
+          },
         ],
       },
       select: {
@@ -112,10 +116,10 @@ const getResultEvaluateById = async (evaluator_id, period_id) => {
       select: {
         evaluator: {
           select: {
-            prefix:{
-              select:{
-                prefix_name:true
-              }
+            prefix: {
+              select: {
+                prefix_name: true,
+              },
             },
             name: true,
             role: {
@@ -130,6 +134,7 @@ const getResultEvaluateById = async (evaluator_id, period_id) => {
                 id: true,
               },
             },
+            supervise: true,
           },
         },
         period: {
@@ -160,10 +165,29 @@ const getResultEvaluateById = async (evaluator_id, period_id) => {
   }
 };
 
+const findResultEvaluate = async (evaluator_id, period_id) => {
+  try {
+    return prisma.evaluate.findFirst({
+      where: {
+        evaluator_id,
+        period_id,
+      },
+      select: {
+        period:true,
+        assessor_id:true,
+        evaluator_id:true
+      },
+    });
+  } catch (error) {
+    console.error({ message: error });
+  }
+};
+
 module.exports = {
   createEvaluate,
   deleteEvaluate,
   findUserEvaluate,
   getResultEvaluateById,
-  findUserEvaluateForDepartment
+  findUserEvaluateForDepartment,
+  findResultEvaluate,
 };

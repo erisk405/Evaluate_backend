@@ -172,7 +172,8 @@ const findUserById = async (id) => {
       image: true,
       role:true,
       supervise:true,
-      department_id:true
+      department_id:true,
+      department:true
     },
   });
 };

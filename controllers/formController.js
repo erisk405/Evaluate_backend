@@ -120,6 +120,22 @@ const getQuestions = async (req, res) => {
   }
 };
 
+const createRoleFormVision = async (req,res) =>{
+  try {
+  const {role_id,form_id,level} = req.body;
+  const create = await form.createRoleFormVision(form_id,role_id,level);
+  res.status(201).json(create)
+    
+  } catch (error) {
+    console.error("Error create createRoleFormVision:", error);
+    res.status(500).json({
+      message: "Internal server error",
+      error: error.message,
+    });
+    
+  }
+}
+
 module.exports = {
   createForm,
   getAllform,
@@ -129,4 +145,5 @@ module.exports = {
   updateQuestion,
   deleteQuestion,
   getQuestions,
+  createRoleFormVision
 };

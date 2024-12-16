@@ -49,6 +49,18 @@ model Role {
 
   permissionsAsEvaluator Permission[] @relation("EvaluatorOfRole")
   permissionsAsAssessor  Permission[] @relation("AssessorOfRole")
+  roleFormVision RoleFormVision[]
+}
+
+model RoleFormVision {
+  role_form_id String @id @default(uuid())
+  form_id String
+  role_id String
+  level VisionFormLevel
+  @@unique([form_id, role_id])
+  visionForm Form @relation(fields: [form_id],references: [id])
+  visionRole Role @relation(fields: [role_id],references: [id])
+
 }
 
 model Department {
@@ -93,6 +105,8 @@ model Form {
   name            String           @unique
   questions       FormQuestion[]   @relation("form-have-question")
   permissionForms PermissionForm[] @relation("FormOfPermission")
+  roleFormVision RoleFormVision[] 
+
 }
 
 model FormQuestion {
@@ -139,6 +153,7 @@ model Supervise {
   user       User       @relation("UserSupervise", fields: [user_id], references: [id])
   department Department @relation("SuperviseOfDepartment", fields: [department_id], references: [id])
 }
+
 
 model Permission {
   permission_id     String @id @default(uuid())
@@ -211,6 +226,12 @@ enum RequestStatus {
   APPROVED
   REJECTED
 }
+
+enum VisionFormLevel {
+  VISION_1
+  VISION_2
+}
+
 
 enum RoleLevel {
   LEVEL_1

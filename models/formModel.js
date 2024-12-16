@@ -42,7 +42,7 @@ const getAllform = async () => {
   try {
     return prisma.form.findMany({
      include:{
-      questions:true
+      questions:true,
      }
     });
   } catch (error) {
@@ -50,9 +50,37 @@ const getAllform = async () => {
   }
 };
 
+const createRoleFormVision = async(form_id,role_id,level) =>{
+  try {
+    return prisma.roleFormVision.create({
+      data:{
+        form_id,
+        role_id,
+        level
+      }
+    })
+    
+  } catch (error) {
+    console.error({ message: error });
+  }
+}
+const findVisionFormLevel = async(form_id,role_id)=>{
+  try {
+    return prisma.roleFormVision.findUnique({
+      where:{
+        form_id,role_id
+      }
+    });
+  } catch (error) {
+    console.error({ message: error });
+  }
+}
+
 module.exports = {
   createForm,
   getAllform,
   updateFormById,
   deleteFormById,
+  createRoleFormVision,
+  findVisionFormLevel
 };

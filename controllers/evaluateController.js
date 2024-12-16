@@ -298,7 +298,6 @@ const getResultEvaluate = async (req, res) => {
         );
 
         const flattenedScoresPerForm = scorePerForm.flat();
-        console.log(scorePerForm);
         const assessEvaluatePerForm = scorePerForm[0].length;
         allScores.push(flattenedScoresPerForm);
         const { mean, standardDeviation } = calculateStatistics(
@@ -462,63 +461,58 @@ const getResultEvaluateDetail = async (req, res) => {
   try {
     const userId = req.userId;
     const periodId = req.params.periodId;
-    const evaluateData = await evaluate.getResultEvaluateById(userId, periodId);
-
-    if (!evaluateData || evaluateData.length === 0) {
-      return res.status(404).json({
-        message: "error not found evaluate for this evaluator",
-      });
-    }
-    const departmentName = evaluateData[0].evaluator.department.department_name;
+    const evaluateData = await evaluate.findResultEvaluate(userId, periodId);
+    const forms = await form.getAllform();
+    const userDetail = await user.findUserById(userId);
+    const superviseDepart = userDetail.supervise?.map(
+      (supervise) => supervise.department_id
+    );
 
     const headData = {
-      evaluatorName:
-        evaluateData[0].evaluator.prefix.prefix_name +
-        evaluateData[0].evaluator.name,
-      periodName: evaluateData[0].period.title,
-      roleName: evaluateData[0].evaluator.role.role_name,
-      roleLevel: evaluateData[0].evaluator.role.role_level,
-      department: departmentName,
-      totalAvg: 0,
+      evaluatorName: userDetail.prefix.prefix_name + userDetail.name,
+      periodName: evaluateData.period.title,
+      roleName: userDetail.role.role_name,
+      department: userDetail.department.department_name,
+      totalAvg: 3,
       totalSD: 0,
-      success: {
-        success: true,
-        message: "มีผลการประเมิน",
-      },
     };
-    const forms = await form.getAllform();
-    if (!forms || forms.length === 0) {
-      return res.status(404).json({ message: "not found form" });
-    }
-    const departmentHaveRoleLevel1 =
-      await department.findDepartWhereHaveRoleLevel1();
 
+    if (!evaluateData) {
+      return res
+        .status(404)
+        .json({ message: "not found evaluate for this evaluator" });
+    }
     const allScores = [];
     const formResults = await Promise.all(
-      forms.map(async (form) => {
+      forms.map(async (formData) => {
         const scorePerForm = [];
         const total = [];
+        const visionForm = await form.findVisionFormLevel(
+          formData.id,
+          userDetail.role.id
+        );
+        const visionLevel = visionForm?.level;
+        if(!visionLevel){
+          return res.status(400).json({message:"Not set yet visionFormLevel : for "+userDetail.role.role_name});
+        }
+        
         const questions = await Promise.all(
-          form.questions.map(async (question) => {
+          formData.questions.map(async (question) => {
             const score = [];
             const scorePerQuestions = [];
-
-            if (
-              headData.roleLevel === "LEVEL_1" ||
-              headData.roleLevel === "LEVEL_4"
-            ) {
-              const details = await evaluateDetail.getScoreByQuestion(
+            if (visionLevel === "VISION_1") {
+              const scoreDetail = await evaluateDetail.getScoreByQuestion(
                 userId,
                 question.id,
                 periodId
               );
-              // console.log(details);
-              const scores = details.map((item) => item.score);
+              const scores = scoreDetail.map((item) => item.score);
               scorePerQuestions.push(scores);
-              const { mean, standardDeviation } = calculateStatistics(scores);
               const flattenedScores = scorePerQuestions.flat();
               scorePerForm.push(flattenedScores);
+              const { mean, standardDeviation } = calculateStatistics(scores);
               return {
+                level: visionLevel,
                 questionId: question.id,
                 questionName: question.content,
                 sumScore: {
@@ -526,22 +520,17 @@ const getResultEvaluateDetail = async (req, res) => {
                   standardDeviation: standardDeviation,
                 },
               };
-            } else if (
-              headData.roleLevel === "LEVEL_3" ||
-              headData.roleLevel === "LEVEL_2"
-            ) {
-              if (departmentHaveRoleLevel1.length > 0) {
-                for (const depart of departmentHaveRoleLevel1) {
-                  const scoreDepart = await getScoreForDepartment(
-                    userId,
-                    question.id,
-                    periodId,
-                    depart.id
-                  );
-                  // console.log(scoreDepart.scores);
-                  if (scoreDepart.average > 0) {
+            } else if (visionLevel === "VISION_2") {
+              if (userDetail.role.role_level === "LEVEL_3") {
+                if (superviseDepart) {
+                  for (const depart_id of superviseDepart) {
+                    const scoreDepart = await getScoreForDepartment(
+                      userId,
+                      question.id,
+                      periodId,
+                      depart_id
+                    );
                     scorePerQuestions.push(scoreDepart.scores);
-
                     total.push({
                       type: scoreDepart.type,
                       scores: scoreDepart.scores,
@@ -553,19 +542,37 @@ const getResultEvaluateDetail = async (req, res) => {
                     });
                   }
                 }
+              } else if (userDetail.role.role_level === "LEVEL_2") {
+                const scoreDepart = await getScoreForDepartment(
+                  userId,
+                  question.id,
+                  periodId,
+                  userDetail.department?.id
+                );
+                scorePerQuestions.push(scoreDepart.scores);
+                total.push({
+                  type: scoreDepart.type,
+                  scores: scoreDepart.scores,
+                });
+                score.push({
+                  type: scoreDepart.type,
+                  average: scoreDepart.average,
+                  sd: scoreDepart.sd,
+                });
               }
-              const details =
+
+              //---------get result for Executive----------------
+              const scoreForExecutive =
                 await evaluateDetail.getScoreByQuestionForExecutive(
                   userId,
                   question.id,
                   periodId
                 );
-              const scores = details.map((item) => item.score);
-              scorePerQuestions.push(scores);
-
-              const { mean, standardDeviation } = calculateStatistics(scores);
-              // console.log("Executive", details);
-              if (details.length > 0) {
+              const scores = scoreForExecutive.map((item) => item.score);
+              if (scoreForExecutive.length > 0) {
+                scorePerQuestions.push(scores);
+                const { mean, standardDeviation } =
+                  calculateStatistics(scores);
                 total.push({
                   type: "Executive",
                   scores: scores,
@@ -576,30 +583,15 @@ const getResultEvaluateDetail = async (req, res) => {
                   sd: standardDeviation,
                 });
               }
-            }
-            // console.log("scorePerQuestions",scorePerQuestions);
+              //---------get result for Executive----------------
 
-            const flattenedScores = scorePerQuestions.flat();
-            scorePerForm.push(flattenedScores);
+              const flattenedScores = scorePerQuestions.flat();
+              scorePerForm.push(flattenedScores);
 
-            const { mean, standardDeviation } =
-              calculateStatistics(flattenedScores);
-            const scoreTypes = new Set(score.map((score) => score.type));
-            const missingDepartments = departmentHaveRoleLevel1.filter(
-              (dep) => !scoreTypes.has(dep.department_name)
-            ).length;
-            if (missingDepartments == 0) {
+              const { mean, standardDeviation } =
+                calculateStatistics(flattenedScores);
               return {
-                questionId: question.id,
-                questionName: question.content,
-                // missingDepartments:missingDepartments,
-                sumScore: {
-                  average: mean,
-                  standardDeviation: standardDeviation,
-                },
-              };
-            } else {
-              return {
+                level: visionLevel,
                 questionId: question.id,
                 questionName: question.content,
                 scores: score,
@@ -628,30 +620,39 @@ const getResultEvaluateDetail = async (req, res) => {
             sd: standardDeviation,
           };
         });
-
         const flateScorePerForm = scorePerForm.flat();
         allScores.push(flateScorePerForm);
 
         const { mean, standardDeviation } =
           calculateStatistics(flateScorePerForm);
-
-        return {
-          formId: form.id,
-          formName: form.name,
-          total: results,
-          totalAvgPerForm: mean,
-          totalSDPerForm: standardDeviation,
-          questions,
-        };
+        if(visionLevel === "VISION_1"){
+          return {
+            formId: formData.id,
+            formName: formData.name,
+            totalAvgPerForm: mean,
+            totalSDPerForm: standardDeviation,
+            questions: questions,
+          };
+        }else{
+          return {
+            formId: formData.id,
+            formName: formData.name,
+            total:results,
+            totalAvgPerForm: mean,
+            totalSDPerForm: standardDeviation,
+            questions: questions,
+          };
+        }
       })
     );
     const flateScoreAll = allScores.flat();
     const { mean, standardDeviation } = calculateStatistics(flateScoreAll);
-
     headData.totalAvg = mean;
     headData.totalSD = standardDeviation;
 
     return res.status(200).json({ headData, formResults });
+
+    // return res.status(200).json({ headData, formResults });
   } catch (error) {
     console.log(error);
 
@@ -701,39 +702,44 @@ const getAllResultEvaluateOverview = async (req, res) => {
     const allUsers = await user.getAllUsers();
     let filterUsers = [];
     const role_level = userDetail.role.role_level;
-    
+
     if (role_level) {
       if (role_level === "LEVEL_2") {
         filterUsers = allUsers.filter(
-          (user) => user.department?.id === userDetail.department_id && user.role?.role_level === "LEVEL_1"
+          (user) =>
+            user.department?.id === userDetail.department_id &&
+            user.role?.role_level === "LEVEL_1"
         );
       } else if (role_level === "LEVEL_3") {
         const supervises = userDetail.supervise;
         if (supervises) {
           supervises.forEach((data) => {
             allUsers.map((user) => {
-              if (user.department?.id === data.department_id && 
-                user.role?.role_level === "LEVEL_1" ||
-                  user.role?.role_level === "LEVEL_2"
-                )filterUsers.push(user);
+              if (
+                (user.department?.id === data.department_id &&
+                  user.role?.role_level === "LEVEL_1") ||
+                user.role?.role_level === "LEVEL_2"
+              )
+                filterUsers.push(user);
             });
           });
         }
-      }else{
-        filterUsers = allUsers.filter((user)=>user.role?.role_name !== "admin" && user.department?.id);
+      } else {
+        filterUsers = allUsers.filter(
+          (user) => user.role?.role_name !== "admin" && user.department?.id
+        );
       }
     }
     console.log(userDetail.name);
     console.log(role_level);
-    console.log("show :",filterUsers.length," lists");
-    
-    
-    filterUsers = filterUsers.map((user)=>({
-      id:user.id,
-      name:user.prefix.prefix_name+user.name,
-      departmentId:user.department.id,
-      departmentName:user.department.department_name,
-      roleName:user.role.role_name
+    console.log("show :", filterUsers.length, " lists");
+
+    filterUsers = filterUsers.map((user) => ({
+      id: user.id,
+      name: user.prefix.prefix_name + user.name,
+      departmentId: user.department.id,
+      departmentName: user.department.department_name,
+      roleName: user.role.role_name,
     }));
 
     if (filterUsers) {
@@ -743,7 +749,7 @@ const getAllResultEvaluateOverview = async (req, res) => {
           const { mean, standardDeviation } =
             await findTotalResultEvaluateByUserId(user.id, period_id);
           return {
-            user:user,
+            user: user,
             mean,
             standardDeviation,
             score: calculateScoreByMean(mean),
@@ -769,7 +775,7 @@ module.exports = {
   getResultEvaluate,
   getAssessorsPerFormByEvaluator,
   getEvaluatePerDepart,
-  getResultEvaluateDetail,
   getAllResultEvaluateOverview,
   calculateScoreByMean,
+  getResultEvaluateDetail,
 };

@@ -71,9 +71,10 @@ router.put("/usersToDepartment",middleware.verifyToken,middleware.verifyAdmin,us
 //--------------user----------------------
 
 //--------------form----------------------
+router.post("/form",middleware.verifyToken,middleware.verifyAdmin,formController.createForm)
+router.post("/roleFormVision",middleware.verifyToken,middleware.verifyAdmin,formController.createRoleFormVision)
 router.get("/form",formController.getAllform)
 router.put('/form',middleware.verifyToken,middleware.verifyAdmin,formController.updateForm);
-router.post("/form",middleware.verifyToken,middleware.verifyAdmin,formController.createForm)
 router.delete("/form",middleware.verifyToken,middleware.verifyAdmin,formController.deleteForm)
 router.post("/question",middleware.verifyToken,middleware.verifyAdmin,formController.createQuestion)
 router.put("/question",middleware.verifyToken,middleware.verifyAdmin,formController.updateQuestion)
