@@ -64,9 +64,12 @@ const findEvaluateUserContr = async (req, res) => {
   try {
     const assessor_id = req.userId;
     const period_id = req.params.period_id;
+    // --- หาว่าประเมินใครไปแล้วบ้าง -----
     const founded = await evaluate.findUserEvaluate(assessor_id, period_id);
-
-    res.status(201).json(founded);
+    if(!founded || founded.length == 0){
+      return res.status(404).json({message:"Not found evaluate"})
+    }
+    return res.status(200).json(founded);
   } catch (error) {
     console.error("Error in find:", error);
     // ส่ง error ทั่วไปสำหรับกรณีที่ไม่เจาะจง
@@ -119,15 +122,16 @@ const findAllEluatedUserContr = async (req, res) => {
               `Error fetching department ${department.department_name}:`,
               error
             );
+            
           }
         })
       );
     }
 
-    res.status(200).json(report);
+    return res.status(200).json(report);
   } catch (error) {
     console.error("Error in find:", error);
-    res.status(500).json({
+    return res.status(500).json({
       message: "เกิดข้อผิดพลาดภายในระบบ",
       error: error.message,
     });
@@ -460,6 +464,216 @@ const getScoreForDepartment = async (
 const getResultEvaluateDetail = async (req, res) => {
   try {
     const userId = req.userId;
+    const periodId = req.params.period_id;
+    const evaluateData = await evaluate.findResultEvaluate(userId, periodId);
+    const forms = await form.getAllform();
+    const userDetail = await user.findUserById(userId);
+    const superviseDepart = userDetail.supervise?.map(
+      (supervise) => supervise.department_id
+    );
+
+    const headData = {
+      evaluatorName: userDetail.prefix.prefix_name + userDetail.name,
+      periodName: evaluateData.period.title,
+      roleName: userDetail.role.role_name,
+      department: userDetail.department.department_name,
+      totalAvg: 3,
+      totalSD: 0,
+    };
+
+    if (!evaluateData) {
+      return res
+        .status(404)
+        .json({ message: "not found evaluate for this evaluator" });
+    }
+    const allScores = [];
+    const formResults = await Promise.all(
+      forms.map(async (formData) => {
+        const scorePerForm = [];
+        const total = [];
+        const visionForm = await form.findVisionFormLevel(
+          formData.id,
+          userDetail.role.id
+        );
+        const visionLevel = visionForm?.level;
+        if (!visionLevel || visionLevel === "UNSET") {
+          return res
+            .status(400)
+            .json({
+              message:
+                "Not set yet visionFormLevel : for " +
+                userDetail.role.role_name,
+            });
+        }
+
+        const questions = await Promise.all(
+          formData.questions.map(async (question) => {
+            const score = [];
+            const scorePerQuestions = [];
+            if (visionLevel === "VISION_1") {
+              const scoreDetail = await evaluateDetail.getScoreByQuestion(
+                userId,
+                question.id,
+                periodId
+              );
+              const scores = scoreDetail.map((item) => item.score);
+              scorePerQuestions.push(scores);
+              const flattenedScores = scorePerQuestions.flat();
+              scorePerForm.push(flattenedScores);
+              const { mean, standardDeviation } = calculateStatistics(scores);
+              return {
+                level: visionLevel,
+                questionId: question.id,
+                questionName: question.content,
+                sumScore: {
+                  average: mean,
+                  standardDeviation: standardDeviation,
+                },
+              };
+            } else if (visionLevel === "VISION_2") {
+              if (userDetail.role.role_level === "LEVEL_3") {
+                if (superviseDepart) {
+                  for (const depart_id of superviseDepart) {
+                    const scoreDepart = await getScoreForDepartment(
+                      userId,
+                      question.id,
+                      periodId,
+                      depart_id
+                    );
+                    scorePerQuestions.push(scoreDepart.scores);
+                    total.push({
+                      type: scoreDepart.type,
+                      scores: scoreDepart.scores,
+                    });
+                    score.push({
+                      type: scoreDepart.type,
+                      average: scoreDepart.average,
+                      sd: scoreDepart.sd,
+                    });
+                  }
+                }
+              } else if (userDetail.role.role_level === "LEVEL_2") {
+                const scoreDepart = await getScoreForDepartment(
+                  userId,
+                  question.id,
+                  periodId,
+                  userDetail.department?.id
+                );
+                scorePerQuestions.push(scoreDepart.scores);
+                total.push({
+                  type: scoreDepart.type,
+                  scores: scoreDepart.scores,
+                });
+                score.push({
+                  type: scoreDepart.type,
+                  average: scoreDepart.average,
+                  sd: scoreDepart.sd,
+                });
+              }
+
+              //---------get result for Executive----------------
+              const scoreForExecutive =
+                await evaluateDetail.getScoreByQuestionForExecutive(
+                  userId,
+                  question.id,
+                  periodId
+                );
+              const scores = scoreForExecutive.map((item) => item.score);
+              if (scoreForExecutive.length > 0) {
+                scorePerQuestions.push(scores);
+                const { mean, standardDeviation } = calculateStatistics(scores);
+                total.push({
+                  type: "Executive",
+                  scores: scores,
+                });
+                score.push({
+                  type: "Executive",
+                  average: mean,
+                  sd: standardDeviation,
+                });
+              }
+              //---------get result for Executive----------------
+
+              const flattenedScores = scorePerQuestions.flat(); // รวมอาเรยเข้าเป็น 1 มิติ
+              scorePerForm.push(flattenedScores);
+
+              const { mean, standardDeviation } =
+                calculateStatistics(flattenedScores);
+              return {
+                level: visionLevel,
+                questionId: question.id,
+                questionName: question.content,
+                scores: score,
+                sumScore: {
+                  average: mean,
+                  standardDeviation: standardDeviation,
+                },
+              };
+            }
+          })
+        );
+        // กลุ่มข้อมูลตาม type
+        const groupedData = total.reduce((acc, item) => {
+          if (!acc[item.type]) acc[item.type] = [];
+          acc[item.type].push(...item.scores); // รวมคะแนนในอาร์เรย์เดียว
+          return acc;
+        }, {});
+        // console.log(groupedData);
+
+        const results = Object.keys(groupedData).map((type) => {
+          const scores = groupedData[type];
+          const { mean, standardDeviation } = calculateStatistics(scores);
+          return {
+            total: type,
+            average: mean,
+            sd: standardDeviation,
+          };
+        });
+        const flateScorePerForm = scorePerForm.flat();
+        allScores.push(flateScorePerForm);
+
+        const { mean, standardDeviation } =
+          calculateStatistics(flateScorePerForm);
+        if (visionLevel === "VISION_1") {
+          return {
+            formId: formData.id,
+            formName: formData.name,
+            totalAvgPerForm: mean,
+            totalSDPerForm: standardDeviation,
+            questions: questions,
+          };
+        } else {
+          return {
+            formId: formData.id,
+            formName: formData.name,
+            total: results,
+            totalAvgPerForm: mean,
+            totalSDPerForm: standardDeviation,
+            questions: questions,
+          };
+        }
+      })
+    );
+    const flateScoreAll = allScores.flat();
+    const { mean, standardDeviation } = calculateStatistics(flateScoreAll);
+    headData.totalAvg = mean;
+    headData.totalSD = standardDeviation;
+
+    return res.status(200).json({ headData, formResults });
+
+    // return res.status(200).json({ headData, formResults });
+  } catch (error) {
+    console.log(error);
+
+    return res.status(500).json({
+      message: "เกิดข้อผิดพลาดภายในระบบ",
+      error: error.message,
+    });
+  }
+};
+const getResultEvaluateDetailByUserId = async (req, res) => {
+  try {
+    const userId = req.params.userId;
     const periodId = req.params.periodId;
     const evaluateData = await evaluate.findResultEvaluate(userId, periodId);
     const forms = await form.getAllform();
@@ -703,7 +917,10 @@ const getAllResultEvaluateOverview = async (req, res) => {
   try {
     const userId = req.userId;
     const userDetail = await user.findUserById(userId);
-    const period_id = req.params.periodId;
+    if(!userDetail){
+      return res.status(404).json({message:"not found detail"})
+    }
+    const period_id = req.params.period_id;
     const allUsers = await user.getAllUsers();
     let filterUsers = [];
     const role_level = userDetail.role.role_level;
@@ -773,6 +990,29 @@ const getAllResultEvaluateOverview = async (req, res) => {
   }
 };
 
+const findEvaluateScore = async (req,res)=>{
+  try {
+    const userId = req.userId; 
+    const period_id = req.params.period_id
+    const evaluated = await evaluate.findUserEvaluate(userId,period_id);
+    if(!evaluated || evaluated.length ==0){
+      return res.status(404).json({message:"not found evalute score"})
+    }
+    // console.log(evaluated);
+    return res.status(200).json(evaluated);
+    
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      message: "เกิดข้อผิดพลาดภายในระบบ",
+      error: error.message,
+    });
+    
+  }
+}
+
+
+
 module.exports = {
   createEvaluate,
   findEvaluateUserContr,
@@ -783,4 +1023,6 @@ module.exports = {
   getAllResultEvaluateOverview,
   calculateScoreByMean,
   getResultEvaluateDetail,
+  getResultEvaluateDetailByUserId,
+  findEvaluateScore
 };

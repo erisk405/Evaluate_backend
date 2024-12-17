@@ -99,16 +99,18 @@ router.delete("/period/:period_id",middleware.verifyToken,middleware.verifyAdmin
 //-------------evaluate for Admin ------------------------------->>>
 
 router.get("/resultEvaluatePerDepart/:period_id",middleware.verifyToken,middleware.verifyAdmin,evaluateController.getEvaluatePerDepart);
+router.get("/resultEvaluateDetail/:periodId/:userId",middleware.verifyToken,middleware.verifyAdmin,evaluateController.getResultEvaluateDetailByUserId);
 
 //-------------evaluate for Admin ------------------------------->>>
 
 //-------------evaluate For User------------------------------->>>
 router.post("/evaluate",middleware.verifyToken,evaluateController.createEvaluate);
-router.get("/findUserEval/:period_id",middleware.verifyToken,evaluateController.findEvaluateUserContr);
-router.get("/countUserEvaluated/:period_id",middleware.verifyToken,evaluateController.findAllEluatedUserContr);
-router.get("/resultEvaluate/:period_id",middleware.verifyToken,evaluateController.getResultEvaluate);
-router.get("/resultEvaluateDetail/:periodId",middleware.verifyToken,evaluateController.getResultEvaluateDetail);
-router.get("/allResultEvaluateOverview/:periodId",middleware.verifyToken,evaluateController.getAllResultEvaluateOverview);
+router.get("/findUserEval/:period_id",middleware.verifyToken,evaluateController.findEvaluateUserContr); // Find user ,Who has been evaluated
+router.get("/countUserEvaluated/:period_id",middleware.verifyToken,evaluateController.findAllEluatedUserContr); // count user ,Who has been evaluated for department
+router.get("/resultEvaluate/:period_id",middleware.verifyToken,evaluateController.getResultEvaluate); // Result evaluate for User Oveview
+router.get("/resultEvaluateDetail/:period_id",middleware.verifyToken,evaluateController.getResultEvaluateDetail); // Results of each item evaluation for User
+router.get("/allResultEvaluateOverview/:period_id",middleware.verifyToken,evaluateController.getAllResultEvaluateOverview); //Result evaluate Overview
+router.get("/findEvaluateScore/:period_id",middleware.verifyToken,evaluateController.findEvaluateScore); //find score user evaluate
 //-------------evaluate For User------------------------------->>>
 
 module.exports = router

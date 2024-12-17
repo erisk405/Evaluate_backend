@@ -44,7 +44,6 @@ const findUserEvaluate = async (assessor_id, period_id) => {
             title: true,
           },
         },
-
         evaluator: {
           select: {
             id: true,
@@ -52,6 +51,14 @@ const findUserEvaluate = async (assessor_id, period_id) => {
             name: true,
           },
         },
+        evaluateDetail:{
+          select:{
+            id:true,
+            formQuestion:true,
+            score:true,
+          }
+
+        }
       },
     });
   } catch (error) {
@@ -173,9 +180,9 @@ const findResultEvaluate = async (evaluator_id, period_id) => {
         period_id,
       },
       select: {
-        period:true,
-        assessor_id:true,
-        evaluator_id:true
+        period: true,
+        assessor_id: true,
+        evaluator_id: true,
       },
     });
   } catch (error) {
