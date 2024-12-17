@@ -1,16 +1,46 @@
 const form = require("../models/formModel");
 const question = require("../models/questionModel");
+const Role = require("../models/roleModel");
 
 const createForm = async (req, res) => {
   const { name } = req.body;
   try {
-    const created = await form.createForm(name);
-    if (!created) {
-      return res.status(404).json({ message: "not create" });
+    const createdForm = await form.createForm(name);
+    const form_Id = createdForm.id;
+
+    const responsed = await Role.getRole();
+    if (!responsed) {
+      return res.status(404).json({ message: "don't get role" });
     }
-    res.status(201).json(created);
+
+    const payload = responsed
+      .filter(
+        (role) => role.role_name !== "admin" && role.role_name !== "member"
+      )
+      .map((role) => ({
+        form_id: form_Id,
+        role_id: role.id,
+        level: "VISION_1",
+      }));
+
+    const matchRoleFormVision = await form.createRoleFormVision(payload);
+
+    if (!matchRoleFormVision) {
+      return res
+        .status(404)
+        .json({ message: "Failed to create role form vision" });
+    }
+
+    res.status(201).json({
+      form: createdForm,
+      roleFormVision: matchRoleFormVision,
+    });
   } catch (error) {
-    console.error({ message: error });
+    console.error("Error creating form and role form vision:", error);
+    res.status(500).json({
+      message: "Internal server error",
+      error: error.message,
+    });
   }
 };
 
@@ -28,16 +58,46 @@ const updateForm = async (req, res) => {
     console.error({ message: error });
   }
 };
+
+const updateVisionOfForm = async (req, res) => {
+  const payload = req.body;
+  // console.log("payload", payload);
+
+  try {
+    const deleteOldVisionOfForm = await form.deleteVisionAllOfForm(
+      payload.formId
+    );
+    if (!deleteOldVisionOfForm) {
+      return res.status(404).json({ message: "can not deleted" });
+    }
+
+    const update = await form.createVisionForm(payload);
+    if (!update) {
+      return res.status(404).json({ message: "not update" });
+    }
+    res.status(201).json(update);
+  } catch (error) {
+    console.error({ message: error });
+  }
+};
+
 const deleteForm = async (req, res) => {
   const { id } = req.body;
   try {
+    const deletedVision = await form.deleteVisionByFormId(id);
+    if (!deletedVision) {
+      return res
+        .status(404)
+        .json({ message: "can not delete vision of this formId" });
+    }
     const response = await form.deleteFormById(id);
     if (!response) {
       return res.status(404).json({ message: "not delete" });
     }
     res.status(201).json(response);
   } catch (error) {
-    console.error({ message: error });
+    console.log({ message: error });
+    res.status(500).json({ message: error });
   }
 };
 
@@ -68,13 +128,13 @@ const createQuestion = async (req, res) => {
 const updateQuestion = async (req, res) => {
   try {
     const { questionId, content } = req.body;
-    console.log("req.body",req.body);
-    
+    console.log("req.body", req.body);
+
     const updated = await question.updateQuestion(content, questionId);
     if (!updated) {
       return res.status(404).json({ message: "question not update" });
     }
-    res.status(201).json({datail:updated});
+    res.status(201).json({ datail: updated });
   } catch (error) {
     console.error({ message: error });
   }
@@ -85,7 +145,7 @@ const deleteQuestion = async (req, res) => {
     const questionToDelete = req.body;
 
     // console.log("questionToDelete", questionToDelete);
-    // เอามาแค่ question ID 
+    // เอามาแค่ question ID
     const questionIds = questionToDelete.map((question) => question.id);
 
     console.log("questionIds", questionIds);
@@ -120,22 +180,6 @@ const getQuestions = async (req, res) => {
   }
 };
 
-const createRoleFormVision = async (req,res) =>{
-  try {
-  const {role_id,form_id,level} = req.body;
-  const create = await form.createRoleFormVision(form_id,role_id,level);
-  res.status(201).json(create)
-    
-  } catch (error) {
-    console.error("Error create createRoleFormVision:", error);
-    res.status(500).json({
-      message: "Internal server error",
-      error: error.message,
-    });
-    
-  }
-}
-
 module.exports = {
   createForm,
   getAllform,
@@ -145,5 +189,5 @@ module.exports = {
   updateQuestion,
   deleteQuestion,
   getQuestions,
-  createRoleFormVision
+  updateVisionOfForm,
 };

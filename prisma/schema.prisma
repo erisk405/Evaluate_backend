@@ -47,20 +47,20 @@ model Role {
   user         User[]
   roleRequests RoleRequest[] @relation("RoleRequests")
 
-  permissionsAsEvaluator Permission[] @relation("EvaluatorOfRole")
-  permissionsAsAssessor  Permission[] @relation("AssessorOfRole")
-  roleFormVision RoleFormVision[]
+  permissionsAsEvaluator Permission[]     @relation("EvaluatorOfRole")
+  permissionsAsAssessor  Permission[]     @relation("AssessorOfRole")
+  roleFormVision         RoleFormVision[]
 }
 
 model RoleFormVision {
-  role_form_id String @id @default(uuid())
-  form_id String
-  role_id String
-  level VisionFormLevel
-  @@unique([form_id, role_id])
-  visionForm Form @relation(fields: [form_id],references: [id])
-  visionRole Role @relation(fields: [role_id],references: [id])
+  role_form_id String          @id @default(uuid())
+  form_id      String
+  role_id      String
+  level        VisionFormLevel
+  visionForm   Form            @relation(fields: [form_id], references: [id])
+  visionRole   Role            @relation(fields: [role_id], references: [id])
 
+  @@unique([form_id, role_id])
 }
 
 model Department {
@@ -74,15 +74,16 @@ model Department {
 }
 
 model Evaluate {
-  id              String           @id @default(uuid())
-  period_id       String
-  assessor_id     String
-  evaluator_id    String
-  date            DateTime         @default(now())
-  evaluator       User             @relation("UserEvaluator", fields: [evaluator_id], references: [id])
-  assessor        User             @relation("UserAssessor", fields: [assessor_id], references: [id])
-  period          Period           @relation(fields: [period_id], references: [period_id])
-  evaluateDetail  EvaluateDetail[] @relation("EvaluateToDetail")
+  id             String           @id @default(uuid())
+  period_id      String
+  assessor_id    String
+  evaluator_id   String
+  date           DateTime         @default(now())
+  evaluator      User             @relation("UserEvaluator", fields: [evaluator_id], references: [id])
+  assessor       User             @relation("UserAssessor", fields: [assessor_id], references: [id])
+  period         Period           @relation(fields: [period_id], references: [period_id])
+  evaluateDetail EvaluateDetail[] @relation("EvaluateToDetail")
+
   @@unique([assessor_id, evaluator_id])
 }
 
@@ -105,8 +106,7 @@ model Form {
   name            String           @unique
   questions       FormQuestion[]   @relation("form-have-question")
   permissionForms PermissionForm[] @relation("FormOfPermission")
-  roleFormVision RoleFormVision[] 
-
+  roleFormVision  RoleFormVision[]
 }
 
 model FormQuestion {
@@ -153,7 +153,6 @@ model Supervise {
   user       User       @relation("UserSupervise", fields: [user_id], references: [id])
   department Department @relation("SuperviseOfDepartment", fields: [department_id], references: [id])
 }
-
 
 model Permission {
   permission_id     String @id @default(uuid())
@@ -228,10 +227,10 @@ enum RequestStatus {
 }
 
 enum VisionFormLevel {
+  UNSET
   VISION_1
   VISION_2
 }
-
 
 enum RoleLevel {
   LEVEL_1

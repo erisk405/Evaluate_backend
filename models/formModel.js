@@ -27,6 +27,59 @@ const updateFormById = async (id, name) => {
     console.error({ message: error });
   }
 };
+
+const createVisionForm = async (payload) => {
+  try {
+    const visionData = payload.stackFormLevel.map((item) => ({
+      form_id: payload.formId,
+      role_id: item.role_id,
+      level: item.visionLevel,
+    }));
+    return prisma.roleFormVision.createMany({
+      data: visionData,
+      skipDuplicates: true,
+    });
+  } catch (error) {
+    console.error("Error creating vision forms:", error);
+    throw error; // Re-throw error for higher-level handling
+  }
+};
+const deleteVisionAllOfForm = async (form_id) => {
+  try {
+    return prisma.roleFormVision.deleteMany({
+      where: {
+        form_id,
+      },
+    });
+  } catch (error) {
+    console.error({ message: error });
+  }
+};
+
+const deleteVisionByFormId = async (form_id) => {
+  try {
+    return prisma.roleFormVision.deleteMany({
+      where: {
+        form_id,
+      },
+    });
+  } catch (error) {
+    console.error({ message: error });
+  }
+};
+
+const deleteVisionByRoleId = async (role_id) => {
+  try {
+    return prisma.roleFormVision.deleteMany({
+      where: {
+        role_id,
+      },
+    });
+  } catch (error) {
+    console.error({ message: error });
+  }
+};
+
 const deleteFormById = async (id) => {
   try {
     return prisma.form.delete({
@@ -35,46 +88,51 @@ const deleteFormById = async (id) => {
       },
     });
   } catch (error) {
-    console.error({ message: error });
+    return error({ message: error });
   }
 };
 const getAllform = async () => {
   try {
     return prisma.form.findMany({
-     include:{
-      questions:true,
-     }
+      include: {
+        questions: true,
+        roleFormVision: {
+          select: {
+            role_form_id: true,
+            form_id: true,
+            visionRole: true,
+            level: true,
+          },
+        },
+      },
     });
   } catch (error) {
     console.error({ message: error });
   }
 };
 
-const createRoleFormVision = async(form_id,role_id,level) =>{
+const createRoleFormVision = async (payload) => {
   try {
-    return prisma.roleFormVision.create({
-      data:{
-        form_id,
-        role_id,
-        level
-      }
-    })
-    
-  } catch (error) {
-    console.error({ message: error });
-  }
-}
-const findVisionFormLevel = async(form_id,role_id)=>{
-  try {
-    return prisma.roleFormVision.findUnique({
-      where:{
-        form_id,role_id
-      }
+    return prisma.roleFormVision.createMany({
+      data: payload,
     });
   } catch (error) {
     console.error({ message: error });
   }
-}
+};
+
+const findVisionFormLevel = async (form_id, role_id) => {
+  try {
+    return prisma.roleFormVision.findUnique({
+      where: {
+        form_id,
+        role_id,
+      },
+    });
+  } catch (error) {
+    console.error({ message: error });
+  }
+};
 
 module.exports = {
   createForm,
@@ -82,5 +140,9 @@ module.exports = {
   updateFormById,
   deleteFormById,
   createRoleFormVision,
-  findVisionFormLevel
+  findVisionFormLevel,
+  createVisionForm,
+  deleteVisionAllOfForm,
+  deleteVisionByFormId,
+  deleteVisionByRoleId
 };

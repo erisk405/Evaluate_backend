@@ -1,7 +1,7 @@
 const Role = require("../models/roleModel");
 const User = require("../models/userModel");
 const permission = require("../models/permissionModel");
-
+const form = require("../models/formModel");
 const createRole = async (req, res) => {
   try {
     const {roleName,description,roleLevel} = req.body;
@@ -57,6 +57,10 @@ const deleteRole = async (req,res) => {
       const deletePermission = await permission.deletePermission(id);
       // console.log("deletePermission",deletePermission);
       
+    }
+    const deleteVision = await form.deleteVisionByRoleId(id)
+    if (!deleteVision) {
+      return res.status(404).json({ message: "cannot delete formVision" });
     }
     const responsed = await Role.deleteRole(id)
     if (!responsed) {

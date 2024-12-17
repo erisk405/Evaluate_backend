@@ -72,7 +72,7 @@ router.put("/usersToDepartment",middleware.verifyToken,middleware.verifyAdmin,us
 
 //--------------form----------------------
 router.post("/form",middleware.verifyToken,middleware.verifyAdmin,formController.createForm)
-router.post("/roleFormVision",middleware.verifyToken,middleware.verifyAdmin,formController.createRoleFormVision)
+router.put("/roleFormVision",middleware.verifyToken,middleware.verifyAdmin,formController.updateVisionOfForm)
 router.get("/form",formController.getAllform)
 router.put('/form',middleware.verifyToken,middleware.verifyAdmin,formController.updateForm);
 router.delete("/form",middleware.verifyToken,middleware.verifyAdmin,formController.deleteForm)

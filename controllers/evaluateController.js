@@ -492,10 +492,16 @@ const getResultEvaluateDetail = async (req, res) => {
           userDetail.role.id
         );
         const visionLevel = visionForm?.level;
-        if(!visionLevel){
-          return res.status(400).json({message:"Not set yet visionFormLevel : for "+userDetail.role.role_name});
+        if (!visionLevel || visionLevel === "UNSET") {
+          return res
+            .status(400)
+            .json({
+              message:
+                "Not set yet visionFormLevel : for " +
+                userDetail.role.role_name,
+            });
         }
-        
+
         const questions = await Promise.all(
           formData.questions.map(async (question) => {
             const score = [];
@@ -571,8 +577,7 @@ const getResultEvaluateDetail = async (req, res) => {
               const scores = scoreForExecutive.map((item) => item.score);
               if (scoreForExecutive.length > 0) {
                 scorePerQuestions.push(scores);
-                const { mean, standardDeviation } =
-                  calculateStatistics(scores);
+                const { mean, standardDeviation } = calculateStatistics(scores);
                 total.push({
                   type: "Executive",
                   scores: scores,
@@ -625,7 +630,7 @@ const getResultEvaluateDetail = async (req, res) => {
 
         const { mean, standardDeviation } =
           calculateStatistics(flateScorePerForm);
-        if(visionLevel === "VISION_1"){
+        if (visionLevel === "VISION_1") {
           return {
             formId: formData.id,
             formName: formData.name,
@@ -633,11 +638,11 @@ const getResultEvaluateDetail = async (req, res) => {
             totalSDPerForm: standardDeviation,
             questions: questions,
           };
-        }else{
+        } else {
           return {
             formId: formData.id,
             formName: formData.name,
-            total:results,
+            total: results,
             totalAvgPerForm: mean,
             totalSDPerForm: standardDeviation,
             questions: questions,
