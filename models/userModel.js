@@ -376,6 +376,7 @@ const findPermissionByUserId = async (userId,period_id) => {
           },
           
         },
+        image:true,
         evaluationsReceived: {
           // Get the users that the current user has evaluated\
           where:{

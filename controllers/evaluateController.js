@@ -354,8 +354,6 @@ const getEvaluatePerDepart = async (req, res) => {
             const users = await user.findPermissionByUserId(userId, period_id);
             // console.log(users);
 
-            // const allUserPermiss = users.map((user) => user.)
-
             const totalCount = users.role.permissionsAsAssessor.reduce(
               (total, item) => {
                 return total + item.evaluatorRole._count.user;
@@ -374,6 +372,11 @@ const getEvaluatePerDepart = async (req, res) => {
               unfinishUsers.push({
                 id: users.id,
                 name: users.prefix.prefix_name + users.name,
+                image:users.image,
+                role:{
+                  id:users.role.id,
+                  role_name:users.role.role_name
+                }
               });
             }
             const userData = {
