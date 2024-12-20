@@ -110,7 +110,9 @@ router.get("/countUserEvaluated/:period_id",middleware.verifyToken,evaluateContr
 router.get("/resultEvaluate/:period_id",middleware.verifyToken,evaluateController.getResultEvaluate); // Result evaluate for User Oveview
 router.get("/resultEvaluateDetail/:period_id",middleware.verifyToken,evaluateController.getResultEvaluateDetail); // Results of each item evaluation for User
 router.get("/allResultEvaluateOverview/:period_id",middleware.verifyToken,evaluateController.getAllResultEvaluateOverview); //Result evaluate Overview
-router.get("/findEvaluateScore/:period_id",middleware.verifyToken,evaluateController.findEvaluateScore); //find score user evaluate
+
+router.put("/evaluate",middleware.verifyToken,evaluateController.upDateEvaluate);
+router.delete("/evaluate/:evaluate_id",middleware.verifyToken,middleware.verifyAdmin,evaluateController.deleteEvaluate);
 //-------------evaluate For User------------------------------->>>
 
 module.exports = router

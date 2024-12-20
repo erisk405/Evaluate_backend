@@ -106,9 +106,43 @@ const getScoreByQuestionForDepartment = async (
   }
 };
 
+const updateDetailEval = async (details,tx) =>{
+  try {
+    const updates = details.map((detail) =>
+      tx.evaluateDetail.updateMany({
+        where: {
+          id: detail.id,
+        },
+        data: {
+          score: detail.score,
+        },
+      })
+    );
+    return await Promise.all(updates);
+  } catch (error) {
+    console.error("Error in updateDetailEval:", error);
+    throw error;
+  }
+}
+const deleteDetailEvalByEvaluteId = async (evaluate_id) =>{
+  try {
+    return prisma.evaluateDetail.deleteMany({
+      where:{
+        evaluate_id
+      }
+    });
+    
+  } catch (error) {
+    console.error("Error in updateDetailEval:", error);
+    throw error;
+  }
+}
+
 module.exports = {
   createDetailEval,
   getScoreByQuestion,
   getScoreByQuestionForExecutive,
   getScoreByQuestionForDepartment,
+  updateDetailEval,
+  deleteDetailEvalByEvaluteId
 };

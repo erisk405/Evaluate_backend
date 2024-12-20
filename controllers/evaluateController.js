@@ -66,8 +66,8 @@ const findEvaluateUserContr = async (req, res) => {
     const period_id = req.params.period_id;
     // --- หาว่าประเมินใครไปแล้วบ้าง -----
     const founded = await evaluate.findUserEvaluate(assessor_id, period_id);
-    if(!founded || founded.length == 0){
-      return res.status(404).json({message:"Not found evaluate"})
+    if (!founded || founded.length == 0) {
+      return res.status(404).json({ message: "Not found evaluate" });
     }
     return res.status(200).json(founded);
   } catch (error) {
@@ -122,7 +122,6 @@ const findAllEluatedUserContr = async (req, res) => {
               `Error fetching department ${department.department_name}:`,
               error
             );
-            
           }
         })
       );
@@ -372,11 +371,11 @@ const getEvaluatePerDepart = async (req, res) => {
               unfinishUsers.push({
                 id: users.id,
                 name: users.prefix.prefix_name + users.name,
-                image:users.image,
-                role:{
-                  id:users.role.id,
-                  role_name:users.role.role_name
-                }
+                image: users.image,
+                role: {
+                  id: users.role.id,
+                  role_name: users.role.role_name,
+                },
               });
             }
             const userData = {
@@ -500,13 +499,10 @@ const getResultEvaluateDetail = async (req, res) => {
         );
         const visionLevel = visionForm?.level;
         if (!visionLevel || visionLevel === "UNSET") {
-          return res
-            .status(400)
-            .json({
-              message:
-                "Not set yet visionFormLevel : for " +
-                userDetail.role.role_name,
-            });
+          return res.status(400).json({
+            message:
+              "Not set yet visionFormLevel : for " + userDetail.role.role_name,
+          });
         }
 
         const questions = await Promise.all(
@@ -710,13 +706,10 @@ const getResultEvaluateDetailByUserId = async (req, res) => {
         );
         const visionLevel = visionForm?.level;
         if (!visionLevel || visionLevel === "UNSET") {
-          return res
-            .status(400)
-            .json({
-              message:
-                "Not set yet visionFormLevel : for " +
-                userDetail.role.role_name,
-            });
+          return res.status(400).json({
+            message:
+              "Not set yet visionFormLevel : for " + userDetail.role.role_name,
+          });
         }
 
         const questions = await Promise.all(
@@ -920,8 +913,8 @@ const getAllResultEvaluateOverview = async (req, res) => {
   try {
     const userId = req.userId;
     const userDetail = await user.findUserById(userId);
-    if(!userDetail){
-      return res.status(404).json({message:"not found detail"})
+    if (!userDetail) {
+      return res.status(404).json({ message: "not found detail" });
     }
     const period_id = req.params.period_id;
     const allUsers = await user.getAllUsers();
@@ -993,16 +986,41 @@ const getAllResultEvaluateOverview = async (req, res) => {
   }
 };
 
-const findEvaluateScore = async (req,res)=>{
+const upDateEvaluate = async (req, res) => {
   try {
-    const userId = req.userId; 
-    const period_id = req.params.period_id
-    const evaluated = await evaluate.findUserEvaluate(userId,period_id);
-    if(!evaluated || evaluated.length ==0){
-      return res.status(404).json({message:"not found evalute score"})
-    }
-    // console.log(evaluated);
-    return res.status(200).json(evaluated);
+    const evalData = req.body;
+    const evaluate_id = evalData.evaluate_id;
+    const details = evalData.details;
+    // console.log(evalData);
+    const result = await prisma.$transaction(async (tx) => {
+      const updateDetail = await evaluateDetail.updateDetailEval(details,tx);
+      if (!updateDetail) {
+        throw new error("Failed update evaluate score");
+      }
+      const updateDateEval = await evaluate.upDateDateEval(evaluate_id,tx);
+      if (!updateDateEval) {
+        throw new error("Failed update evaluate date");
+      }
+      return {updateDetail,updateDetail}
+    });
+
+    return res.status(200).json({message:"update successfully",result});
+  } catch (error) {
+    console.log(error);
+
+    return res.status(500).json({
+      message: "เกิดข้อผิดพลาดภายในระบบ",
+      error: error.message,
+    });
+  }
+};
+const deleteEvaluate = async (req,res) =>{
+  try {
+    const evaluate_id = req.params.evaluate_id;
+
+    const deleteEvaluateScore = await evaluateDetail.deleteDetailEvalByEvaluteId(evaluate_id);
+    res.status(200).json(evaluate_id)
+    
     
   } catch (error) {
     console.log(error);
@@ -1010,11 +1028,8 @@ const findEvaluateScore = async (req,res)=>{
       message: "เกิดข้อผิดพลาดภายในระบบ",
       error: error.message,
     });
-    
   }
 }
-
-
 
 module.exports = {
   createEvaluate,
@@ -1027,5 +1042,6 @@ module.exports = {
   calculateScoreByMean,
   getResultEvaluateDetail,
   getResultEvaluateDetailByUserId,
-  findEvaluateScore
+  upDateEvaluate,
+  deleteEvaluate
 };

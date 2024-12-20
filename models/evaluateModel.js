@@ -1,4 +1,5 @@
 const { PrismaClient } = require("@prisma/client");
+const { prototype } = require("nodemailer/lib/dkim");
 const prisma = new PrismaClient();
 
 const createEvaluate = async (evaluate, tx) => {
@@ -190,6 +191,23 @@ const findResultEvaluate = async (evaluator_id, period_id) => {
   }
 };
 
+const upDateDateEval = async(evaluate_id,tx)=>{
+  try {
+    return tx.evaluate.update({
+      where:{
+        id:evaluate_id
+      },
+      data:{
+        date: new Date(),
+      }
+    })
+    
+  } catch (error) {
+    console.error("Error in createEvaluate:", error);
+    throw error;
+  }
+}
+
 module.exports = {
   createEvaluate,
   deleteEvaluate,
@@ -197,4 +215,5 @@ module.exports = {
   getResultEvaluateById,
   findUserEvaluateForDepartment,
   findResultEvaluate,
+  upDateDateEval
 };
