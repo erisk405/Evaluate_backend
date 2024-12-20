@@ -993,18 +993,18 @@ const upDateEvaluate = async (req, res) => {
     const details = evalData.details;
     // console.log(evalData);
     const result = await prisma.$transaction(async (tx) => {
-      const updateDetail = await evaluateDetail.updateDetailEval(details,tx);
+      const updateDetail = await evaluateDetail.updateDetailEval(details, tx);
       if (!updateDetail) {
         throw new error("Failed update evaluate score");
       }
-      const updateDateEval = await evaluate.upDateDateEval(evaluate_id,tx);
+      const updateDateEval = await evaluate.upDateDateEval(evaluate_id, tx);
       if (!updateDateEval) {
         throw new error("Failed update evaluate date");
       }
-      return {updateDetail,updateDetail}
+      return { updateDetail, updateDetail };
     });
 
-    return res.status(200).json({message:"update successfully",result});
+    return res.status(200).json({ message: "update successfully", result });
   } catch (error) {
     console.log(error);
 
@@ -1014,14 +1014,22 @@ const upDateEvaluate = async (req, res) => {
     });
   }
 };
-const deleteEvaluate = async (req,res) =>{
+const deleteEvaluate = async (req, res) => {
   try {
     const evaluate_id = req.params.evaluate_id;
+    const allDelete = await prisma.$transaction(async (tx) => {
+      const deleteEvaluateScore = await evaluateDetail.deleteDetailEvalByEvaluteId(evaluate_id, tx);
+      if (!deleteEvaluateScore) {
+        throw new error("cannot delete evaluate score");
+      }
+      const deleted = await evaluate.deleteEvaluate(evaluate_id, tx);
+      if (!deleted) {
+        throw new error("cannot delete evaluate");
+      }
+      return { deleteEvaluateScore, deleted };
+    });
 
-    const deleteEvaluateScore = await evaluateDetail.deleteDetailEvalByEvaluteId(evaluate_id);
-    res.status(200).json(evaluate_id)
-    
-    
+    return res.status(200).json(allDelete);
   } catch (error) {
     console.log(error);
     return res.status(500).json({
@@ -1029,7 +1037,7 @@ const deleteEvaluate = async (req,res) =>{
       error: error.message,
     });
   }
-}
+};
 
 module.exports = {
   createEvaluate,
@@ -1043,5 +1051,5 @@ module.exports = {
   getResultEvaluateDetail,
   getResultEvaluateDetailByUserId,
   upDateEvaluate,
-  deleteEvaluate
+  deleteEvaluate,
 };

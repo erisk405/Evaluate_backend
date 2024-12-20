@@ -19,11 +19,11 @@ const createEvaluate = async (evaluate, tx) => {
   }
 };
 
-const deleteEvaluate = async (evaluate_id) => {
+const deleteEvaluate = async (evaluate_id,tx) => {
   try {
-    return prisma.evaluate.delete({
+    return tx.evaluate.delete({
       where: {
-        evaluate_id,
+        id:evaluate_id,
       },
     });
   } catch (error) {

@@ -124,9 +124,9 @@ const updateDetailEval = async (details,tx) =>{
     throw error;
   }
 }
-const deleteDetailEvalByEvaluteId = async (evaluate_id) =>{
+const deleteDetailEvalByEvaluteId = async (evaluate_id,tx) =>{
   try {
-    return prisma.evaluateDetail.deleteMany({
+    return tx.evaluateDetail.deleteMany({
       where:{
         evaluate_id
       }
