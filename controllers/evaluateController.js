@@ -6,7 +6,9 @@ const form = require("../models/formModel");
 const user = require("../models/userModel");
 const permission = require("../models/permissionModel");
 const period = require("../models/periodModel");
+const history = require("../models/historyModel");
 const { PrismaClient } = require("@prisma/client");
+const { errorMonitor } = require("nodemailer/lib/xoauth2");
 const prisma = new PrismaClient();
 
 const createEvaluate = async (req, res) => {
@@ -461,6 +463,203 @@ const getScoreForDepartment = async (
     sd: standardDeviation,
     scores: scores,
   };
+};
+
+const findResultEvaluateDetailByUserId = async (userId, periodId) => {
+  try {
+    const evaluateData = await evaluate.findResultEvaluate(userId, periodId);
+    const forms = await form.getAllform();
+    const userDetail = await user.findUserById(userId);
+    const superviseDepart = userDetail.supervise?.map(
+      (supervise) => supervise.department_id
+    );
+
+    const historyData = {
+      evaluatorName: userDetail.prefix.prefix_name + userDetail.name,
+      user_id: userId,
+      period_id: periodId,
+      role_name: userDetail.role.role_name,
+      department_name: userDetail.department.department_name,
+      total_SD: 3,
+      total_mean: 0,
+    };
+
+    if (!evaluateData) {
+      throw new Error("not found evaluate for this evaluator");
+    }
+    const allScores = [];
+    const formResults = await Promise.all(
+      forms.map(async (formData) => {
+        const scorePerForm = [];
+        const total = [];
+        const visionForm = await form.findVisionFormLevel(
+          formData.id,
+          userDetail.role.id
+        );
+        const visionLevel = visionForm?.level;
+        if (!visionLevel || visionLevel === "UNSET") {
+          throw new Error(
+            "Not set yet visionFormLevel : for " + userDetail.role.role_name
+          );
+        }
+
+        const questions = await Promise.all(
+          formData.questions.map(async (question) => {
+            const score = [];
+            const scorePerQuestions = [];
+            if (visionLevel === "VISION_1") {
+              const scoreDetail = await evaluateDetail.getScoreByQuestion(
+                userId,
+                question.id,
+                periodId
+              );
+              const scores = scoreDetail.map((item) => item.score);
+              scorePerQuestions.push(scores);
+              const flattenedScores = scorePerQuestions.flat();
+              scorePerForm.push(flattenedScores);
+              const { mean, standardDeviation } = calculateStatistics(scores);
+              return {
+                level: visionLevel,
+                questionId: question.id,
+                questionName: question.content,
+                sumScore: {
+                  average: mean,
+                  standardDeviation: standardDeviation,
+                },
+              };
+            } else if (visionLevel === "VISION_2") {
+              if (userDetail.role.role_level === "LEVEL_3") {
+                if (superviseDepart) {
+                  for (const depart_id of superviseDepart) {
+                    const scoreDepart = await getScoreForDepartment(
+                      userId,
+                      question.id,
+                      periodId,
+                      depart_id
+                    );
+                    scorePerQuestions.push(scoreDepart.scores);
+                    total.push({
+                      type: scoreDepart.type,
+                      scores: scoreDepart.scores,
+                    });
+                    score.push({
+                      type: scoreDepart.type,
+                      average: scoreDepart.average,
+                      sd: scoreDepart.sd,
+                    });
+                  }
+                }
+              } else if (userDetail.role.role_level === "LEVEL_2") {
+                const scoreDepart = await getScoreForDepartment(
+                  userId,
+                  question.id,
+                  periodId,
+                  userDetail.department?.id
+                );
+                scorePerQuestions.push(scoreDepart.scores);
+                total.push({
+                  type: scoreDepart.type,
+                  scores: scoreDepart.scores,
+                });
+                score.push({
+                  type: scoreDepart.type,
+                  average: scoreDepart.average,
+                  sd: scoreDepart.sd,
+                });
+              }
+
+              //---------get result for Executive----------------
+              const scoreForExecutive =
+                await evaluateDetail.getScoreByQuestionForExecutive(
+                  userId,
+                  question.id,
+                  periodId
+                );
+              const scores = scoreForExecutive.map((item) => item.score);
+              if (scoreForExecutive.length > 0) {
+                scorePerQuestions.push(scores);
+                const { mean, standardDeviation } = calculateStatistics(scores);
+                total.push({
+                  type: "Executive",
+                  scores: scores,
+                });
+                score.push({
+                  type: "Executive",
+                  average: mean,
+                  sd: standardDeviation,
+                });
+              }
+              //---------get result for Executive----------------
+
+              const flattenedScores = scorePerQuestions.flat();
+              scorePerForm.push(flattenedScores);
+
+              const { mean, standardDeviation } =
+                calculateStatistics(flattenedScores);
+              return {
+                level: visionLevel,
+                questionId: question.id,
+                questionName: question.content,
+                scores: score,
+                sumScore: {
+                  average: mean,
+                  standardDeviation: standardDeviation,
+                },
+              };
+            }
+          })
+        );
+        // กลุ่มข้อมูลตาม type
+        const groupedData = total.reduce((acc, item) => {
+          if (!acc[item.type]) acc[item.type] = [];
+          acc[item.type].push(...item.scores); // รวมคะแนนในอาร์เรย์เดียว
+          return acc;
+        }, {});
+        // console.log(groupedData);
+
+        const results = Object.keys(groupedData).map((type) => {
+          const scores = groupedData[type];
+          const { mean, standardDeviation } = calculateStatistics(scores);
+          return {
+            total: type,
+            average: mean,
+            sd: standardDeviation,
+          };
+        });
+        const flateScorePerForm = scorePerForm.flat();
+        allScores.push(flateScorePerForm);
+
+        const { mean, standardDeviation } =
+          calculateStatistics(flateScorePerForm);
+        if (visionLevel === "VISION_1") {
+          return {
+            formId: formData.id,
+            formName: formData.name,
+            totalAvgPerForm: mean,
+            totalSDPerForm: standardDeviation,
+            questions: questions,
+          };
+        } else {
+          return {
+            formId: formData.id,
+            formName: formData.name,
+            total: results,
+            totalAvgPerForm: mean,
+            totalSDPerForm: standardDeviation,
+            questions: questions,
+          };
+        }
+      })
+    );
+    const flateScoreAll = allScores.flat();
+    const { mean, standardDeviation } = calculateStatistics(flateScoreAll);
+    historyData.total_mean = mean;
+    historyData.total_SD = standardDeviation;
+
+    return { historyData, formResults };
+  } catch (error) {
+    console.log(error);
+  }
 };
 
 const getResultEvaluateDetail = async (req, res) => {
@@ -1018,7 +1217,8 @@ const deleteEvaluate = async (req, res) => {
   try {
     const evaluate_id = req.params.evaluate_id;
     const allDelete = await prisma.$transaction(async (tx) => {
-      const deleteEvaluateScore = await evaluateDetail.deleteDetailEvalByEvaluteId(evaluate_id, tx);
+      const deleteEvaluateScore =
+        await evaluateDetail.deleteDetailEvalByEvaluteId(evaluate_id, tx);
       if (!deleteEvaluateScore) {
         throw new error("cannot delete evaluate score");
       }
@@ -1039,6 +1239,270 @@ const deleteEvaluate = async (req, res) => {
   }
 };
 
+// const saveToHistory = async (req, res) => {
+//   try {
+//     const userId = "aa2abf8b-ac3c-4b6d-972e-2fa89564bcb0"; //kedkarn
+//     const { period_id } = req.body;
+//     const allUsers = await user.getAllUsers();
+//     const filterUserId = allUsers
+//       .filter(
+//         (user) =>
+//           user.role?.role_name !== "admin" && user.role?.role_name !== "member"
+//       )
+//       .map((user) => user.id);
+
+//     // ผลการประเมิน
+//     const result = await findResultEvaluateDetailByUserId(userId, period_id);
+
+//     const resultCreate = await prisma.$transaction(async (tx) => {
+
+//       const createHistory = await history.createHistory(result.historyData, tx);
+//       if (!createHistory) {
+//         throw new error("failed to create history");
+//       }
+
+
+
+//       const historyCreateAll = await Promise.all(
+//         result.formResults.map(async (form) => {
+//           const formScore = [];
+//           const historyDetailData = {
+//             history_id: createHistory.history_id, //ดึง id จาก history
+//             questionHead: form.formName,
+//             level: form.questions[0].level,
+//           };
+//           const createHistoryDetail = await history.createHistoryDetail(
+//             historyDetailData,
+//             tx
+//           );
+//           if (!createHistoryDetail) {
+//             throw new error("failed to create historyDetail");
+//           }
+
+//           if (form?.total) {
+//             form?.total.map((item) => {
+//               formScore.push({
+//                 history_detail_id: createHistoryDetail.id,
+//                 type_name: item.total,
+//                 total_SD_per_type: item.sd,
+//                 total_mean_per_type: item.average,
+//               });
+//             });
+//             formScore.push({
+//               history_detail_id: createHistoryDetail.id,
+//               type_name: "sumScore",
+//               total_SD_per_type: form.totalSDPerForm,
+//               total_mean_per_type: form.totalAvgPerForm,
+//             });
+//           }else{
+//             formScore.push({
+//               history_detail_id: createHistoryDetail.id,
+//               type_name: "sumScore",
+//               total_SD_per_type: form.totalSDPerForm,
+//               total_mean_per_type: form.totalAvgPerForm,
+//             });
+//           }
+
+//           const createFormScore = await history.createHistoryFormScore(formScore,tx);
+//              if(!createFormScore){
+//               throw new error("failed to create FormScore");
+//             }
+
+//             let questionScoreData = form.questions.map((question) => {
+//               if (question?.scores) {
+//                 const scores = [];
+//                 question?.scores.map((score) => {
+//                   scores.push({
+//                     history_detail_id:createHistoryDetail.id,
+//                     question: question.questionName,
+//                     type_name: score.type,
+//                     SD: score.sd,
+//                     mean: score.average,
+//                   });
+//                 });
+//                 scores.push({
+//                   history_detail_id:createHistoryDetail.id,
+//                   question: question.questionName,
+//                   type_name: "sumScore",
+//                   SD: question.sumScore.standardDeviation,
+//                   mean: question.sumScore.average,
+//                 });
+//                 return scores;
+//               } else {
+//                 return {
+//                   history_detail_id:createHistoryDetail.id,
+//                   question: question.questionName,
+//                   type_name: "sumScore",
+//                   SD: question.sumScore.standardDeviation,
+//                   mean: question.sumScore.average,
+//                 };
+//               }
+//             });
+
+//             if (form?.total) {
+//               questionScoreData = questionScoreData.flat();
+//             }
+
+//             const createQuestionScore = await history.createHistoryQuestionScore(questionScoreData,tx);
+//             if(!createQuestionScore){
+//               throw new error("failed to create QuestionScore");
+//             }
+//           return { createHistoryDetail,createFormScore,createQuestionScore};
+//         })
+//       );
+//       return { createHistory, historyCreateAll };
+//     });
+
+//     return res.status(200).json({ resultCreate });
+//   } catch (error) {
+//     console.log(error);
+//     return res.status(500).json({
+//       message: "เกิดข้อผิดพลาดภายในระบบ",
+//       error: error.message,
+//     });
+//   }
+// };
+const saveToHistory = async (req, res) => {
+  try {
+    const { period_id } = req.body;
+
+    // ดึงข้อมูลผู้ใช้ทั้งหมด
+    const allUsers = await user.getAllUsers();
+
+    // คัดกรองเฉพาะผู้ใช้ที่ไม่ใช่ admin และ member
+    const filterUserIds = allUsers
+      .filter(
+        (user) =>
+          user.role?.role_name !== "admin" && user.role?.role_name !== "member"
+      )
+      .map((user) => user.id);
+
+    // สร้าง history และ detail สำหรับผู้ใช้แต่ละคน
+    const resultsCreate = await Promise.all(
+      filterUserIds.map(async (userId) => {
+        const result = await findResultEvaluateDetailByUserId(userId, period_id);
+        if(result){
+          return await prisma.$transaction(async (tx) => {
+            // สร้าง history
+            const createHistory = await history.createHistory(result.historyData, tx);
+            if (!createHistory) {
+              throw new Error("Failed to create history");
+            }
+  
+            // วนลูปสร้าง history detail, form score, และ question score
+            const historyCreateAll = await Promise.all(
+              result.formResults.map(async (form) => {
+                const formScore = [];
+                const historyDetailData = {
+                  history_id: createHistory.history_id, // ใช้ id จาก history ที่สร้าง
+                  questionHead: form.formName,
+                  level: form.questions[0].level,
+                };
+  
+                const createHistoryDetail = await history.createHistoryDetail(
+                  historyDetailData,
+                  tx
+                );
+                if (!createHistoryDetail) {
+                  throw new Error("Failed to create historyDetail");
+                }
+  
+                // สร้าง form score
+                if (form?.total) {
+                  form?.total.map((item) => {
+                    formScore.push({
+                      history_detail_id: createHistoryDetail.id,
+                      type_name: item.total,
+                      total_SD_per_type: item.sd,
+                      total_mean_per_type: item.average,
+                    });
+                  });
+                  formScore.push({
+                    history_detail_id: createHistoryDetail.id,
+                    type_name: "sumScore",
+                    total_SD_per_type: form.totalSDPerForm,
+                    total_mean_per_type: form.totalAvgPerForm,
+                  });
+                } else {
+                  formScore.push({
+                    history_detail_id: createHistoryDetail.id,
+                    type_name: "sumScore",
+                    total_SD_per_type: form.totalSDPerForm,
+                    total_mean_per_type: form.totalAvgPerForm,
+                  });
+                }
+  
+                const createFormScore = await history.createHistoryFormScore(formScore, tx);
+                if (!createFormScore) {
+                  throw new Error("Failed to create FormScore");
+                }
+  
+                // สร้าง question score
+                let questionScoreData = form.questions.map((question) => {
+                  if (question?.scores) {
+                    const scores = [];
+                    question?.scores.map((score) => {
+                      scores.push({
+                        history_detail_id: createHistoryDetail.id,
+                        question: question.questionName,
+                        type_name: score.type,
+                        SD: score.sd,
+                        mean: score.average,
+                      });
+                    });
+                    scores.push({
+                      history_detail_id: createHistoryDetail.id,
+                      question: question.questionName,
+                      type_name: "sumScore",
+                      SD: question.sumScore.standardDeviation,
+                      mean: question.sumScore.average,
+                    });
+                    return scores;
+                  } else {
+                    return {
+                      history_detail_id: createHistoryDetail.id,
+                      question: question.questionName,
+                      type_name: "sumScore",
+                      SD: question.sumScore.standardDeviation,
+                      mean: question.sumScore.average,
+                    };
+                  }
+                });
+  
+                if (form?.total) {
+                  questionScoreData = questionScoreData.flat();
+                }
+  
+                const createQuestionScore = await history.createHistoryQuestionScore(
+                  questionScoreData,
+                  tx
+                );
+                if (!createQuestionScore) {
+                  throw new Error("Failed to create QuestionScore");
+                }
+  
+                return { createHistoryDetail, createFormScore, createQuestionScore };
+              })
+            );
+  
+            return { createHistory, historyCreateAll };
+          });
+        }
+        
+      })
+    );
+
+    return res.status(200).json({ resultsCreate });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      message: "เกิดข้อผิดพลาดภายในระบบ",
+      error: error.message,
+    });
+  }
+};
+
+
 module.exports = {
   createEvaluate,
   findEvaluateUserContr,
@@ -1052,4 +1516,5 @@ module.exports = {
   getResultEvaluateDetailByUserId,
   upDateEvaluate,
   deleteEvaluate,
+  saveToHistory,
 };

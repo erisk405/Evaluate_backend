@@ -1,5 +1,4 @@
 const { PrismaClient } = require("@prisma/client");
-const { prototype } = require("nodemailer/lib/dkim");
 const prisma = new PrismaClient();
 
 const createEvaluate = async (evaluate, tx) => {
@@ -19,11 +18,11 @@ const createEvaluate = async (evaluate, tx) => {
   }
 };
 
-const deleteEvaluate = async (evaluate_id,tx) => {
+const deleteEvaluate = async (evaluate_id, tx) => {
   try {
     return tx.evaluate.delete({
       where: {
-        id:evaluate_id,
+        id: evaluate_id,
       },
     });
   } catch (error) {
@@ -52,14 +51,13 @@ const findUserEvaluate = async (assessor_id, period_id) => {
             name: true,
           },
         },
-        evaluateDetail:{
-          select:{
-            id:true,
-            formQuestion:true,
-            score:true,
-          }
-
-        }
+        evaluateDetail: {
+          select: {
+            id: true,
+            formQuestion: true,
+            score: true,
+          },
+        },
       },
     });
   } catch (error) {
@@ -191,22 +189,34 @@ const findResultEvaluate = async (evaluator_id, period_id) => {
   }
 };
 
-const upDateDateEval = async(evaluate_id,tx)=>{
+const upDateDateEval = async (evaluate_id, tx) => {
   try {
     return tx.evaluate.update({
-      where:{
-        id:evaluate_id
+      where: {
+        id: evaluate_id,
       },
-      data:{
+      data: {
         date: new Date(),
-      }
-    })
-    
+      },
+    });
   } catch (error) {
     console.error("Error in createEvaluate:", error);
     throw error;
   }
-}
+};
+
+const findEvaluateByPeriod = async (period_id) => {
+  try {
+    return prisma.evaluate.findMany({
+      where:{
+        period_id
+      }
+    });
+  } catch (error) {
+    console.error("Error failed to find evaluate for this period:", error);
+    throw error;
+  }
+};
 
 module.exports = {
   createEvaluate,
@@ -215,5 +225,6 @@ module.exports = {
   getResultEvaluateById,
   findUserEvaluateForDepartment,
   findResultEvaluate,
-  upDateDateEval
+  upDateDateEval,
+  findEvaluateByPeriod,
 };

@@ -195,29 +195,44 @@ model History {
   period_id       String
   role_name       String
   department_name String
+  total_SD        Float
+  total_mean      Float
+
   user            User   @relation(fields: [user_id], references: [id])
   period          Period @relation(fields: [period_id], references: [period_id])
-
+  @@unique([period_id,user_id])
   history_detail HistoryDetail[]
 }
 
 model HistoryDetail {
-  history_detail_id String         @id @default(uuid())
+  id String         @id @default(uuid())
   history_id        String
   questionHead      String
-  question          String
+  level             VisionFormLevel
+
   history           History        @relation(fields: [history_id], references: [history_id])
-  history_score     HistoryScore[]
+  historyQuestionScore     HistoryQuestionScore[]
+  historyFormScore     HistoryFormScore[]
 }
 
-model HistoryScore {
-  history_score_id   String @id @default(uuid())
+model HistoryQuestionScore {
+  id   String @id @default(uuid())
+  history_detail_id  String
+  question           String
+  type_name          String
+  mean                Float
+  SD                  Float
+  history_detail HistoryDetail @relation(fields: [history_detail_id], references: [id])
+}
+
+model HistoryFormScore {
+  id   String @id @default(uuid())
   history_detail_id  String
   type_name          String
-  average            Float
-  standard_deviation Float
+  total_SD_per_type  Float
+  total_mean_per_type  Float
 
-  history_detail HistoryDetail @relation(fields: [history_detail_id], references: [history_detail_id])
+  history_detail HistoryDetail @relation(fields: [history_detail_id], references: [id])
 }
 
 enum RequestStatus {

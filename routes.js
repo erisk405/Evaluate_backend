@@ -100,7 +100,7 @@ router.delete("/period/:period_id",middleware.verifyToken,middleware.verifyAdmin
 
 router.get("/resultEvaluatePerDepart/:period_id",middleware.verifyToken,middleware.verifyAdmin,evaluateController.getEvaluatePerDepart);
 router.get("/resultEvaluateDetail/:periodId/:userId",middleware.verifyToken,middleware.verifyAdmin,evaluateController.getResultEvaluateDetailByUserId);
-
+router.post("/history",middleware.verifyToken,middleware.verifyAdmin,evaluateController.saveToHistory);
 //-------------evaluate for Admin ------------------------------->>>
 
 //-------------evaluate For User------------------------------->>>
