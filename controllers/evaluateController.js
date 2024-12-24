@@ -1261,8 +1261,6 @@ const deleteEvaluate = async (req, res) => {
 //         throw new error("failed to create history");
 //       }
 
-
-
 //       const historyCreateAll = await Promise.all(
 //         result.formResults.map(async (form) => {
 //           const formScore = [];
@@ -1380,15 +1378,21 @@ const saveToHistory = async (req, res) => {
     // สร้าง history และ detail สำหรับผู้ใช้แต่ละคน
     const resultsCreate = await Promise.all(
       filterUserIds.map(async (userId) => {
-        const result = await findResultEvaluateDetailByUserId(userId, period_id);
-        if(result){
+        const result = await findResultEvaluateDetailByUserId(
+          userId,
+          period_id
+        );
+        if (result) {
           return await prisma.$transaction(async (tx) => {
             // สร้าง history
-            const createHistory = await history.createHistory(result.historyData, tx);
+            const createHistory = await history.createHistory(
+              result.historyData,
+              tx
+            );
             if (!createHistory) {
               throw new Error("Failed to create history");
             }
-  
+
             // วนลูปสร้าง history detail, form score, และ question score
             const historyCreateAll = await Promise.all(
               result.formResults.map(async (form) => {
@@ -1398,7 +1402,7 @@ const saveToHistory = async (req, res) => {
                   questionHead: form.formName,
                   level: form.questions[0].level,
                 };
-  
+
                 const createHistoryDetail = await history.createHistoryDetail(
                   historyDetailData,
                   tx
@@ -1406,7 +1410,7 @@ const saveToHistory = async (req, res) => {
                 if (!createHistoryDetail) {
                   throw new Error("Failed to create historyDetail");
                 }
-  
+
                 // สร้าง form score
                 if (form?.total) {
                   form?.total.map((item) => {
@@ -1431,12 +1435,15 @@ const saveToHistory = async (req, res) => {
                     total_mean_per_type: form.totalAvgPerForm,
                   });
                 }
-  
-                const createFormScore = await history.createHistoryFormScore(formScore, tx);
+
+                const createFormScore = await history.createHistoryFormScore(
+                  formScore,
+                  tx
+                );
                 if (!createFormScore) {
                   throw new Error("Failed to create FormScore");
                 }
-  
+
                 // สร้าง question score
                 let questionScoreData = form.questions.map((question) => {
                   if (question?.scores) {
@@ -1468,27 +1475,31 @@ const saveToHistory = async (req, res) => {
                     };
                   }
                 });
-  
+
                 if (form?.total) {
                   questionScoreData = questionScoreData.flat();
                 }
-  
-                const createQuestionScore = await history.createHistoryQuestionScore(
-                  questionScoreData,
-                  tx
-                );
+
+                const createQuestionScore =
+                  await history.createHistoryQuestionScore(
+                    questionScoreData,
+                    tx
+                  );
                 if (!createQuestionScore) {
                   throw new Error("Failed to create QuestionScore");
                 }
-  
-                return { createHistoryDetail, createFormScore, createQuestionScore };
+
+                return {
+                  createHistoryDetail,
+                  createFormScore,
+                  createQuestionScore,
+                };
               })
             );
-  
+
             return { createHistory, historyCreateAll };
           });
         }
-        
       })
     );
 
@@ -1502,6 +1513,177 @@ const saveToHistory = async (req, res) => {
   }
 };
 
+const getResultEvaluateFormHistory = async (req, res) => {
+  try {
+    const userId = req.userId;
+    const periodId = req.params.periodId;
+    // console.log(userId, periodId);
+
+    const result = await history.findResultEvaluateFormHistoryByUserId(
+      periodId,
+      userId
+    );
+    if (!result || result.length == 0) {
+      return res
+        .status(404)
+        .json({ message: "not found result evaluate form this User" });
+    }
+    const headData = {
+      periodName:result.period.title,
+      userName:result.user.prefix.prefix_name+result.user.name,
+      roleName:result.role_name,
+      department:result.department_name,
+      total_mean:result.total_mean,
+      total_SD:result.total_SD
+    }
+    const formResults = result.history_detail.map((form) => {
+      const total = form.historyFormScore.filter((total) =>total.type_name !== "sumScore").map((total)=>{
+        return{
+          type: total.type_name,
+          average_per_type: total.total_mean_per_type,
+          sd_per_type: total.total_SD_per_type,
+        }
+      });
+      const sumTotal = form.historyFormScore.filter((total) =>total.type_name === "sumScore").map((total)=>{
+        return{
+          // type: total.type_name,
+          average_per_form: total.total_mean_per_type,
+          sd_per_form: total.total_SD_per_type,
+        }
+      });
+
+      let questions = form.historyQuestionScore.reduce((acc, item) => {
+        if (!acc[item.question]) {
+          acc[item.question] = {
+            id: item.id,
+            questionName: item.question,
+            scores: [],
+            sumScore:{
+              average:0,
+              sd:0,
+            }
+          };
+        }
+        if(item.type_name === "sumScore"){
+          acc[item.question].sumScore.average = item.mean;
+          acc[item.question].sumScore.sd = item.SD;
+        }else{
+          acc[item.question].scores.push({
+            type: item.type_name,
+            average: item.mean,
+            sd: item.SD,
+          });
+        }
+        return acc;
+      }, {});
+
+      questions = Object.values(questions); // แปลง ออบเจ็ก ไป อาเรย์ ผ่านคีย์
+
+      return {
+        detailId: form.id,
+        level: form.level,
+        formName: form.questionHead,
+        total: total,
+        sumTotal:sumTotal[0],
+        questions: questions,
+      };
+    });
+
+    return res.status(200).json({ headData,formResults });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      message: "Internal server error !!",
+      error: error.message,
+    });
+  }
+};
+
+const getResultEvaluateFormHistoryByUserId = async (req, res) => {
+  try {
+    const userId = req.params.userId;
+    const periodId = req.params.periodId;
+    // console.log(userId, periodId);
+
+    const result = await history.findResultEvaluateFormHistoryByUserId(
+      periodId,
+      userId
+    );
+    if (!result || result.length == 0) {
+      return res
+        .status(404)
+        .json({ message: "not found result evaluate form this User" });
+    }
+    const headData = {
+      periodName:result.period.title,
+      userName:result.user.prefix.prefix_name+result.user.name,
+      roleName:result.role_name,
+      department:result.department_name,
+      total_mean:result.total_mean,
+      total_SD:result.total_SD
+    }
+    const formResults = result.history_detail.map((form) => {
+      const total = form.historyFormScore.filter((total) =>total.type_name !== "sumScore").map((total)=>{
+        return{
+          type: total.type_name,
+          average_per_type: total.total_mean_per_type,
+          sd_per_type: total.total_SD_per_type,
+        }
+      });
+      const sumTotal = form.historyFormScore.filter((total) =>total.type_name === "sumScore").map((total)=>{
+        return{
+          // type: total.type_name,
+          average_per_form: total.total_mean_per_type,
+          sd_per_form: total.total_SD_per_type,
+        }
+      });
+
+      let questions = form.historyQuestionScore.reduce((acc, item) => {
+        if (!acc[item.question]) {
+          acc[item.question] = {
+            id: item.id,
+            questionName: item.question,
+            scores: [],
+            sumScore:{
+              average:0,
+              sd:0,
+            }
+          };
+        }
+        if(item.type_name === "sumScore"){
+          acc[item.question].sumScore.average = item.mean;
+          acc[item.question].sumScore.sd = item.SD;
+        }else{
+          acc[item.question].scores.push({
+            type: item.type_name,
+            average: item.mean,
+            sd: item.SD,
+          });
+        }
+        return acc;
+      }, {});
+
+      questions = Object.values(questions); // แปลง ออบเจ็ก ไป อาเรย์ ผ่านคีย์
+
+      return {
+        detailId: form.id,
+        level: form.level,
+        formName: form.questionHead,
+        total: total,
+        sumTotal:sumTotal[0],
+        questions: questions,
+      };
+    });
+
+    return res.status(200).json({ headData,formResults });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      message: "Internal server error !!",
+      error: error.message,
+    });
+  }
+};
 
 module.exports = {
   createEvaluate,
@@ -1517,4 +1699,6 @@ module.exports = {
   upDateEvaluate,
   deleteEvaluate,
   saveToHistory,
+  getResultEvaluateFormHistory,
+  getResultEvaluateFormHistoryByUserId
 };

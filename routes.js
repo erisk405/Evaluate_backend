@@ -100,7 +100,9 @@ router.delete("/period/:period_id",middleware.verifyToken,middleware.verifyAdmin
 
 router.get("/resultEvaluatePerDepart/:period_id",middleware.verifyToken,middleware.verifyAdmin,evaluateController.getEvaluatePerDepart);
 router.get("/resultEvaluateDetail/:periodId/:userId",middleware.verifyToken,middleware.verifyAdmin,evaluateController.getResultEvaluateDetailByUserId);
+router.get("/resultEvaluateFormHistory/:periodId/:userId",middleware.verifyToken,middleware.verifyAdmin,evaluateController.getResultEvaluateFormHistoryByUserId);
 router.post("/history",middleware.verifyToken,middleware.verifyAdmin,evaluateController.saveToHistory);
+
 //-------------evaluate for Admin ------------------------------->>>
 
 //-------------evaluate For User------------------------------->>>
@@ -110,6 +112,7 @@ router.get("/countUserEvaluated/:period_id",middleware.verifyToken,evaluateContr
 router.get("/resultEvaluate/:period_id",middleware.verifyToken,evaluateController.getResultEvaluate); // Result evaluate for User Oveview
 router.get("/resultEvaluateDetail/:period_id",middleware.verifyToken,evaluateController.getResultEvaluateDetail); // Results of each item evaluation for User
 router.get("/allResultEvaluateOverview/:period_id",middleware.verifyToken,evaluateController.getAllResultEvaluateOverview); //Result evaluate Overview
+router.get("/resultEvaluateFormHistory/:periodId",middleware.verifyToken,evaluateController.getResultEvaluateFormHistory);
 
 router.put("/evaluate",middleware.verifyToken,evaluateController.upDateEvaluate);
 router.delete("/evaluate/:evaluate_id",middleware.verifyToken,middleware.verifyAdmin,evaluateController.deleteEvaluate);
