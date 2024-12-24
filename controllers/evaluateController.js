@@ -1077,21 +1077,6 @@ const getResultEvaluateDetailByUserId = async (req, res) => {
   }
 };
 
-const findTotalResultEvaluateByUserId = async (userId, periodId) => {
-  try {
-    const score = await evaluate.getResultEvaluateById(userId, periodId);
-    const resultScore = score
-      .reduce((acc, item) => {
-        return acc.concat(item.evaluateDetail); // รวม evaluateDetail ของแต่ละ การประเมิน แล้ว map เอาแค่ score
-      }, [])
-      .map((item) => item.score);
-    const { mean, standardDeviation } = calculateStatistics(resultScore);
-    return { mean, standardDeviation };
-  } catch (error) {
-    console.log(error);
-  }
-};
-
 const calculateScoreByMean = (mean) => {
   let score = 0;
   if (mean >= 4.5) {
@@ -1147,10 +1132,13 @@ const getAllResultEvaluateOverview = async (req, res) => {
         );
       }
     }
-    console.log(userDetail.name);
-    console.log(role_level);
-    console.log("show :", filterUsers.length, " lists");
-
+    const headData = {
+      name:userDetail.prefix.prefix_name+userDetail.name,
+      roleLevel:role_level,
+      roleName:userDetail.role.role_name,
+      department:userDetail.department.department_name,
+      numberOFUser:filterUsers.length
+    }
     filterUsers = filterUsers.map((user) => ({
       id: user.id,
       name: user.prefix.prefix_name + user.name,
@@ -1163,18 +1151,19 @@ const getAllResultEvaluateOverview = async (req, res) => {
       const resultUser = await Promise.all(
         filterUsers.map(async (user) => {
           // ดึงผลเฉลี่ย และ ส่วนเบี่ยงเบน ภาพรวม ของแต่ละคน
-          const { mean, standardDeviation } =
-            await findTotalResultEvaluateByUserId(user.id, period_id);
+          const data = await history.getTotalMeanAndSDByUserId(period_id,user.id);
+          const total_mean = data ? data.total_mean : 0;
+          const total_SD = data ? data.total_SD : 0;
           return {
             user: user,
-            mean,
-            standardDeviation,
-            score: calculateScoreByMean(mean),
+            mean:total_mean,
+            standardDeviation:total_SD,
+            score: calculateScoreByMean(total_mean),
           };
         })
       );
 
-      return res.status(200).json(resultUser);
+      return res.status(200).json({headData,resultUser});
     }
   } catch (error) {
     console.log(error);

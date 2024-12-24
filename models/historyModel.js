@@ -108,10 +108,31 @@ const findResultEvaluateFormHistoryByUserId = async(period_id,user_id) =>{
     console.log(error);
   }
 }
+
+const getTotalMeanAndSDByUserId = async (period_id,user_id)=>{
+  try {
+    const find = prisma.history.findFirst({
+      where:{
+        period_id,
+        user_id
+      }
+      ,select:{
+        total_mean:true,
+        total_SD:true
+      }
+    })
+    
+    return find
+  } catch (error) {
+    console.log(error);
+    
+  }
+}
 module.exports = {
   createHistory,
   createHistoryDetail,
   createHistoryQuestionScore,
   createHistoryFormScore,
-  findResultEvaluateFormHistoryByUserId
+  findResultEvaluateFormHistoryByUserId,
+  getTotalMeanAndSDByUserId
 };
