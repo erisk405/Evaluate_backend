@@ -10,6 +10,7 @@ const permissionController = require("./controllers/permissionController");
 const periodController = require("./controllers/periodController");
 const evaluateController = require("./controllers/evaluateController");
 const superviseController = require("./controllers/superviseController");
+const exportController = require("./controllers/exportController");
 const { upload, uploadDepartmentImage } = require("./controllers/routeUpload");
 const router = express.Router();
 
@@ -117,5 +118,8 @@ router.get("/resultEvaluateFormHistory/:periodId",middleware.verifyToken,evaluat
 router.put("/evaluate",middleware.verifyToken,evaluateController.upDateEvaluate);
 router.delete("/evaluate/:evaluate_id",middleware.verifyToken,middleware.verifyAdmin,evaluateController.deleteEvaluate);
 //-------------evaluate For User------------------------------->>>
+
+//-------------export ------------------------------->>>
+router.get("/export",middleware.verifyToken,exportController.exportResultOverview);
 
 module.exports = router

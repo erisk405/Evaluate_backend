@@ -120,8 +120,8 @@ const updateNameAndPrefix = async (req, res) => {
       .status(200)
       .json({
         message: "Success updated user prefix and name.",
-        nameUpdated,
-        prefixUpdated,
+        name:nameUpdated.name,
+        prefix:prefixUpdated.prefix,
       });
   } catch (error) {
     console.error({ message: error });

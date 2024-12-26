@@ -183,7 +183,8 @@ model Period {
   title     String
   start     DateTime
   end       DateTime
-  isAction  Boolean
+  isAction  Boolean @default(false)
+  backUp    Boolean @default(false)
 
   evaluate Evaluate[]
   history  History[]

@@ -1,8 +1,6 @@
-
 const bcrypt = require("bcryptjs");
 const { PrismaClient, RequestStatus } = require("@prisma/client");
 const prisma = new PrismaClient();
-
 
 const createUser = async (user, role) => {
   const password = await user.password;
@@ -29,13 +27,16 @@ const updateUserName = async (uid, name) => {
       data: {
         name,
       },
+      select:{
+        name:true
+      }
     });
   } catch (error) {
     console.log("Error on updateUserName model!!");
     console.error({ message: error });
   }
 };
-const updateUserPrefix = async (uid,prefix_id)=>{
+const updateUserPrefix = async (uid, prefix_id) => {
   try {
     return prisma.user.update({
       where: {
@@ -44,12 +45,15 @@ const updateUserPrefix = async (uid,prefix_id)=>{
       data: {
         prefix_id,
       },
+      select:{
+        prefix:true
+      }
     });
   } catch (error) {
     console.log("Error on updateUserPrefix !!");
     console.error({ message: error });
   }
-}
+};
 const updateUserEmail = async (uid, email) => {
   try {
     return prisma.user.update({
@@ -66,21 +70,21 @@ const updateUserEmail = async (uid, email) => {
   }
 };
 
-const updateUserPassword = async(uid,newPassword)=>{
+const updateUserPassword = async (uid, newPassword) => {
   try {
     const hashedPassword = bcrypt.hashSync(newPassword, 10);
     return prisma.user.update({
-      where:{
-        id:uid
+      where: {
+        id: uid,
       },
-      data:{
-        password:hashedPassword
+      data: {
+        password: hashedPassword,
       },
-    })
+    });
   } catch (error) {
-    return error
+    return error;
   }
-}
+};
 
 const findUserByEmail = async (email) => {
   return prisma.user.findUnique({
@@ -95,7 +99,7 @@ const getAllUsers = async () => {
   return prisma.user.findMany({
     select: {
       id: true,
-      prefix:true,
+      prefix: true,
       name: true,
       role: true,
       email: true,
@@ -112,7 +116,7 @@ const myProfile = async (userId) => {
     },
     select: {
       id: true,
-      prefix:true,
+      prefix: true,
       name: true,
       email: true,
       phone: true,
@@ -166,14 +170,14 @@ const findUserById = async (id) => {
     where: { id: id },
     select: {
       id: true,
-      prefix:true,
+      prefix: true,
       name: true,
       email: true,
       image: true,
-      role:true,
-      supervise:true,
-      department_id:true,
-      department:true
+      role: true,
+      supervise: true,
+      department_id: true,
+      department: true,
     },
   });
 };
@@ -190,7 +194,7 @@ const findUserEmptyDepartment = async () => {
     },
     select: {
       id: true,
-      prefix:true,
+      prefix: true,
       name: true,
       image: true,
       role: true,
@@ -261,7 +265,7 @@ const updateImage = async (userId, imageId) => {
       select: {
         id: true,
         image: true,
-        prefix:true,
+        prefix: true,
         email: true,
         department: true,
         name: true,
@@ -290,8 +294,8 @@ const countAssessors = async (assessorRoleId, userId) => {
     const assessorCount = await prisma.user.count({
       where: {
         role_id: assessorRoleId,
-        id:{
-          not:userId
+        id: {
+          not: userId,
         },
         department_id: userDepartment.department_id, // นับเฉพาะ ingroup
       },
@@ -328,17 +332,17 @@ const countAssessorsOutgroup = async (assessorRoleId, userId) => {
   }
 };
 
-const findPermissionByUserId = async (userId,period_id) => {
+const findPermissionByUserId = async (userId, period_id) => {
   try {
     const user = await prisma.user.findUnique({
       where: {
         id: userId,
       },
       select: {
-        prefix:{
-          select:{
-            prefix_name:true
-          }
+        prefix: {
+          select: {
+            prefix_name: true,
+          },
         },
         id: true,
         name: true,
@@ -347,11 +351,10 @@ const findPermissionByUserId = async (userId,period_id) => {
             id: true,
             role_name: true,
             permissionsAsAssessor: {
-              where:{
-                permissionForm:{
-                  some:{}
-                }
-                
+              where: {
+                permissionForm: {
+                  some: {},
+                },
               },
               select: {
                 permission_id: true,
@@ -374,16 +377,15 @@ const findPermissionByUserId = async (userId,period_id) => {
               },
             },
           },
-          
         },
-        image:true,
+        image: true,
         evaluationsReceived: {
           // Get the users that the current user has evaluated\
-          where:{
+          where: {
             period_id,
           },
           select: {
-            period_id:true,
+            period_id: true,
             evaluator: {
               select: {
                 id: true,
@@ -397,7 +399,6 @@ const findPermissionByUserId = async (userId,period_id) => {
               },
             },
           },
-         
         },
       },
     });
@@ -405,6 +406,66 @@ const findPermissionByUserId = async (userId,period_id) => {
   } catch (error) {
     console.error("Error fetching permissions by user ID:", error);
     throw error; // Optionally throw the error to be handled by the caller
+  }
+};
+
+const filterUserForExecutive = async (userId) => {
+  try {
+    const userDetail = await findUserById(userId);
+    if (!userDetail) {
+      throw new Error("cannot get userDetail");
+    }
+    const allUsers = await getAllUsers();
+    let filterUsers = [];
+    const role_level = userDetail.role.role_level;
+    console.log(role_level);
+
+    if (role_level) {
+      if (role_level === "LEVEL_2") {
+        filterUsers = allUsers.filter(
+          (user) =>
+            user.department?.id === userDetail.department_id &&
+            user.role?.role_level === "LEVEL_1"
+        );
+      } else if (role_level === "LEVEL_3") {
+        const supervises = userDetail.supervise;
+        console.log(supervises);
+
+        if (supervises && supervises.length > 0) {
+          supervises.map((data) => {
+            allUsers.map((user) => {
+              if (
+                (user.department?.id === data.department_id &&
+                  user.role?.role_level === "LEVEL_1") ||
+                (user.department?.id === data.department_id &&
+                  user.role?.role_level === "LEVEL_2")
+              ) {
+                filterUsers.push(user);
+              }
+            });
+          });
+        } else {
+          throw new Error("ยังไม่มีหน่วยงานที่กำกับดูแล ");
+        }
+      } else if (role_level === "LEVEL_4")
+        filterUsers = allUsers.filter(
+          (user) => user.role?.role_name !== "admin" && user.department?.id
+        );
+      else {
+        throw new Error("คุณไม่ใช่รุ่นใหญ่ ต้อง roleLevel2 ขึ้นไป");
+      }
+    }
+    filterUsers = filterUsers.map((user) => ({
+      id: user.id,
+      name: user.prefix.prefix_name + user.name,
+      departmentId: user.department.id,
+      departmentName: user.department.department_name,
+      roleName: user.role.role_name,
+    }));
+
+    return filterUsers;
+  } catch (error) {
+    console.log(error);
   }
 };
 
@@ -427,5 +488,6 @@ module.exports = {
   countAssessorsOutgroup,
   findPermissionByUserId,
   updateUserPrefix,
-  updateUserPassword
+  updateUserPassword,
+  filterUserForExecutive,
 };

@@ -8,7 +8,6 @@ const permission = require("../models/permissionModel");
 const period = require("../models/periodModel");
 const history = require("../models/historyModel");
 const { PrismaClient } = require("@prisma/client");
-const { errorMonitor } = require("nodemailer/lib/xoauth2");
 const prisma = new PrismaClient();
 
 const createEvaluate = async (req, res) => {
@@ -1101,37 +1100,11 @@ const getAllResultEvaluateOverview = async (req, res) => {
       return res.status(404).json({ message: "not found detail" });
     }
     const period_id = req.params.period_id;
-    const allUsers = await user.getAllUsers();
-    let filterUsers = [];
-    const role_level = userDetail.role.role_level;
-
-    if (role_level) {
-      if (role_level === "LEVEL_2") {
-        filterUsers = allUsers.filter(
-          (user) =>
-            user.department?.id === userDetail.department_id &&
-            user.role?.role_level === "LEVEL_1"
-        );
-      } else if (role_level === "LEVEL_3") {
-        const supervises = userDetail.supervise;
-        if (supervises) {
-          supervises.forEach((data) => {
-            allUsers.map((user) => {
-              if (
-                (user.department?.id === data.department_id &&
-                  user.role?.role_level === "LEVEL_1") ||
-                user.role?.role_level === "LEVEL_2"
-              )
-                filterUsers.push(user);
-            });
-          });
-        }
-      } else {
-        filterUsers = allUsers.filter(
-          (user) => user.role?.role_name !== "admin" && user.department?.id
-        );
-      }
+    const filterUsers = await user.filterUserForExecutive(userId);
+    if(!filterUsers || filterUsers.length == 0){
+      return res.status(404).json({ message: "ไม่มีผลการประเมิน" });
     }
+    const role_level = userDetail.role.role_level;
     const headData = {
       name:userDetail.prefix.prefix_name+userDetail.name,
       roleLevel:role_level,
@@ -1139,13 +1112,7 @@ const getAllResultEvaluateOverview = async (req, res) => {
       department:userDetail.department.department_name,
       numberOFUser:filterUsers.length
     }
-    filterUsers = filterUsers.map((user) => ({
-      id: user.id,
-      name: user.prefix.prefix_name + user.name,
-      departmentId: user.department.id,
-      departmentName: user.department.department_name,
-      roleName: user.role.role_name,
-    }));
+   
 
     if (filterUsers) {
       const resultUser = await Promise.all(
