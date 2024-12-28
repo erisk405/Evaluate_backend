@@ -1076,20 +1076,63 @@ const getResultEvaluateDetailByUserId = async (req, res) => {
   }
 };
 
-const calculateScoreByMean = (mean) => {
-  let score = 0;
-  if (mean >= 4.5) {
-    score = 10;
-  } else if (mean >= 3.5 && mean <= 4.49) {
-    score = 9;
-  } else if (mean >= 2.5 && mean <= 3.49) {
-    score = 8;
-  } else if (mean >= 1.5 && mean <= 2.49) {
-    score = 7;
-  } else {
-    score = 6;
+const getAllResultEvaluateOverviewByUserId = async (req, res) => {
+  try {
+    const userId = req.params.userId;
+    const userDetail = await user.findUserById(userId);
+    if (!userDetail) {
+      return res.status(404).json({ message: "not found detail" });
+    }
+    const period_id = req.params.period_id;
+    const filterUsers = await user.filterUserForExecutive(userId);
+    if(!filterUsers || filterUsers.length == 0){
+      return res.status(404).json({ message: "ไม่มีผลการประเมิน" });
+    }
+    const role_level = userDetail.role.role_level;
+    let headData = {};
+    if(userDetail.role.role_name ==="admin"){
+      headData = {
+        name:userDetail.prefix.prefix_name+userDetail.name,
+        roleName:userDetail.role.role_name,
+        numberOFUser:filterUsers.length
+      }
+    }else{
+
+      headData = {
+        name:userDetail.prefix.prefix_name+userDetail.name,
+        roleLevel:role_level,
+        roleName:userDetail.role.role_name,
+        department:userDetail.department.department_name,
+        numberOFUser:filterUsers.length
+      }
+    }
+   
+
+    if (filterUsers) {
+      const resultUser = await Promise.all(
+        filterUsers.map(async (user) => {
+          // ดึงผลเฉลี่ย และ ส่วนเบี่ยงเบน ภาพรวม ของแต่ละคน
+          const data = await history.getTotalMeanAndSDByUserId(period_id,user.id);
+          const total_mean = data ? data.total_mean : 0;
+          const total_SD = data ? data.total_SD : 0;
+          return {
+            user: user,
+            mean:total_mean,
+            standardDeviation:total_SD,
+            score: evaluate.calculateScoreByMean(total_mean),
+          };
+        })
+      );
+
+      return res.status(200).json({headData,resultUser});
+    }
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      message: "เกิดข้อผิดพลาดภายในระบบ",
+      error: error.message,
+    });
   }
-  return score;
 };
 
 const getAllResultEvaluateOverview = async (req, res) => {
@@ -1105,12 +1148,22 @@ const getAllResultEvaluateOverview = async (req, res) => {
       return res.status(404).json({ message: "ไม่มีผลการประเมิน" });
     }
     const role_level = userDetail.role.role_level;
-    const headData = {
-      name:userDetail.prefix.prefix_name+userDetail.name,
-      roleLevel:role_level,
-      roleName:userDetail.role.role_name,
-      department:userDetail.department.department_name,
-      numberOFUser:filterUsers.length
+    let headData = {};
+    if(userDetail.role.role_name ==="admin"){
+      headData = {
+        name:userDetail.prefix.prefix_name+userDetail.name,
+        roleName:userDetail.role.role_name,
+        numberOFUser:filterUsers.length
+      }
+    }else{
+
+      headData = {
+        name:userDetail.prefix.prefix_name+userDetail.name,
+        roleLevel:role_level,
+        roleName:userDetail.role.role_name,
+        department:userDetail.department.department_name,
+        numberOFUser:filterUsers.length
+      }
     }
    
 
@@ -1125,7 +1178,7 @@ const getAllResultEvaluateOverview = async (req, res) => {
             user: user,
             mean:total_mean,
             standardDeviation:total_SD,
-            score: calculateScoreByMean(total_mean),
+            score: evaluate.calculateScoreByMean(total_mean),
           };
         })
       );
@@ -1649,12 +1702,12 @@ module.exports = {
   getAssessorsPerFormByEvaluator,
   getEvaluatePerDepart,
   getAllResultEvaluateOverview,
-  calculateScoreByMean,
   getResultEvaluateDetail,
   getResultEvaluateDetailByUserId,
   upDateEvaluate,
   deleteEvaluate,
   saveToHistory,
   getResultEvaluateFormHistory,
-  getResultEvaluateFormHistoryByUserId
+  getResultEvaluateFormHistoryByUserId,
+  getAllResultEvaluateOverviewByUserId
 };

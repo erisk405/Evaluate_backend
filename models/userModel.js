@@ -418,7 +418,7 @@ const filterUserForExecutive = async (userId) => {
     const allUsers = await getAllUsers();
     let filterUsers = [];
     const role_level = userDetail.role.role_level;
-    console.log(role_level);
+    // console.log(role_level);
 
     if (role_level) {
       if (role_level === "LEVEL_2") {
@@ -429,7 +429,7 @@ const filterUserForExecutive = async (userId) => {
         );
       } else if (role_level === "LEVEL_3") {
         const supervises = userDetail.supervise;
-        console.log(supervises);
+        // console.log(supervises);
 
         if (supervises && supervises.length > 0) {
           supervises.map((data) => {
@@ -447,7 +447,7 @@ const filterUserForExecutive = async (userId) => {
         } else {
           throw new Error("ยังไม่มีหน่วยงานที่กำกับดูแล ");
         }
-      } else if (role_level === "LEVEL_4")
+      } else if (role_level === "LEVEL_4" || userDetail.role.role_name === "admin")
         filterUsers = allUsers.filter(
           (user) => user.role?.role_name !== "admin" && user.department?.id
         );

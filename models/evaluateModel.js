@@ -218,6 +218,22 @@ const findEvaluateByPeriod = async (period_id) => {
   }
 };
 
+const calculateScoreByMean = (mean) => {
+  let score = 0;
+  if (mean >= 4.5) {
+    score = 10;
+  } else if (mean >= 3.5 && mean <= 4.49) {
+    score = 9;
+  } else if (mean >= 2.5 && mean <= 3.49) {
+    score = 8;
+  } else if (mean >= 1.5 && mean <= 2.49) {
+    score = 7;
+  } else {
+    score = 6;
+  }
+  return score;
+};
+
 module.exports = {
   createEvaluate,
   deleteEvaluate,
@@ -227,4 +243,5 @@ module.exports = {
   findResultEvaluate,
   upDateDateEval,
   findEvaluateByPeriod,
+  calculateScoreByMean
 };

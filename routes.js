@@ -103,6 +103,9 @@ router.get("/resultEvaluatePerDepart/:period_id",middleware.verifyToken,middlewa
 router.get("/resultEvaluateDetail/:periodId/:userId",middleware.verifyToken,middleware.verifyAdmin,evaluateController.getResultEvaluateDetailByUserId);
 router.get("/resultEvaluateFormHistory/:periodId/:userId",middleware.verifyToken,middleware.verifyAdmin,evaluateController.getResultEvaluateFormHistoryByUserId);
 router.post("/history",middleware.verifyToken,middleware.verifyAdmin,evaluateController.saveToHistory);
+router.get("/allResultEvaluateOverview/:period_id/:userId",middleware.verifyToken,evaluateController.getAllResultEvaluateOverviewByUserId); //Result evaluate Overview
+
+router.get("/export/:periodId/:userId",middleware.verifyToken,middleware.verifyAdmin,exportController.exportResultOverviewByUserId);
 
 //-------------evaluate for Admin ------------------------------->>>
 
@@ -120,6 +123,5 @@ router.delete("/evaluate/:evaluate_id",middleware.verifyToken,middleware.verifyA
 //-------------evaluate For User------------------------------->>>
 
 //-------------export ------------------------------->>>
-router.get("/export",middleware.verifyToken,exportController.exportResultOverview);
-
+router.get("/export/:periodId",middleware.verifyToken,exportController.exportResultOverview);
 module.exports = router
