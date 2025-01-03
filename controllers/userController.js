@@ -1,5 +1,6 @@
 const User = require("../models/userModel");
 const Image = require("../models/imageModel");
+const bcrypt = require("bcryptjs");
 const { deleteImage } = require("./routeUpload");
 const findUser = async (req, res) => {
   const id = req.userId;
@@ -116,13 +117,11 @@ const updateNameAndPrefix = async (req, res) => {
       res.status(500).json("don't update User'prefix ");
       throw error;
     }
-    res
-      .status(200)
-      .json({
-        message: "Success updated user prefix and name.",
-        name:nameUpdated.name,
-        prefix:prefixUpdated.prefix,
-      });
+    res.status(200).json({
+      message: "Success updated user prefix and name.",
+      name: nameUpdated.name,
+      prefix: prefixUpdated.prefix,
+    });
   } catch (error) {
     console.error({ message: error });
   }
@@ -203,6 +202,76 @@ const showRole = async (req, res) => {
   res.status(201).json({ role: role, userId: userId });
 };
 
+const changePassword = async (req, res) => {
+  try {
+    const userId = req.userId;
+    const user = await User.findUserById(userId);
+    const { old_pass, new_pass } = req.body;
+    const isMatch = await bcrypt.compare(old_pass, user.password);
+    if (!isMatch) {
+      return res
+        .status(409)
+        .json({ message: "Old password is not correct !!" });
+    }
+    const updated = await User.updateUserPassword(userId, new_pass);
+
+    return res
+      .status(201)
+      .json({ message: "Set new password success**", update: updated });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      message: "เกิดข้อผิดพลาดภายในระบบ",
+      error: error.message,
+    });
+  }
+};
+
+const changePasswordByUserId = async (req, res) => {
+  try {
+    const userId = req.params.userId;
+    const {new_pass } = req.body;
+    const updated = await User.updateUserPassword(userId, new_pass);
+
+    return res
+      .status(201)
+      .json({ message: "Set new password success**", update: updated });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      message: "เกิดข้อผิดพลาดภายในระบบ",
+      error: error.message,
+    });
+  }
+};
+
+const deleteUser = async(req,res)=>{
+  try {
+    const userId = req.params.userId;
+    const user = await User.findUserById(userId);
+    if (!user) {
+      return res.status(404).json({ error: "User not found!" });
+    }
+    console.log("user:", user);
+    if (user.image) {
+      // Delete the old image
+      await deleteImage(user.image.public_id);
+      // ลบ old image จาก database
+      await Image.DeleteImage(user.image.id);
+    }
+    const deleteUser = await User.deleteUserById(userId);
+    if(!deleteUser){
+      return res.status(400).json({message:"Cannot delete this user"})
+    }
+    return res.status(200).json(deleteUser)
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      message: "เกิดข้อผิดพลาดภายในระบบ",
+      error: error.message,
+    });
+  }
+}
 module.exports = {
   findUser,
   setDepartment,
@@ -215,4 +284,7 @@ module.exports = {
   setUserstoDepartment,
   updateProfileUserByAdmin,
   updateNameAndPrefix,
+  changePassword,
+  changePasswordByUserId,
+  deleteUser
 };

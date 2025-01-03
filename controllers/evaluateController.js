@@ -1085,46 +1085,47 @@ const getAllResultEvaluateOverviewByUserId = async (req, res) => {
     }
     const period_id = req.params.period_id;
     const filterUsers = await user.filterUserForExecutive(userId);
-    if(!filterUsers || filterUsers.length == 0){
+    if (!filterUsers || filterUsers.length == 0) {
       return res.status(404).json({ message: "ไม่มีผลการประเมิน" });
     }
     const role_level = userDetail.role.role_level;
     let headData = {};
-    if(userDetail.role.role_name ==="admin"){
+    if (userDetail.role.role_name === "admin") {
       headData = {
-        name:userDetail.prefix.prefix_name+userDetail.name,
-        roleName:userDetail.role.role_name,
-        numberOFUser:filterUsers.length
-      }
-    }else{
-
+        name: userDetail.prefix.prefix_name + userDetail.name,
+        roleName: userDetail.role.role_name,
+        numberOFUser: filterUsers.length,
+      };
+    } else {
       headData = {
-        name:userDetail.prefix.prefix_name+userDetail.name,
-        roleLevel:role_level,
-        roleName:userDetail.role.role_name,
-        department:userDetail.department.department_name,
-        numberOFUser:filterUsers.length
-      }
+        name: userDetail.prefix.prefix_name + userDetail.name,
+        roleLevel: role_level,
+        roleName: userDetail.role.role_name,
+        department: userDetail.department.department_name,
+        numberOFUser: filterUsers.length,
+      };
     }
-   
 
     if (filterUsers) {
       const resultUser = await Promise.all(
         filterUsers.map(async (user) => {
           // ดึงผลเฉลี่ย และ ส่วนเบี่ยงเบน ภาพรวม ของแต่ละคน
-          const data = await history.getTotalMeanAndSDByUserId(period_id,user.id);
+          const data = await history.getTotalMeanAndSDByUserId(
+            period_id,
+            user.id
+          );
           const total_mean = data ? data.total_mean : 0;
           const total_SD = data ? data.total_SD : 0;
           return {
             user: user,
-            mean:total_mean,
-            standardDeviation:total_SD,
+            mean: total_mean,
+            standardDeviation: total_SD,
             score: evaluate.calculateScoreByMean(total_mean),
           };
         })
       );
 
-      return res.status(200).json({headData,resultUser});
+      return res.status(200).json({ headData, resultUser });
     }
   } catch (error) {
     console.log(error);
@@ -1144,46 +1145,47 @@ const getAllResultEvaluateOverview = async (req, res) => {
     }
     const period_id = req.params.period_id;
     const filterUsers = await user.filterUserForExecutive(userId);
-    if(!filterUsers || filterUsers.length == 0){
+    if (!filterUsers || filterUsers.length == 0) {
       return res.status(404).json({ message: "ไม่มีผลการประเมิน" });
     }
     const role_level = userDetail.role.role_level;
     let headData = {};
-    if(userDetail.role.role_name ==="admin"){
+    if (userDetail.role.role_name === "admin") {
       headData = {
-        name:userDetail.prefix.prefix_name+userDetail.name,
-        roleName:userDetail.role.role_name,
-        numberOFUser:filterUsers.length
-      }
-    }else{
-
+        name: userDetail.prefix.prefix_name + userDetail.name,
+        roleName: userDetail.role.role_name,
+        numberOFUser: filterUsers.length,
+      };
+    } else {
       headData = {
-        name:userDetail.prefix.prefix_name+userDetail.name,
-        roleLevel:role_level,
-        roleName:userDetail.role.role_name,
-        department:userDetail.department.department_name,
-        numberOFUser:filterUsers.length
-      }
+        name: userDetail.prefix.prefix_name + userDetail.name,
+        roleLevel: role_level,
+        roleName: userDetail.role.role_name,
+        department: userDetail.department.department_name,
+        numberOFUser: filterUsers.length,
+      };
     }
-   
 
     if (filterUsers) {
       const resultUser = await Promise.all(
         filterUsers.map(async (user) => {
           // ดึงผลเฉลี่ย และ ส่วนเบี่ยงเบน ภาพรวม ของแต่ละคน
-          const data = await history.getTotalMeanAndSDByUserId(period_id,user.id);
+          const data = await history.getTotalMeanAndSDByUserId(
+            period_id,
+            user.id
+          );
           const total_mean = data ? data.total_mean : 0;
           const total_SD = data ? data.total_SD : 0;
           return {
             user: user,
-            mean:total_mean,
-            standardDeviation:total_SD,
+            mean: total_mean,
+            standardDeviation: total_SD,
             score: evaluate.calculateScoreByMean(total_mean),
           };
         })
       );
 
-      return res.status(200).json({headData,resultUser});
+      return res.status(200).json({ headData, resultUser });
     }
   } catch (error) {
     console.log(error);
@@ -1224,29 +1226,58 @@ const upDateEvaluate = async (req, res) => {
 };
 const deleteEvaluate = async (req, res) => {
   try {
-    const evaluate_id = req.params.evaluate_id;
-    const allDelete = await prisma.$transaction(async (tx) => {
-      const deleteEvaluateScore =
-        await evaluateDetail.deleteDetailEvalByEvaluteId(evaluate_id, tx);
-      if (!deleteEvaluateScore) {
-        throw new error("cannot delete evaluate score");
-      }
-      const deleted = await evaluate.deleteEvaluate(evaluate_id, tx);
-      if (!deleted) {
-        throw new error("cannot delete evaluate");
-      }
-      return { deleteEvaluateScore, deleted };
-    });
+    const { allUserId, periodId } = req.body;
 
-    return res.status(200).json(allDelete);
+    if (allUserId.length > 0) {
+      const allResults = []; // เก็บผลลัพธ์ทั้งหมด
+      for (const user of allUserId) {
+        //find all evaluate id of user 
+        const find = await evaluate.getResultEvaluateById(user.userId, periodId);
+        const allEvaluateId = find.map((user) => user.id);
+
+        console.log(`User: ${user.userId}, Evaluate IDs:`, allEvaluateId);
+
+        if (allEvaluateId.length > 0) {
+          const userDelete = await prisma.$transaction(async (tx) => {
+            const results = [];
+            for (const evaluateId of allEvaluateId) {
+              const deleteEvaluateScore =
+                await evaluateDetail.deleteDetailEvalByEvaluteId(evaluateId, tx);
+
+              if (!deleteEvaluateScore) {
+                throw new Error("cannot delete evaluate score");
+              }
+
+              const deleted = await evaluate.deleteEvaluate(evaluateId, tx);
+              if (!deleted) {
+                throw new Error("cannot delete evaluate");
+              }
+
+              results.push({ evaluateId, deleteEvaluateScore, deleted });
+            }
+            return results;
+          });
+
+          allResults.push({ userId: user.userId, userDelete });
+        }
+      }
+
+      return res.status(200).json({
+        message: "ลบข้อมูลสำเร็จ",
+        details: allResults,
+      });
+    }
+
+    return res.status(400).json({ message: "No data to delete" });
   } catch (error) {
-    console.log(error);
+    console.error(error);
     return res.status(500).json({
       message: "เกิดข้อผิดพลาดภายในระบบ",
       error: error.message,
     });
   }
 };
+
 
 // const saveToHistory = async (req, res) => {
 //   try {
@@ -1538,28 +1569,32 @@ const getResultEvaluateFormHistory = async (req, res) => {
         .json({ message: "not found result evaluate form this User" });
     }
     const headData = {
-      periodName:result.period.title,
-      userName:result.user.prefix.prefix_name+result.user.name,
-      roleName:result.role_name,
-      department:result.department_name,
-      total_mean:result.total_mean,
-      total_SD:result.total_SD
-    }
+      periodName: result.period.title,
+      userName: result.user.prefix.prefix_name + result.user.name,
+      roleName: result.role_name,
+      department: result.department_name,
+      total_mean: result.total_mean,
+      total_SD: result.total_SD,
+    };
     const formResults = result.history_detail.map((form) => {
-      const total = form.historyFormScore.filter((total) =>total.type_name !== "sumScore").map((total)=>{
-        return{
-          type: total.type_name,
-          average_per_type: total.total_mean_per_type,
-          sd_per_type: total.total_SD_per_type,
-        }
-      });
-      const sumTotal = form.historyFormScore.filter((total) =>total.type_name === "sumScore").map((total)=>{
-        return{
-          // type: total.type_name,
-          average_per_form: total.total_mean_per_type,
-          sd_per_form: total.total_SD_per_type,
-        }
-      });
+      const total = form.historyFormScore
+        .filter((total) => total.type_name !== "sumScore")
+        .map((total) => {
+          return {
+            type: total.type_name,
+            average_per_type: total.total_mean_per_type,
+            sd_per_type: total.total_SD_per_type,
+          };
+        });
+      const sumTotal = form.historyFormScore
+        .filter((total) => total.type_name === "sumScore")
+        .map((total) => {
+          return {
+            // type: total.type_name,
+            average_per_form: total.total_mean_per_type,
+            sd_per_form: total.total_SD_per_type,
+          };
+        });
 
       let questions = form.historyQuestionScore.reduce((acc, item) => {
         if (!acc[item.question]) {
@@ -1567,16 +1602,16 @@ const getResultEvaluateFormHistory = async (req, res) => {
             id: item.id,
             questionName: item.question,
             scores: [],
-            sumScore:{
-              average:0,
-              sd:0,
-            }
+            sumScore: {
+              average: 0,
+              sd: 0,
+            },
           };
         }
-        if(item.type_name === "sumScore"){
+        if (item.type_name === "sumScore") {
           acc[item.question].sumScore.average = item.mean;
           acc[item.question].sumScore.sd = item.SD;
-        }else{
+        } else {
           acc[item.question].scores.push({
             type: item.type_name,
             average: item.mean,
@@ -1593,12 +1628,12 @@ const getResultEvaluateFormHistory = async (req, res) => {
         level: form.level,
         formName: form.questionHead,
         total: total,
-        sumTotal:sumTotal[0],
+        sumTotal: sumTotal[0],
         questions: questions,
       };
     });
 
-    return res.status(200).json({ headData,formResults });
+    return res.status(200).json({ headData, formResults });
   } catch (error) {
     console.log(error);
     return res.status(500).json({
@@ -1624,28 +1659,32 @@ const getResultEvaluateFormHistoryByUserId = async (req, res) => {
         .json({ message: "not found result evaluate form this User" });
     }
     const headData = {
-      periodName:result.period.title,
-      userName:result.user.prefix.prefix_name+result.user.name,
-      roleName:result.role_name,
-      department:result.department_name,
-      total_mean:result.total_mean,
-      total_SD:result.total_SD
-    }
+      periodName: result.period.title,
+      userName: result.user.prefix.prefix_name + result.user.name,
+      roleName: result.role_name,
+      department: result.department_name,
+      total_mean: result.total_mean,
+      total_SD: result.total_SD,
+    };
     const formResults = result.history_detail.map((form) => {
-      const total = form.historyFormScore.filter((total) =>total.type_name !== "sumScore").map((total)=>{
-        return{
-          type: total.type_name,
-          average_per_type: total.total_mean_per_type,
-          sd_per_type: total.total_SD_per_type,
-        }
-      });
-      const sumTotal = form.historyFormScore.filter((total) =>total.type_name === "sumScore").map((total)=>{
-        return{
-          // type: total.type_name,
-          average_per_form: total.total_mean_per_type,
-          sd_per_form: total.total_SD_per_type,
-        }
-      });
+      const total = form.historyFormScore
+        .filter((total) => total.type_name !== "sumScore")
+        .map((total) => {
+          return {
+            type: total.type_name,
+            average_per_type: total.total_mean_per_type,
+            sd_per_type: total.total_SD_per_type,
+          };
+        });
+      const sumTotal = form.historyFormScore
+        .filter((total) => total.type_name === "sumScore")
+        .map((total) => {
+          return {
+            // type: total.type_name,
+            average_per_form: total.total_mean_per_type,
+            sd_per_form: total.total_SD_per_type,
+          };
+        });
 
       let questions = form.historyQuestionScore.reduce((acc, item) => {
         if (!acc[item.question]) {
@@ -1653,16 +1692,16 @@ const getResultEvaluateFormHistoryByUserId = async (req, res) => {
             id: item.id,
             questionName: item.question,
             scores: [],
-            sumScore:{
-              average:0,
-              sd:0,
-            }
+            sumScore: {
+              average: 0,
+              sd: 0,
+            },
           };
         }
-        if(item.type_name === "sumScore"){
+        if (item.type_name === "sumScore") {
           acc[item.question].sumScore.average = item.mean;
           acc[item.question].sumScore.sd = item.SD;
-        }else{
+        } else {
           acc[item.question].scores.push({
             type: item.type_name,
             average: item.mean,
@@ -1679,12 +1718,12 @@ const getResultEvaluateFormHistoryByUserId = async (req, res) => {
         level: form.level,
         formName: form.questionHead,
         total: total,
-        sumTotal:sumTotal[0],
+        sumTotal: sumTotal[0],
         questions: questions,
       };
     });
 
-    return res.status(200).json({ headData,formResults });
+    return res.status(200).json({ headData, formResults });
   } catch (error) {
     console.log(error);
     return res.status(500).json({
@@ -1709,5 +1748,5 @@ module.exports = {
   saveToHistory,
   getResultEvaluateFormHistory,
   getResultEvaluateFormHistoryByUserId,
-  getAllResultEvaluateOverviewByUserId
+  getAllResultEvaluateOverviewByUserId,
 };

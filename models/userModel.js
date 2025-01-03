@@ -80,6 +80,11 @@ const updateUserPassword = async (uid, newPassword) => {
       data: {
         password: hashedPassword,
       },
+      select:{
+        id:true,
+        name:true,
+        password:true
+      }
     });
   } catch (error) {
     return error;
@@ -178,6 +183,7 @@ const findUserById = async (id) => {
       supervise: true,
       department_id: true,
       department: true,
+      password:true
     },
   });
 };
@@ -469,6 +475,24 @@ const filterUserForExecutive = async (userId) => {
   }
 };
 
+const deleteUserById = async (userId) => {
+  try {
+    return prisma.user.delete({
+      where:{
+        id:userId
+      },
+      select:{
+        id:true,
+        name:true
+      }
+    })
+    
+  } catch (error) {
+    console.log(error);
+    
+  }
+}
+
 module.exports = {
   // findAllUserforCount,
   createUser,
@@ -490,4 +514,5 @@ module.exports = {
   updateUserPrefix,
   updateUserPassword,
   filterUserForExecutive,
+  deleteUserById
 };

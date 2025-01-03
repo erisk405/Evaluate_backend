@@ -120,6 +120,7 @@ const getResultEvaluateById = async (evaluator_id, period_id) => {
         period_id,
       },
       select: {
+        id:true,
         evaluator: {
           select: {
             prefix: {

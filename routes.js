@@ -69,6 +69,9 @@ router.put("/usersRole/:id",middleware.verifyToken,middleware.verifyAdmin,userCo
 router.put("/usersImage", upload.single('image'), middleware.verifyToken, userController.updateUserImage);
 router.get("/allUsers",middleware.verifyToken,middleware.verifyAdmin,userController.getAllUsers)
 router.put("/usersToDepartment",middleware.verifyToken,middleware.verifyAdmin,userController.setUserstoDepartment);
+router.put("/password",middleware.verifyToken,userController.changePassword);
+router.put("/password/:userId",middleware.verifyToken,middleware.verifyAdmin,userController.changePasswordByUserId);
+router.delete("/user/:userId",middleware.verifyToken,middleware.verifyAdmin,userController.deleteUser);
 //--------------user----------------------
 
 //--------------form----------------------
@@ -103,7 +106,7 @@ router.get("/resultEvaluatePerDepart/:period_id",middleware.verifyToken,middlewa
 router.get("/resultEvaluateDetail/:periodId/:userId",middleware.verifyToken,middleware.verifyAdmin,evaluateController.getResultEvaluateDetailByUserId);
 router.get("/resultEvaluateFormHistory/:periodId/:userId",middleware.verifyToken,middleware.verifyAdmin,evaluateController.getResultEvaluateFormHistoryByUserId);
 router.post("/history",middleware.verifyToken,middleware.verifyAdmin,evaluateController.saveToHistory);
-router.get("/allResultEvaluateOverview/:period_id/:userId",middleware.verifyToken,evaluateController.getAllResultEvaluateOverviewByUserId); //Result evaluate Overview
+router.get("/allResultEvaluateOverview/:period_id/:userId",middleware.verifyToken,middleware.verifyAdmin,evaluateController.getAllResultEvaluateOverviewByUserId); //Result evaluate Overview
 
 router.get("/export/:periodId/:userId",middleware.verifyToken,middleware.verifyAdmin,exportController.exportResultOverviewByUserId);// Export overview for admin By userId
 router.get("/exportDetail/:periodId",middleware.verifyToken);// editing..
@@ -119,7 +122,7 @@ router.get("/allResultEvaluateOverview/:period_id",middleware.verifyToken,evalua
 router.get("/resultEvaluateFormHistory/:periodId",middleware.verifyToken,evaluateController.getResultEvaluateFormHistory);
 
 router.put("/evaluate",middleware.verifyToken,evaluateController.upDateEvaluate);
-router.delete("/evaluate/:evaluate_id",middleware.verifyToken,middleware.verifyAdmin,evaluateController.deleteEvaluate);
+router.delete("/evaluate",middleware.verifyToken,middleware.verifyAdmin,evaluateController.deleteEvaluate);
 //-------------evaluate For User------------------------------->>>
 
 //-------------export ------------------------------->>>

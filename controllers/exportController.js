@@ -5,37 +5,43 @@ const evaluate = require("../models/evaluateModel");
 const period = require("../models/periodModel");
 const form = require("../models/formModel");
 
+
 const exportResultOverviewByUserId = async (req, res) => {
   try {
     const userId = req.params.userId;
     const periodId = req.params.periodId;
     const workbook = new ExcelJS.Workbook();
     const userDetail = await user.findUserById(userId);
-    if(!userDetail){
-      return res.status(404).json("Not found User for id :"+userId);
+    if (!userDetail) {
+      return res.status(404).json("Not found User for id :" + userId);
     }
 
-    if(!userDetail.role.role_level || userDetail.role.role_name === "admin"){
-      return res.status(404).json("Not found report for role :"+userDetail.role.role_name);
+    if (!userDetail.role.role_level || userDetail.role.role_name === "admin") {
+      return res
+        .status(404)
+        .json("Not found report for role :" + userDetail.role.role_name);
     }
 
-    let reportName = "รายงานสรุปผลการประเมินสำหรับ "+userDetail.prefix?.prefix_name+userDetail.name;
+    let reportName =
+      "รายงานสรุปผลการประเมินสำหรับ " +
+      userDetail.prefix?.prefix_name +
+      userDetail.name;
     const filterUsers = await user.filterUserForExecutive(userId);
-    if(!filterUsers){
-      return res.status(404).json("Not found report for role :"+userDetail.role.role_name)
+    if (!filterUsers) {
+      return res
+        .status(404)
+        .json("Not found report for role :" + userDetail.role.role_name);
     }
     const periodDetail = await period.getPeriodById(periodId);
     const formData = await form.getAllform();
     let allFormName = "";
-    formData.forEach((form,index)=>{
-     
-     if(index+1 ===formData.length){
-      allFormName += `และ${form.name}`
-     }else{
-      allFormName += `${form.name} `
-     }
+    formData.forEach((form, index) => {
+      if (index + 1 === formData.length) {
+        allFormName += `และ${form.name}`;
+      } else {
+        allFormName += `${form.name} `;
+      }
     });
-
 
     const resultUser = await Promise.all(
       filterUsers.map(async (user) => {
@@ -54,8 +60,7 @@ const exportResultOverviewByUserId = async (req, res) => {
 
     // สร้าง worksheet
     const sheet = workbook.addWorksheet("My Sheet", {
-      properties: { defaultColWidth: 10, defaultRowHeight:25}, // ความกว้างเริ่มต้นสำหรับทุกคอลัมน์
-
+      properties: { defaultColWidth: 10, defaultRowHeight: 25 }, // ความกว้างเริ่มต้นสำหรับทุกคอลัมน์
     });
 
     // ตั้งค่าขนาด A4
@@ -109,12 +114,14 @@ const exportResultOverviewByUserId = async (req, res) => {
     // หัวข้อพิเศษบนสุด
     sheet.mergeCells("A1:F2"); // รวมเซลล์ตั้งแต่ A1 ถึง F2
     sheet.getCell("A1").value =
-      "สรุปผลการประเมินผลการปฏิบัติงาน\n"
-      +"สำหรับบุคลากรสายสนันสนุน หน่วยงาน สำนักส่งเสริมวิชาการและงานทะเบียน\n"
-      +periodDetail.title+"\n"
-      +"(ผลการประเมิน"+allFormName+")";
-    
-    
+      "สรุปผลการประเมินผลการปฏิบัติงาน\n" +
+      "สำหรับบุคลากรสายสนันสนุน หน่วยงาน สำนักส่งเสริมวิชาการและงานทะเบียน\n" +
+      periodDetail.title +
+      "\n" +
+      "(ผลการประเมิน" +
+      allFormName +
+      ")";
+
     sheet.getRow(1).height = 75;
     sheet.getCell("A1").font = { bold: true, size: 14 }; // ทำตัวหนา และตั้งขนาดตัวอักษร
     sheet.getCell("A1").alignment = {
@@ -131,7 +138,6 @@ const exportResultOverviewByUserId = async (req, res) => {
       // ถ้า score เท่ากันให้เปรียบเทียบ mean
       return b.mean - a.mean; // เรียงจากมากไปน้อยของ mean
     });
-    
 
     resultUser.forEach((result, index) => {
       const rowIndex = index + 5; // เริ่มเติมข้อมูลที่แถว 5
@@ -167,21 +173,28 @@ const exportResultOverviewByUserId = async (req, res) => {
       "Content-Type",
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     );
-    const encodedReportName = encodeURIComponent(reportName).replace(/%20/g, '_');//วาง _ ทับช่องว่าง
+    const encodedReportName = encodeURIComponent(reportName).replace(
+      /%20/g,
+      "_"
+    ); //วาง _ ทับช่องว่าง
     console.log(encodedReportName);
-    res.setHeader("Content-Disposition", `attachment; filename="${encodedReportName}.xlsx"`);
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="${encodedReportName}.xlsx"`
+    );
 
     // เขียนข้อมูล workbook ไปที่ buffer และส่ง response
     const buffer = await workbook.xlsx.writeBuffer();
     res.send(buffer);
   } catch (error) {
     console.error(error);
-    res.status(500).json({
+    return res.status(500).json({
       message: "error in exportResultOverview",
       error: error.message,
     });
   }
 };
+
 module.exports = {
-  exportResultOverviewByUserId
+  exportResultOverviewByUserId,
 };
