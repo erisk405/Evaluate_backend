@@ -493,6 +493,26 @@ const deleteUserById = async (userId) => {
   }
 }
 
+const updatePhoneNumber = async(phone,userId)=>{
+  try {
+    return prisma.user.update({
+      where:{
+        id:userId
+      },
+      data:{
+        phone
+      }
+      ,select:{
+        phone:true
+      }
+    })
+    
+  } catch (error) {
+    console.log(error);
+    
+  }
+}
+
 module.exports = {
   // findAllUserforCount,
   createUser,
@@ -514,5 +534,6 @@ module.exports = {
   updateUserPrefix,
   updateUserPassword,
   filterUserForExecutive,
-  deleteUserById
+  deleteUserById,
+  updatePhoneNumber
 };

@@ -88,6 +88,11 @@ const updateProfileUserByAdmin = async (req, res) => {
     if (!updateUserName) {
       return res.status(404).json({ message: "updateUserName error update" });
     }
+    const prefixUpdated = await User.updateUserPrefix(updateProfile.userId, updateProfile.prefixId);
+    if (!prefixUpdated) {
+      res.status(500).json("don't update User'prefix ");
+      throw error;
+    }
     // แก้ไข อีเมลล์
     const updateUserEmail = await User.updateUserEmail(
       updateProfile.userId,
@@ -181,7 +186,7 @@ const updateUserImage = async (req, res) => {
       // Delete the old image
       await deleteImage(user.image.public_id);
       // ลบ old image จาก database
-      await Image.DeleteImage(user.image);
+      await Image.DeleteImage(user.image.id);
     }
 
     // บันทึก Image ลงในตาราง Image
@@ -272,6 +277,24 @@ const deleteUser = async(req,res)=>{
     });
   }
 }
+
+const updatePhoneNumber = async (req,res)=>{
+  try {
+    const {phone,userId} = req.body;
+    const updated = await User.updatePhoneNumber(phone,userId);
+    if(!updated){
+      return res.status(400).json({message:"Cannot update Phone number"});
+    }
+    return res.status(200).json(updated);
+
+    
+  } catch (error) {
+    return res.status(500).json({
+      message: "เกิดข้อผิดพลาดภายในระบบ",
+      error: error.message,
+    });
+  }
+}
 module.exports = {
   findUser,
   setDepartment,
@@ -286,5 +309,6 @@ module.exports = {
   updateNameAndPrefix,
   changePassword,
   changePasswordByUserId,
-  deleteUser
+  deleteUser,
+  updatePhoneNumber
 };

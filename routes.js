@@ -37,6 +37,7 @@ router.get("/department",departmentController.getDepartments);
 router.get("/department/admin",middleware.verifyToken,middleware.verifyAdmin,departmentController.getDepartmentsForAdmin);
 router.get("/department/:id",middleware.verifyToken,departmentController.getDepartment);
 router.get("/department/admin/:id",middleware.verifyToken,middleware.verifyAdmin,departmentController.getDepartmentForAdmin);
+router.delete("/department/:id",middleware.verifyToken,middleware.verifyAdmin,departmentController.deleteDepartment);
 //--------------department----------------------
 
 //-------------supervise------------------------------->>>
@@ -61,7 +62,6 @@ router.get("/roleRequestPending",middleware.verifyToken,middleware.verifyAdmin,r
 router.get("/findUserEmplyDepartment",userController.findUserEmptyDepartment);
 router.get("/userProfile",middleware.verifyToken,userController.findUser);
 router.put("/userProfile",middleware.verifyToken,middleware.verifyAdmin,userController.updateProfileUserByAdmin);
-
 router.get("/myProfile",middleware.verifyToken,userController.getMyProfile);
 router.put("/myProfile",middleware.verifyToken,userController.updateNameAndPrefix);
 router.put("/usersDepartment",middleware.verifyToken,userController.setDepartment);
@@ -71,6 +71,7 @@ router.get("/allUsers",middleware.verifyToken,middleware.verifyAdmin,userControl
 router.put("/usersToDepartment",middleware.verifyToken,middleware.verifyAdmin,userController.setUserstoDepartment);
 router.put("/password",middleware.verifyToken,userController.changePassword);
 router.put("/password/:userId",middleware.verifyToken,middleware.verifyAdmin,userController.changePasswordByUserId);
+router.put("/phone",middleware.verifyToken,userController.updatePhoneNumber);
 router.delete("/user/:userId",middleware.verifyToken,middleware.verifyAdmin,userController.deleteUser);
 //--------------user----------------------
 
@@ -101,13 +102,10 @@ router.delete("/period/:period_id",middleware.verifyToken,middleware.verifyAdmin
 //-------------period------------------------------->>>
 
 //-------------evaluate for Admin ------------------------------->>>
-
 router.get("/resultEvaluatePerDepart/:period_id",middleware.verifyToken,middleware.verifyAdmin,evaluateController.getEvaluatePerDepart);
 router.get("/resultEvaluateDetail/:periodId/:userId",middleware.verifyToken,middleware.verifyAdmin,evaluateController.getResultEvaluateDetailByUserId);
 router.get("/resultEvaluateFormHistory/:periodId/:userId",middleware.verifyToken,middleware.verifyAdmin,evaluateController.getResultEvaluateFormHistoryByUserId);
-router.post("/history",middleware.verifyToken,middleware.verifyAdmin,evaluateController.saveToHistory);
 router.get("/allResultEvaluateOverview/:period_id/:userId",middleware.verifyToken,middleware.verifyAdmin,evaluateController.getAllResultEvaluateOverviewByUserId); //Result evaluate Overview
-
 router.get("/export/:periodId/:userId",middleware.verifyToken,middleware.verifyAdmin,exportController.exportResultOverviewByUserId);// Export overview for admin By userId
 router.get("/exportDetail/:periodId",middleware.verifyToken);// editing..
 //-------------evaluate for Admin ------------------------------->>>
@@ -125,6 +123,9 @@ router.put("/evaluate",middleware.verifyToken,evaluateController.upDateEvaluate)
 router.delete("/evaluate",middleware.verifyToken,middleware.verifyAdmin,evaluateController.deleteEvaluate);
 //-------------evaluate For User------------------------------->>>
 
-//-------------export ------------------------------->>>
+//------------- history ------------------------------->>>
+router.post("/history",middleware.verifyToken,middleware.verifyAdmin,evaluateController.saveToHistory);
+router.delete("/history/:periodId",middleware.verifyToken,middleware.verifyAdmin,evaluateController.deleteHistoryByPeriod);
+//------------- history ------------------------------->>>
 
 module.exports = router

@@ -129,6 +129,78 @@ const getTotalMeanAndSDByUserId = async (period_id,user_id)=>{
   }
 }
 
+const deleteHistoryById = async (history_id,tx)=>{
+  try {
+    return tx.history.delete({
+      where:{
+        history_id
+      }
+    });
+  } catch (error) {
+    console.log(error);
+    
+  }
+} 
+
+const findHistoryByPeriod = async(period_id)=>{
+  try {
+    return prisma.history.findMany({
+      where:{
+        period_id
+      },
+      include:{
+        history_detail:true
+      }
+    });
+    
+  } catch (error) {
+    console.log(error);
+    
+  }
+}
+
+const deleteHistoryDetailByID= async(id,tx)=>{
+  try {
+    return tx.historyDetail.delete({
+      where:{
+        id
+      }
+    });
+    
+  } catch (error) {
+    console.log(error);
+    
+  }
+}
+const deleteHistoryFormScore = async(history_detail_id,tx)=>{
+  try {
+    return tx.historyFormScore.deleteMany({
+      where:{
+        history_detail_id
+      }
+    });
+    
+  } catch (error) {
+    console.log(error);
+    
+  }
+}
+
+const deleteHistoryQuestionScore = async(history_detail_id,tx)=>{
+  try {
+    return tx.historyQuestionScore.deleteMany({
+      where:{
+        history_detail_id
+      }
+    });
+    
+  } catch (error) {
+    console.log(error);
+    
+  }
+}
+
+
 
 module.exports = {
   createHistory,
@@ -136,5 +208,10 @@ module.exports = {
   createHistoryQuestionScore,
   createHistoryFormScore,
   findResultEvaluateFormHistoryByUserId,
-  getTotalMeanAndSDByUserId
+  getTotalMeanAndSDByUserId,
+  deleteHistoryById,
+  findHistoryByPeriod,
+  deleteHistoryFormScore,
+  deleteHistoryQuestionScore,
+  deleteHistoryDetailByID
 };

@@ -126,6 +126,40 @@ const deletePeriod = async(period_id)=>{
       }
 }
 
+const setBackupTrue = async(period_id)=>{
+  try {
+    return prisma.period.update({
+      where:{
+        period_id
+      },
+      data:{
+        backUp:true
+      }
+    })
+    
+  } catch (error) {
+    console.log(error);
+    
+  }
+}
+const setBackupFalse = async(period_id)=>{
+  try {
+    return prisma.period.update({
+      where:{
+        period_id
+      },
+      data:{
+        backUp:false
+      }
+    })
+    
+  } catch (error) {
+    console.log(error);
+    
+  }
+}
+
+
 module.exports = {
   createPeriod,
   updatePeriod,
@@ -134,5 +168,7 @@ module.exports = {
   getPeriodById,
   deletePeriod,
   checkPeriodOverlap,
-  validateDateTime
+  validateDateTime,
+  setBackupTrue,
+  setBackupFalse
 };

@@ -166,6 +166,7 @@ const findDepartmentById = async (departmentId) => {
                 id: true,
                 name: true,
                 image: true,
+                prefix:true,
                 role: {
                   select: {
                     id: true,
@@ -297,6 +298,9 @@ const deleteDepartment = async (departmentId) => {
   try {
     return await prisma.department.delete({
       where: { id: departmentId },
+      include:{
+        image:true
+      }
     });
   } catch (error) {
     console.error({ message: error.message });

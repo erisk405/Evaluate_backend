@@ -1231,8 +1231,11 @@ const deleteEvaluate = async (req, res) => {
     if (allUserId.length > 0) {
       const allResults = []; // เก็บผลลัพธ์ทั้งหมด
       for (const user of allUserId) {
-        //find all evaluate id of user 
-        const find = await evaluate.getResultEvaluateById(user.userId, periodId);
+        //find all evaluate id of user
+        const find = await evaluate.getResultEvaluateById(
+          user.userId,
+          periodId
+        );
         const allEvaluateId = find.map((user) => user.id);
 
         console.log(`User: ${user.userId}, Evaluate IDs:`, allEvaluateId);
@@ -1242,7 +1245,10 @@ const deleteEvaluate = async (req, res) => {
             const results = [];
             for (const evaluateId of allEvaluateId) {
               const deleteEvaluateScore =
-                await evaluateDetail.deleteDetailEvalByEvaluteId(evaluateId, tx);
+                await evaluateDetail.deleteDetailEvalByEvaluteId(
+                  evaluateId,
+                  tx
+                );
 
               if (!deleteEvaluateScore) {
                 throw new Error("cannot delete evaluate score");
@@ -1277,129 +1283,6 @@ const deleteEvaluate = async (req, res) => {
     });
   }
 };
-
-
-// const saveToHistory = async (req, res) => {
-//   try {
-//     const userId = "aa2abf8b-ac3c-4b6d-972e-2fa89564bcb0"; //kedkarn
-//     const { period_id } = req.body;
-//     const allUsers = await user.getAllUsers();
-//     const filterUserId = allUsers
-//       .filter(
-//         (user) =>
-//           user.role?.role_name !== "admin" && user.role?.role_name !== "member"
-//       )
-//       .map((user) => user.id);
-
-//     // ผลการประเมิน
-//     const result = await findResultEvaluateDetailByUserId(userId, period_id);
-
-//     const resultCreate = await prisma.$transaction(async (tx) => {
-
-//       const createHistory = await history.createHistory(result.historyData, tx);
-//       if (!createHistory) {
-//         throw new error("failed to create history");
-//       }
-
-//       const historyCreateAll = await Promise.all(
-//         result.formResults.map(async (form) => {
-//           const formScore = [];
-//           const historyDetailData = {
-//             history_id: createHistory.history_id, //ดึง id จาก history
-//             questionHead: form.formName,
-//             level: form.questions[0].level,
-//           };
-//           const createHistoryDetail = await history.createHistoryDetail(
-//             historyDetailData,
-//             tx
-//           );
-//           if (!createHistoryDetail) {
-//             throw new error("failed to create historyDetail");
-//           }
-
-//           if (form?.total) {
-//             form?.total.map((item) => {
-//               formScore.push({
-//                 history_detail_id: createHistoryDetail.id,
-//                 type_name: item.total,
-//                 total_SD_per_type: item.sd,
-//                 total_mean_per_type: item.average,
-//               });
-//             });
-//             formScore.push({
-//               history_detail_id: createHistoryDetail.id,
-//               type_name: "sumScore",
-//               total_SD_per_type: form.totalSDPerForm,
-//               total_mean_per_type: form.totalAvgPerForm,
-//             });
-//           }else{
-//             formScore.push({
-//               history_detail_id: createHistoryDetail.id,
-//               type_name: "sumScore",
-//               total_SD_per_type: form.totalSDPerForm,
-//               total_mean_per_type: form.totalAvgPerForm,
-//             });
-//           }
-
-//           const createFormScore = await history.createHistoryFormScore(formScore,tx);
-//              if(!createFormScore){
-//               throw new error("failed to create FormScore");
-//             }
-
-//             let questionScoreData = form.questions.map((question) => {
-//               if (question?.scores) {
-//                 const scores = [];
-//                 question?.scores.map((score) => {
-//                   scores.push({
-//                     history_detail_id:createHistoryDetail.id,
-//                     question: question.questionName,
-//                     type_name: score.type,
-//                     SD: score.sd,
-//                     mean: score.average,
-//                   });
-//                 });
-//                 scores.push({
-//                   history_detail_id:createHistoryDetail.id,
-//                   question: question.questionName,
-//                   type_name: "sumScore",
-//                   SD: question.sumScore.standardDeviation,
-//                   mean: question.sumScore.average,
-//                 });
-//                 return scores;
-//               } else {
-//                 return {
-//                   history_detail_id:createHistoryDetail.id,
-//                   question: question.questionName,
-//                   type_name: "sumScore",
-//                   SD: question.sumScore.standardDeviation,
-//                   mean: question.sumScore.average,
-//                 };
-//               }
-//             });
-
-//             if (form?.total) {
-//               questionScoreData = questionScoreData.flat();
-//             }
-
-//             const createQuestionScore = await history.createHistoryQuestionScore(questionScoreData,tx);
-//             if(!createQuestionScore){
-//               throw new error("failed to create QuestionScore");
-//             }
-//           return { createHistoryDetail,createFormScore,createQuestionScore};
-//         })
-//       );
-//       return { createHistory, historyCreateAll };
-//     });
-
-//     return res.status(200).json({ resultCreate });
-//   } catch (error) {
-//     console.log(error);
-//     return res.status(500).json({
-//       message: "เกิดข้อผิดพลาดภายในระบบ",
-//       error: error.message,
-//     });
-//   }
-// };
 const saveToHistory = async (req, res) => {
   try {
     const { period_id } = req.body;
@@ -1542,6 +1425,12 @@ const saveToHistory = async (req, res) => {
         }
       })
     );
+
+    const updateBackup = await period.setBackupTrue(period_id);
+
+    if (!updateBackup) {
+      return res.status(400).json({ message: "Can not set back Up true" });
+    }
 
     return res.status(200).json({ resultsCreate });
   } catch (error) {
@@ -1733,6 +1622,54 @@ const getResultEvaluateFormHistoryByUserId = async (req, res) => {
   }
 };
 
+const deleteHistoryByPeriod = async (req, res) => {
+  try {
+    const periodId = req.params.periodId;
+    console.log("p1",periodId);
+
+    await prisma.$transaction(async (tx) => {
+      // Find history data
+      const historyData = await history.findHistoryByPeriod(periodId); // Fetch history with details
+      if (!historyData.length) {
+        throw new Error(`No history found for period ID: ${periodId}`);
+      }
+
+      for (const subHistory of historyData) {
+        for (const detail of subHistory.history_detail) {
+          console.log(`Deleting detail: ${detail.id}`);
+
+          // Delete related question scores
+          await history.deleteHistoryQuestionScore(detail.id, tx);
+
+          // Delete related form scores
+          await history.deleteHistoryFormScore(detail.id, tx);
+
+          // Delete the history detail
+          await history.deleteHistoryDetailByID(detail.id,tx)
+          console.log(`Deleted history detail with ID: ${detail.id}`);
+        }
+
+        // Delete the main history record
+        await history.deleteHistoryById(subHistory.history_id,tx)
+        console.log(`Deleted history record with ID: ${subHistory.history_id}`);
+      }
+    });
+    console.log("p2",periodId);
+    
+    await period.setBackupFalse(periodId);
+
+    res.status(200).json({ message: "History deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting history:", error.message);
+    res.status(500).json({
+      message: "Internal server error !!",
+      error: error.message,
+    });
+  }
+};
+
+
+
 module.exports = {
   createEvaluate,
   findEvaluateUserContr,
@@ -1749,4 +1686,5 @@ module.exports = {
   getResultEvaluateFormHistory,
   getResultEvaluateFormHistoryByUserId,
   getAllResultEvaluateOverviewByUserId,
+  deleteHistoryByPeriod,
 };
