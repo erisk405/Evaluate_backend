@@ -88,7 +88,10 @@ const updateProfileUserByAdmin = async (req, res) => {
     if (!updateUserName) {
       return res.status(404).json({ message: "updateUserName error update" });
     }
-    const prefixUpdated = await User.updateUserPrefix(updateProfile.userId, updateProfile.prefixId);
+    const prefixUpdated = await User.updateUserPrefix(
+      updateProfile.userId,
+      updateProfile.prefixId
+    );
     if (!prefixUpdated) {
       res.status(500).json("don't update User'prefix ");
       throw error;
@@ -101,6 +104,16 @@ const updateProfileUserByAdmin = async (req, res) => {
     if (!updateUserEmail) {
       return res.status(404).json({ message: "updateUserEmail error update" });
     }
+
+    const updatedPhoneNumber = await User.updatePhoneNumber(
+      updateProfile.phone,
+      updateProfile.userId
+    );
+    if (!updatedPhoneNumber) {
+      return res
+        .status(404)
+        .json({ message: "updatedPhoneNumber error update" });
+    }
     res.status(200).json({ message: "update success !!!" });
   } catch (error) {
     console.error({ message: error });
@@ -110,7 +123,7 @@ const updateProfileUserByAdmin = async (req, res) => {
 const updateNameAndPrefix = async (req, res) => {
   try {
     const userId = req.userId;
-    const { name, prefixId } = req.body;
+    const { name, prefixId, phone } = req.body;
 
     const nameUpdated = await User.updateUserName(userId, name);
     if (!nameUpdated) {
@@ -122,13 +135,24 @@ const updateNameAndPrefix = async (req, res) => {
       res.status(500).json("don't update User'prefix ");
       throw error;
     }
+    const updatedPhoneNumber = await User.updatePhoneNumber(phone,userId);
+    if (!updatedPhoneNumber) {
+      return res
+        .status(404)
+        .json({ message: "updatedPhoneNumber error update" });
+    }
     res.status(200).json({
       message: "Success updated user prefix and name.",
       name: nameUpdated.name,
       prefix: prefixUpdated.prefix,
+      phone: updatedPhoneNumber.phone
     });
   } catch (error) {
     console.error({ message: error });
+    return res.status(500).json({
+      message: "เกิดข้อผิดพลาดภายในระบบ",
+      error: error.message,
+    });
   }
 };
 
@@ -235,7 +259,7 @@ const changePassword = async (req, res) => {
 const changePasswordByUserId = async (req, res) => {
   try {
     const userId = req.params.userId;
-    const {new_pass } = req.body;
+    const { new_pass } = req.body;
     const updated = await User.updateUserPassword(userId, new_pass);
 
     return res
@@ -250,7 +274,7 @@ const changePasswordByUserId = async (req, res) => {
   }
 };
 
-const deleteUser = async(req,res)=>{
+const deleteUser = async (req, res) => {
   try {
     const userId = req.params.userId;
     const user = await User.findUserById(userId);
@@ -265,10 +289,10 @@ const deleteUser = async(req,res)=>{
       await Image.DeleteImage(user.image.id);
     }
     const deleteUser = await User.deleteUserById(userId);
-    if(!deleteUser){
-      return res.status(400).json({message:"Cannot delete this user"})
+    if (!deleteUser) {
+      return res.status(400).json({ message: "Cannot delete this user" });
     }
-    return res.status(200).json(deleteUser)
+    return res.status(200).json(deleteUser);
   } catch (error) {
     console.log(error);
     return res.status(500).json({
@@ -276,25 +300,23 @@ const deleteUser = async(req,res)=>{
       error: error.message,
     });
   }
-}
+};
 
-const updatePhoneNumber = async (req,res)=>{
+const updatePhoneNumber = async (req, res) => {
   try {
-    const {phone,userId} = req.body;
-    const updated = await User.updatePhoneNumber(phone,userId);
-    if(!updated){
-      return res.status(400).json({message:"Cannot update Phone number"});
+    const { phone, userId } = req.body;
+    const updated = await User.updatePhoneNumber(phone, userId);
+    if (!updated) {
+      return res.status(400).json({ message: "Cannot update Phone number" });
     }
     return res.status(200).json(updated);
-
-    
   } catch (error) {
     return res.status(500).json({
       message: "เกิดข้อผิดพลาดภายในระบบ",
       error: error.message,
     });
   }
-}
+};
 module.exports = {
   findUser,
   setDepartment,
@@ -310,5 +332,5 @@ module.exports = {
   changePassword,
   changePasswordByUserId,
   deleteUser,
-  updatePhoneNumber
+  updatePhoneNumber,
 };
