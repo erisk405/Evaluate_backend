@@ -15,7 +15,7 @@ const CreateImage = async (image)=>{
         return await prisma.image.create({
             data: {
               url: image.path,
-              public_id: image.filename, // Assuming req.file.filename is the public_id
+              public_id: image.filename.replace(/\.[^/.]+$/, ''), // Assuming req.file.filename is the public_id
             },
           });
         
