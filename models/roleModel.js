@@ -129,6 +129,7 @@ async function RoleRequest(userId, roleId) {
         user: {
           select: {
             id: true,
+            prefix:true,
             name: true,
             email: true,
             image: true,
@@ -240,6 +241,7 @@ const getRoleRequestPending = async (skip, limit) => {
           select: {
             id: true,
             name: true,
+            prefix:true,
             email: true,
             image: true,
           },

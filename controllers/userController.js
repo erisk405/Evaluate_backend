@@ -17,8 +17,7 @@ const findUser = async (req, res) => {
 const setDepartment = async (req, res) => {
   const id = req.userId;
   const { departmentId } = req.body;
-  console.log("departmentId ", departmentId);
-  console.log("body ", req.body);
+  // console.log("departmentId ", departmentId);
 
   try {
     const user = await User.setDepartment(departmentId, id);
@@ -302,21 +301,6 @@ const deleteUser = async (req, res) => {
   }
 };
 
-const updatePhoneNumber = async (req, res) => {
-  try {
-    const { phone, userId } = req.body;
-    const updated = await User.updatePhoneNumber(phone, userId);
-    if (!updated) {
-      return res.status(400).json({ message: "Cannot update Phone number" });
-    }
-    return res.status(200).json(updated);
-  } catch (error) {
-    return res.status(500).json({
-      message: "เกิดข้อผิดพลาดภายในระบบ",
-      error: error.message,
-    });
-  }
-};
 module.exports = {
   findUser,
   setDepartment,
@@ -332,5 +316,4 @@ module.exports = {
   changePassword,
   changePasswordByUserId,
   deleteUser,
-  updatePhoneNumber,
 };

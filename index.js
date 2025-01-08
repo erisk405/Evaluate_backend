@@ -44,6 +44,10 @@ io.on('connection', (socket) => {
     io.emit('userNotification', data);
   });
 
+  socket.on('evaluatedHandled', (data) => {
+    io.emit('evaluatedNotification', data);
+  });
+
   socket.on('disconnect', () => {
     console.log('User disconnected');
   });
