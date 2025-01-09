@@ -71,7 +71,7 @@ router.get("/allUsers",middleware.verifyToken,middleware.verifyAdmin,userControl
 router.put("/usersToDepartment",middleware.verifyToken,middleware.verifyAdmin,userController.setUserstoDepartment);
 router.put("/password",middleware.verifyToken,userController.changePassword);
 router.put("/password/:userId",middleware.verifyToken,middleware.verifyAdmin,userController.changePasswordByUserId);
-router.delete("/user/:userId",middleware.verifyToken,middleware.verifyAdmin,userController.deleteUser);
+router.delete("/user",middleware.verifyToken,middleware.verifyAdmin,userController.deleteUser);
 //--------------user----------------------
 
 //--------------form----------------------

@@ -27,9 +27,9 @@ const updateUserName = async (uid, name) => {
       data: {
         name,
       },
-      select:{
-        name:true
-      }
+      select: {
+        name: true,
+      },
     });
   } catch (error) {
     console.log("Error on updateUserName model!!");
@@ -45,9 +45,9 @@ const updateUserPrefix = async (uid, prefix_id) => {
       data: {
         prefix_id,
       },
-      select:{
-        prefix:true
-      }
+      select: {
+        prefix: true,
+      },
     });
   } catch (error) {
     console.log("Error on updateUserPrefix !!");
@@ -80,11 +80,11 @@ const updateUserPassword = async (uid, newPassword) => {
       data: {
         password: hashedPassword,
       },
-      select:{
-        id:true,
-        name:true,
-        password:true
-      }
+      select: {
+        id: true,
+        name: true,
+        password: true,
+      },
     });
   } catch (error) {
     return error;
@@ -183,9 +183,26 @@ const findUserById = async (id) => {
       supervise: true,
       department_id: true,
       department: true,
-      password:true
+      password: true,
     },
   });
+};
+const findUsersByIds = async (userIds) => {
+  try {
+    return prisma.user.findMany({
+      where: {
+        id: {
+          in: userIds,
+        },
+      },
+      include: {
+        image: true,
+      },
+    });
+  } catch (error) {
+    console.error(error);
+    throw error;
+  }
 };
 
 const findUserEmptyDepartment = async () => {
@@ -453,7 +470,10 @@ const filterUserForExecutive = async (userId) => {
         } else {
           throw new Error("ยังไม่มีหน่วยงานที่กำกับดูแล ");
         }
-      } else if (role_level === "LEVEL_4" || userDetail.role.role_name === "admin")
+      } else if (
+        role_level === "LEVEL_4" ||
+        userDetail.role.role_name === "admin"
+      )
         filterUsers = allUsers.filter(
           (user) => user.role?.role_name !== "admin" && user.department?.id
         );
@@ -475,43 +495,51 @@ const filterUserForExecutive = async (userId) => {
   }
 };
 
-const deleteUserById = async (userId) => {
+const deleteUsersByIds = async (userIds) => {
   try {
-    return prisma.user.delete({
-      where:{
-        id:userId
-      },
-      select:{
-        id:true,
-        name:true
-      }
-    })
-    
-  } catch (error) {
-    console.log(error);
-    
-  }
-}
+    // Use Prisma transaction to ensure all operations succeed or fail together
+    return await prisma.$transaction(async (tx) => {
+      // 1. Delete all RoleRequests for these users first
+      await tx.roleRequest.deleteMany({
+        where: {
+          userId: {
+            in: userIds,
+          },
+        },
+      });
 
-const updatePhoneNumber = async(phone,userId)=>{
+      // 2. Then delete the users
+      return tx.user.deleteMany({
+        where: {
+          id: {
+            in: userIds,
+          },
+        },
+      });
+    });
+  } catch (error) {
+    console.error(error);
+    throw error;
+  }
+};
+
+const updatePhoneNumber = async (phone, userId) => {
   try {
     return prisma.user.update({
-      where:{
-        id:userId
+      where: {
+        id: userId,
       },
-      data:{
-        phone
-      }
-      ,select:{
-        phone:true
-      }
-    })
-    
+      data: {
+        phone,
+      },
+      select: {
+        phone: true,
+      },
+    });
   } catch (error) {
     console.log(error);
-    
   }
-}
+};
 
 module.exports = {
   // findAllUserforCount,
@@ -534,6 +562,7 @@ module.exports = {
   updateUserPrefix,
   updateUserPassword,
   filterUserForExecutive,
-  deleteUserById,
-  updatePhoneNumber
+  deleteUsersByIds,
+  updatePhoneNumber,
+  findUsersByIds,
 };

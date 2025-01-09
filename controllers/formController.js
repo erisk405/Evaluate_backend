@@ -143,7 +143,6 @@ const updateQuestion = async (req, res) => {
 const deleteQuestion = async (req, res) => {
   try {
     const questionToDelete = req.body;
-
     // console.log("questionToDelete", questionToDelete);
     // เอามาแค่ question ID
     const questionIds = questionToDelete.map((question) => question.id);

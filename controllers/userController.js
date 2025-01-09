@@ -1,4 +1,5 @@
 const User = require("../models/userModel");
+const Role = require("../models/roleModel");
 const Image = require("../models/imageModel");
 const bcrypt = require("bcryptjs");
 const { deleteImage } = require("./routeUpload");
@@ -134,7 +135,7 @@ const updateNameAndPrefix = async (req, res) => {
       res.status(500).json("don't update User'prefix ");
       throw error;
     }
-    const updatedPhoneNumber = await User.updatePhoneNumber(phone,userId);
+    const updatedPhoneNumber = await User.updatePhoneNumber(phone, userId);
     if (!updatedPhoneNumber) {
       return res
         .status(404)
@@ -144,7 +145,7 @@ const updateNameAndPrefix = async (req, res) => {
       message: "Success updated user prefix and name.",
       name: nameUpdated.name,
       prefix: prefixUpdated.prefix,
-      phone: updatedPhoneNumber.phone
+      phone: updatedPhoneNumber.phone,
     });
   } catch (error) {
     console.error({ message: error });
@@ -275,23 +276,27 @@ const changePasswordByUserId = async (req, res) => {
 
 const deleteUser = async (req, res) => {
   try {
-    const userId = req.params.userId;
-    const user = await User.findUserById(userId);
-    if (!user) {
-      return res.status(404).json({ error: "User not found!" });
+    const userIds = req.body;
+    console.log("userIds", userIds);
+
+    // Find all users that will be deleted
+    const users = await User.findUsersByIds(userIds);
+    if (!users || users.length === 0) {
+      return res.status(404).json({ error: "No users found!" });
     }
-    console.log("user:", user);
-    if (user.image) {
-      // Delete the old image
-      await deleteImage(user.image.public_id);
-      // ลบ old image จาก database
-      await Image.DeleteImage(user.image.id);
+    // Delete images for all users that have them
+    for (const user of users) {
+      if (user.image) {
+        await deleteImage(user.image.public_id);
+        await Image.DeleteImage(user.image.id);
+      }
     }
-    const deleteUser = await User.deleteUserById(userId);
-    if (!deleteUser) {
-      return res.status(400).json({ message: "Cannot delete this user" });
-    }
-    return res.status(200).json(deleteUser);
+    // Delete users and their related records
+    const result = await User.deleteUsersByIds(userIds);
+    return res.status(200).json({
+      message: "Users and related records deleted successfully",
+      deletedCount: result.count,
+    });
   } catch (error) {
     console.log(error);
     return res.status(500).json({
