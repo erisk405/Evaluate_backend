@@ -1286,7 +1286,7 @@ const deleteEvaluate = async (req, res) => {
 const saveToHistory = async (req, res) => {
   try {
     const { period_id } = req.body;
-
+    let status = false;
     // ดึงข้อมูลผู้ใช้ทั้งหมด
     const allUsers = await user.getAllUsers();
 
@@ -1306,6 +1306,7 @@ const saveToHistory = async (req, res) => {
           period_id
         );
         if (result) {
+          status = true
           return await prisma.$transaction(async (tx) => {
             // สร้าง history
             const createHistory = await history.createHistory(
@@ -1426,10 +1427,14 @@ const saveToHistory = async (req, res) => {
       })
     );
 
-    const updateBackup = await period.setBackupTrue(period_id);
-
-    if (!updateBackup) {
-      return res.status(400).json({ message: "Can not set back Up true" });
+    if(status){
+      const updateBackup = await period.setBackupTrue(period_id);
+  
+      if (!updateBackup) {
+        return res.status(400).json({ message: "Can not set back Up true" });
+      }
+    }else{
+      return res.status(404).json({message:"Not found Evluate result !!"})
     }
 
     return res.status(200).json({ resultsCreate });
