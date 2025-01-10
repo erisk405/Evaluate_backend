@@ -2,7 +2,6 @@ const nodemailer = require("nodemailer");
 const fs = require("fs/promises");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
-const config = require("../config");
 const User = require("../models/userModel");
 const Role = require("../models/roleModel");
 const tokenExpiresIn = 36000;
@@ -32,7 +31,7 @@ const login = async (req, res) => {
     }
     const token = jwt.sign(
       { id: user.id, role: user.role.role_name },
-      config.jwtSecret,
+      process.env.jwtSecret,
       {
         expiresIn: tokenExpiresIn + "s",
       }
@@ -78,7 +77,7 @@ const forgotPassword = async (req, res) => {
         .json({ success: false, message: "Email not found user" });
     }
     // สร้าง token สำหรับการ reset password
-    const token = jwt.sign({ uid: findUser.id }, config.jwtSecret, {
+    const token = jwt.sign({ uid: findUser.id }, process.env.jwtSecret, {
       expiresIn: "15m",
     });
     const resetLink = `http://localhost:3000/reset-password/${token}`; // ลิงก์พร้อม token
@@ -113,7 +112,7 @@ const resetPassword = async (req, res) => {
     const { token, newPassword } = req.body;
     if (!token) return res.status(403).json({ message: "No token provided" });
 
-    jwt.verify(token, config.jwtSecret, async (err, decoded) => {
+    jwt.verify(token, process.env.jwtSecret, async (err, decoded) => {
       if (err) {
         return res
           .status(500)
