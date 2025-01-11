@@ -23,7 +23,7 @@ app.use(cookieParser());
 // CORS configuration
 app.use(cors({
   credentials: true,
-  origin: "http://localhost:3000", // Allow only this origin
+  origin: "https://evaluation-360.vercel.app", // Allow only this origin
   methods: ["GET", "POST", "PUT", "DELETE","PATCH"], // Allowed HTTP methods
   allowedHeaders: ["Content-Type"], // Allowed headers
 }));
