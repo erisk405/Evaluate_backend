@@ -10,6 +10,7 @@ const http = require("http");
 const allowedOrigins = [
   "https://evaluation-360.vercel.app",
   "https://evaluation-360-9agw02exx-eris-projects-692a8a83.vercel.app",
+  // "http://localhost:3000"
 ];
 
 const app = express();
@@ -26,7 +27,6 @@ const io = new Server(server, {
     },
     methods: ["GET", "POST", "PATCH", "PUT", "DELETE"],
     allowedHeaders: ["Content-Type"], // Allowed headers
-    credentials: true,
   },
 });
 
@@ -39,6 +39,7 @@ app.use(
   cors({
     credentials: true,
     origin: function (origin, callback) {
+      console.log("Origin:", origin); // ดูว่า Origin ที่ส่งมาเป็นอะไร
       if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
@@ -46,25 +47,9 @@ app.use(
       }
     },
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"], // Allowed HTTP methods
-    allowedHeaders: ["Content-Type", "Authorization"], // เพิ่ม headers ที่ต้องการ
+    allowedHeaders: ["Content-Type"], // เพิ่ม headers ที่ต้องการ
   })
 );
-app.options(
-  "*",
-  cors({
-    credentials: true,
-    origin: function (origin, callback) {
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error("Not allowed by CORS"));
-      }
-    },
-    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"], // เพิ่ม OPTIONS
-    allowedHeaders: ["Content-Type", "Authorization"],
-  })
-);
-
 app.use("/api", routes);
 
 // Socket.IO setup
