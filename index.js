@@ -10,7 +10,7 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: "https://evaluation-360.vercel.app", // Allow only this origin
+    origin: "https://evaluation-360-9agw02exx-eris-projects-692a8a83.vercel.app", // Allow only this origin
     methods: ["GET", "POST","PATCH", "PUT", "DELETE"],
     allowedHeaders: ["Content-Type"], // Allowed headers
   }
@@ -23,7 +23,7 @@ app.use(cookieParser());
 // CORS configuration
 app.use(cors({
   credentials: true,
-  origin: "https://evaluation-360.vercel.app", // Allow only this origin
+  origin: "https://evaluation-360-9agw02exx-eris-projects-692a8a83.vercel.app", // Allow only this origin
   methods: ["GET", "POST", "PUT", "DELETE","PATCH"], // Allowed HTTP methods
   allowedHeaders: ["Content-Type"], // Allowed headers
 }));
