@@ -8,13 +8,16 @@ const http = require("http");
 
 // Allow specific frontend origins
 const allowedOrigins = [
-  "https://evaluation-360.vercel.app",
-  "https://evaluation-360-9agw02exx-eris-projects-692a8a83.vercel.app",
-  // "http://localhost:3000"
+  process.env.CLIENT_URL,
+  "http://localhost:3000",
 ];
 
 const app = express();
 const server = http.createServer(app);
+// JSON
+app.use(express.json());
+// ตั้งค่า cookie-parser ก่อน routes
+app.use(cookieParser());
 const io = new Server(server, {
   cors: {
     origin: function (origin, callback) {
@@ -26,18 +29,14 @@ const io = new Server(server, {
       }
     },
     methods: ["GET", "POST", "PATCH", "PUT", "DELETE"],
-    allowedHeaders: ["Content-Type"], // Allowed headers
+    allowedHeaders: ["Content-Type", "Authorization"], // อนุญาต headers ที่ต้องการ
+    credentials: true,
   },
 });
-
-// JSON
-app.use(express.json());
-app.use(cookieParser());
 
 // CORS configuration
 app.use(
   cors({
-    credentials: true,
     origin: function (origin, callback) {
       console.log("Origin:", origin); // ดูว่า Origin ที่ส่งมาเป็นอะไร
       if (!origin || allowedOrigins.includes(origin)) {
@@ -46,8 +45,10 @@ app.use(
         callback(new Error("Not allowed by CORS"));
       }
     },
-    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"], // Allowed HTTP methods
-    allowedHeaders: ["Content-Type"], // เพิ่ม headers ที่ต้องการ
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"], // อนุญาต headers ที่ต้องการ
+    exposedHeaders: ["Set-Cookie"],
+    credentials: true,
   })
 );
 app.use("/api", routes);

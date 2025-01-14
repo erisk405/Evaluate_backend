@@ -6,7 +6,6 @@ const User = require("../models/userModel");
 const Role = require("../models/roleModel");
 const tokenExpiresIn = 36000;
 const cookieMaxAge = tokenExpiresIn * 1000;
-
 const register = async (req, res) => {
   try {
     const role = await Role.checkMemberRole();
@@ -16,7 +15,6 @@ const register = async (req, res) => {
     res.status(500).json({ message: "Error registered user!" });
   }
 };
-
 const login = async (req, res) => {
   const { email, password } = req.body;
   try {
@@ -29,21 +27,21 @@ const login = async (req, res) => {
     if (!isMatch) {
       return res.status(401).json({ message: "Invalid username or password" });
     }
+
     const token = jwt.sign(
       { id: user.id, role: user.role.role_name },
       process.env.jwtSecret,
-      {
-        expiresIn: tokenExpiresIn + "s",
-      }
+      { expiresIn: tokenExpiresIn + "s" }
     );
-    res.cookie("token", token, {
-      maxAge: cookieMaxAge,
-      secure: true,
-      httpOnly: true,
-      sameSite: "none",
+
+    // ส่ง JWT ผ่าน Authorization header
+    res.status(200).json({
+      message: "Login Success",
+      success: true,
+      token, // frontend จะต้องเก็บ token และแนบไปใน request ถัดไป
     });
-    res.json({ message: "Login Success" });
   } catch (error) {
+    console.error("Error logging in:", error);
     res.status(500).json({ message: "Error logging in" });
   }
 };
@@ -80,7 +78,7 @@ const forgotPassword = async (req, res) => {
     const token = jwt.sign({ uid: findUser.id }, process.env.jwtSecret, {
       expiresIn: "15m",
     });
-    const resetLink = `http://localhost:3000/reset-password/${token}`; // ลิงก์พร้อม token
+    const resetLink = `${process.env.CLIENT_URL}/reset-password/${token}`; // ลิงก์พร้อม token
 
     // อ่านเนื้อหาไฟล์ mail.html
     let htmlContent = await fs.readFile("../backend/mail.html", "utf-8");
