@@ -5,12 +5,10 @@ const routes = require("./routes");
 const cookieParser = require("cookie-parser");
 const { Server } = require("socket.io");
 const http = require("http");
+const jwt = require("jsonwebtoken"); // เพิ่มการ import jwt
 
 // Allow specific frontend origins
-const allowedOrigins = [
-  process.env.CLIENT_URL,
-  "http://localhost:3000",
-];
+const allowedOrigins = [process.env.CLIENT_URL, "http://localhost:3000"];
 
 const app = express();
 const server = http.createServer(app);
@@ -38,7 +36,6 @@ const io = new Server(server, {
 app.use(
   cors({
     origin: function (origin, callback) {
-      console.log("Origin:", origin); // ดูว่า Origin ที่ส่งมาเป็นอะไร
       if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
@@ -54,6 +51,22 @@ app.use(
 app.use("/api", routes);
 
 // Socket.IO setup
+// io.use((socket, next) => {
+//   const token = socket.handshake.auth.token;
+//   if (!token) {
+//     return next(new Error("Authentication error"));
+//   }
+
+//   try {
+//     const user = jwt.verify(token, process.env.jwtSecret); // ใช้ jwtSecret จาก .env
+//     socket.user = user; // เก็บข้อมูลผู้ใช้ใน socket
+//     console.log("user", user);
+//     next();
+//   } catch (err) {
+//     next(new Error("Invalid token"));
+//   }
+// });
+
 io.on("connection", (socket) => {
   console.log("A user connected");
 

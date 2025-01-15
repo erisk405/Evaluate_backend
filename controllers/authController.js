@@ -5,7 +5,9 @@ const bcrypt = require("bcryptjs");
 const User = require("../models/userModel");
 const Role = require("../models/roleModel");
 const tokenExpiresIn = 36000;
-const cookieMaxAge = tokenExpiresIn * 1000;
+const tokenMaxAge = tokenExpiresIn * 1000;
+const isProduction = process.env.NODE_ENV === "production"
+const baseUrl = isProduction ? `${process.env.CLIENT_URL}` : "http://localhost:3000"
 const register = async (req, res) => {
   try {
     const role = await Role.checkMemberRole();
@@ -31,7 +33,7 @@ const login = async (req, res) => {
     const token = jwt.sign(
       { id: user.id, role: user.role.role_name },
       process.env.jwtSecret,
-      { expiresIn: tokenExpiresIn + "s" }
+      { expiresIn: tokenMaxAge + "s" }
     );
 
     // ส่ง JWT ผ่าน Authorization header
@@ -67,7 +69,7 @@ const forgotPassword = async (req, res) => {
   try {
     const email = req.params.email;
     const findUser = await User.findUserByEmail(email);
-    // console.log(findUser);
+    console.log(findUser);
 
     if (!findUser) {
       return res
@@ -78,7 +80,7 @@ const forgotPassword = async (req, res) => {
     const token = jwt.sign({ uid: findUser.id }, process.env.jwtSecret, {
       expiresIn: "15m",
     });
-    const resetLink = `${process.env.CLIENT_URL}/reset-password/${token}`; // ลิงก์พร้อม token
+    const resetLink = `${baseUrl}/reset-password/${token}`; // ลิงก์พร้อม token
 
     // อ่านเนื้อหาไฟล์ mail.html
     let htmlContent = await fs.readFile("../backend/mail.html", "utf-8");
@@ -107,7 +109,14 @@ const forgotPassword = async (req, res) => {
 
 const resetPassword = async (req, res) => {
   try {
-    const { token, newPassword } = req.body;
+    const { newPassword } = req.body;
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(403).json({ message: "No token provided" });
+    }
+
+    const token = authHeader.split(" ")[1];
     if (!token) return res.status(403).json({ message: "No token provided" });
 
     jwt.verify(token, process.env.jwtSecret, async (err, decoded) => {
