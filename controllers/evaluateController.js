@@ -371,7 +371,7 @@ const getEvaluatePerDepart = async (req, res) => {
             if (finishCk == false) {
               unfinishUsers.push({
                 id: users.id,
-                name: users.prefix.prefix_name + users.name,
+                name: (users.prefix?.prefix_name || "") + users.name,
                 image: users.image,
                 role: {
                   id: users.role.id,
@@ -381,7 +381,7 @@ const getEvaluatePerDepart = async (req, res) => {
             }
             const userData = {
               id: users.id,
-              name: users.prefix.prefix_name + " " + users.name,
+              name: (users.prefix?.prefix_name || "") + users.name,
               finished: finishCk,
               countReceived: countReceived,
               totalCount: totalCount,
@@ -1306,7 +1306,7 @@ const saveToHistory = async (req, res) => {
           period_id
         );
         if (result) {
-          status = true
+          status = true;
           return await prisma.$transaction(async (tx) => {
             // สร้าง history
             const createHistory = await history.createHistory(
@@ -1427,14 +1427,14 @@ const saveToHistory = async (req, res) => {
       })
     );
 
-    if(status){
+    if (status) {
       const updateBackup = await period.setBackupTrue(period_id);
-  
+
       if (!updateBackup) {
         return res.status(400).json({ message: "Can not set back Up true" });
       }
-    }else{
-      return res.status(404).json({message:"Not found Evluate result !!"})
+    } else {
+      return res.status(404).json({ message: "Not found Evluate result !!" });
     }
 
     return res.status(200).json({ resultsCreate });
@@ -1630,7 +1630,7 @@ const getResultEvaluateFormHistoryByUserId = async (req, res) => {
 const deleteHistoryByPeriod = async (req, res) => {
   try {
     const periodId = req.params.periodId;
-    console.log("p1",periodId);
+    console.log("p1", periodId);
 
     await prisma.$transaction(async (tx) => {
       // Find history data
@@ -1650,17 +1650,17 @@ const deleteHistoryByPeriod = async (req, res) => {
           await history.deleteHistoryFormScore(detail.id, tx);
 
           // Delete the history detail
-          await history.deleteHistoryDetailByID(detail.id,tx)
+          await history.deleteHistoryDetailByID(detail.id, tx);
           console.log(`Deleted history detail with ID: ${detail.id}`);
         }
 
         // Delete the main history record
-        await history.deleteHistoryById(subHistory.history_id,tx)
+        await history.deleteHistoryById(subHistory.history_id, tx);
         console.log(`Deleted history record with ID: ${subHistory.history_id}`);
       }
     });
-    console.log("p2",periodId);
-    
+    console.log("p2", periodId);
+
     await period.setBackupFalse(periodId);
 
     res.status(200).json({ message: "History deleted successfully" });
@@ -1672,8 +1672,6 @@ const deleteHistoryByPeriod = async (req, res) => {
     });
   }
 };
-
-
 
 module.exports = {
   createEvaluate,

@@ -8,7 +8,7 @@ const createUser = async (user, role) => {
   return prisma.user.create({
     data: {
       uid: user.uid,
-      email: user.email,
+      email: user.email.toLowerCase(), // ใช้ .toLowerCase() แทน
       name: user.name,
       password: hashedPassword,
       role_id: role.id,
@@ -18,6 +18,7 @@ const createUser = async (user, role) => {
     },
   });
 };
+
 const updateUserName = async (uid, name) => {
   try {
     return prisma.user.update({
@@ -92,8 +93,13 @@ const updateUserPassword = async (uid, newPassword) => {
 };
 
 const findUserByEmail = async (email) => {
-  return prisma.user.findUnique({
-    where: { email: email },
+  return prisma.user.findFirst({
+    where: {
+      email: {
+        equals: email,
+        mode: "insensitive", // ค้นหาแบบไม่คำนึงถึงตัวพิมพ์เล็กใหญ่
+      },
+    },
     include: {
       role: true,
     },

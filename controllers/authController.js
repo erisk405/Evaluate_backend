@@ -6,8 +6,10 @@ const User = require("../models/userModel");
 const Role = require("../models/roleModel");
 const tokenExpiresIn = 36000;
 const tokenMaxAge = tokenExpiresIn * 1000;
-const isProduction = process.env.NODE_ENV === "production"
-const baseUrl = isProduction ? `${process.env.CLIENT_URL}` : "http://localhost:3000"
+const isProduction = process.env.NODE_ENV === "production";
+const baseUrl = isProduction
+  ? `${process.env.CLIENT_URL}`
+  : "http://localhost:3000";
 const register = async (req, res) => {
   try {
     const role = await Role.checkMemberRole();
@@ -75,7 +77,7 @@ const forgotPassword = async (req, res) => {
 
     // Resolve path to the mail template
     const path = require("path");
-    const mailFilePath = path.join(process.cwd(), "mail.html");    
+    const mailFilePath = path.join(process.cwd(), "mail.html");
 
     // Read the mail template file
     let htmlContent;
@@ -109,7 +111,6 @@ const forgotPassword = async (req, res) => {
     res.status(500).json({ success: false, error: err.message });
   }
 };
-
 
 const resetPassword = async (req, res) => {
   try {
@@ -150,7 +151,6 @@ const resetPassword = async (req, res) => {
 module.exports = {
   register,
   login,
-  logout,
   forgotPassword,
   resetPassword,
 };
