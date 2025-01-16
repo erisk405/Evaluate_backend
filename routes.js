@@ -19,7 +19,6 @@ router.get("/protected",middleware.verifyToken,(req,res) =>{
 })
 router.post("/sign-up",authController.register);
 router.post("/sign-in",authController.login);
-router.post('/sign-out',authController.logout);
 router.get("/forgot-password/:email",authController.forgotPassword)
 router.put("/reset-password",authController.resetPassword)
 //--------------perfix----------------------

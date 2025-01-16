@@ -78,7 +78,7 @@ const getSuperviseByUserIdCon = async (req, res) => {
 const getSupervisesCon = async (req, res) => {
   try {
     const supervises = await supervise.getSupervises();
-    console.log("supervises",supervises);
+    // console.log("supervises",supervises);
     
     return res.status(200).json({
       message:"Success",

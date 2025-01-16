@@ -5,7 +5,6 @@ const routes = require("./routes");
 const cookieParser = require("cookie-parser");
 const { Server } = require("socket.io");
 const http = require("http");
-const jwt = require("jsonwebtoken"); // เพิ่มการ import jwt
 
 // Allow specific frontend origins
 const allowedOrigins = [process.env.CLIENT_URL, "http://localhost:3000"];
@@ -18,17 +17,9 @@ app.use(express.json());
 app.use(cookieParser());
 const io = new Server(server, {
   cors: {
-    origin: function (origin, callback) {
-      console.log("Origin:", origin); // ดูว่า Origin ที่ส่งมาเป็นอะไร
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error("Not allowed by CORS"));
-      }
-    },
+    origin: allowedOrigins,
     methods: ["GET", "POST", "PATCH", "PUT", "DELETE"],
-    allowedHeaders: ["Content-Type", "Authorization"], // อนุญาต headers ที่ต้องการ
-    credentials: true,
+    allowedHeaders: ["Content-Type", "Authorization"],
   },
 });
 
@@ -50,25 +41,13 @@ app.use(
 );
 app.use("/api", routes);
 
-// Socket.IO setup
-// io.use((socket, next) => {
-//   const token = socket.handshake.auth.token;
-//   if (!token) {
-//     return next(new Error("Authentication error"));
-//   }
-
-//   try {
-//     const user = jwt.verify(token, process.env.jwtSecret); // ใช้ jwtSecret จาก .env
-//     socket.user = user; // เก็บข้อมูลผู้ใช้ใน socket
-//     console.log("user", user);
-//     next();
-//   } catch (err) {
-//     next(new Error("Invalid token"));
-//   }
-// });
-
 io.on("connection", (socket) => {
   console.log("A user connected");
+  console.log("New connection:", socket.id);
+  // จับ error ที่เกิดขึ้นกับ server
+  socket.on("error", (error) => {
+    console.log("Socket error:", error);
+  });
 
   socket.on("newRoleRequest", (data) => {
     io.emit("adminNotification", data);

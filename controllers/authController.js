@@ -48,15 +48,6 @@ const login = async (req, res) => {
   }
 };
 
-const logout = (req, res) => {
-  try {
-    res.clearCookie("token", { path: "/", secure: true, sameSite: "none" });
-    res.json({ message: "Logout successful" });
-  } catch (error) {
-    res.status(500).json({ message: "Error logging out" });
-  }
-};
-
 // ตั้งค่า Nodemailer
 const transporter = nodemailer.createTransport({
   service: "gmail", // เปลี่ยนตามผู้ให้บริการ เช่น 'hotmail', 'yahoo'
@@ -69,31 +60,45 @@ const forgotPassword = async (req, res) => {
   try {
     const email = req.params.email;
     const findUser = await User.findUserByEmail(email);
-    console.log(findUser);
 
     if (!findUser) {
       return res
         .status(403)
         .json({ success: false, message: "Email not found user" });
     }
-    // สร้าง token สำหรับการ reset password
+
+    // Generate token for password reset
     const token = jwt.sign({ uid: findUser.id }, process.env.jwtSecret, {
       expiresIn: "15m",
     });
-    const resetLink = `${baseUrl}/reset-password/${token}`; // ลิงก์พร้อม token
+    const resetLink = `${baseUrl}/reset-password/${token}`;
 
-    // อ่านเนื้อหาไฟล์ mail.html
-    let htmlContent = await fs.readFile("../backend/mail.html", "utf-8");
+    // Resolve path to the mail template
+    const path = require("path");
+    const mailFilePath = path.join(process.cwd(), "mail.html");    
 
-    // แทนที่ {{resetLink}} ใน HTML ด้วยลิงก์จริง
+    // Read the mail template file
+    let htmlContent;
+    try {
+      htmlContent = await fs.readFile(mailFilePath, "utf-8");
+    } catch (fileError) {
+      console.error("Error reading mail.html:", fileError.message);
+      return res.status(500).json({
+        success: false,
+        message: "Failed to load email template",
+        error: fileError.message,
+      });
+    }
+
+    // Replace placeholder with the actual reset link
     htmlContent = htmlContent.replace("{{resetLink}}", resetLink);
 
-    // ส่งอีเมล
+    // Send email
     await transporter.sendMail({
-      from: process.env.EMAIL, // อีเมลผู้ส่ง
-      to: email, // อีเมลผู้รับ
+      from: process.env.EMAIL,
+      to: email,
       subject: "Reset your password",
-      html: htmlContent, // เนื้อหา HTML ที่ปรับแต่งแล้ว
+      html: htmlContent,
     });
 
     return res
@@ -101,11 +106,10 @@ const forgotPassword = async (req, res) => {
       .json({ success: true, message: "Email sent successfully!" });
   } catch (err) {
     console.error("Error:", err);
-    res
-      .status(500)
-      .json({ success: false, error: err.message, errorStack: err.stack });
+    res.status(500).json({ success: false, error: err.message });
   }
 };
+
 
 const resetPassword = async (req, res) => {
   try {
