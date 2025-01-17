@@ -484,8 +484,12 @@ const findResultEvaluateDetailByUserId = async (userId, periodId) => {
     };
 
     if (!evaluateData) {
+      console.error(
+        `No evaluate data found for userId: ${userId}, periodId: ${periodId}`
+      );
       throw new Error("not found evaluate for this evaluator");
     }
+
     const allScores = [];
     const formResults = await Promise.all(
       forms.map(async (formData) => {
@@ -1232,37 +1236,46 @@ const deleteEvaluate = async (req, res) => {
       const allResults = []; // เก็บผลลัพธ์ทั้งหมด
       for (const user of allUserId) {
         //find all evaluate id of user
-        const find = await evaluate.getResultEvaluateById(
-          user.userId,
-          periodId
-        );
+        const find = await evaluate.getResultEvaluateById(user, periodId);
+        // console.log("find", find);
+
         const allEvaluateId = find.map((user) => user.id);
 
-        console.log(`User: ${user.userId}, Evaluate IDs:`, allEvaluateId);
+        console.log(`User: ${user}, Evaluate IDs:`, allEvaluateId);
 
         if (allEvaluateId.length > 0) {
-          const userDelete = await prisma.$transaction(async (tx) => {
-            const results = [];
-            for (const evaluateId of allEvaluateId) {
-              const deleteEvaluateScore =
-                await evaluateDetail.deleteDetailEvalByEvaluteId(
-                  evaluateId,
-                  tx
-                );
+          // กำหนดเวลาตามจำนวน Record
+          const estimatedTimePerRecord = 1000; // ms ต่อ Record
+          const maxTimeout = 60000; // สูงสุด 60 วินาที
+          const dynamicTimeout = Math.min(
+            maxTimeout,
+            allEvaluateId.length * estimatedTimePerRecord
+          );
+          const userDelete = await prisma.$transaction(
+            async (tx) => {
+              const results = [];
+              for (const evaluateId of allEvaluateId) {
+                const deleteEvaluateScore =
+                  await evaluateDetail.deleteDetailEvalByEvaluteId(
+                    evaluateId,
+                    tx
+                  );
 
-              if (!deleteEvaluateScore) {
-                throw new Error("cannot delete evaluate score");
+                if (!deleteEvaluateScore) {
+                  throw new Error("cannot delete evaluate score");
+                }
+
+                const deleted = await evaluate.deleteEvaluate(evaluateId, tx);
+                if (!deleted) {
+                  throw new Error("cannot delete evaluate");
+                }
+
+                results.push({ evaluateId, deleteEvaluateScore, deleted });
               }
-
-              const deleted = await evaluate.deleteEvaluate(evaluateId, tx);
-              if (!deleted) {
-                throw new Error("cannot delete evaluate");
-              }
-
-              results.push({ evaluateId, deleteEvaluateScore, deleted });
-            }
-            return results;
-          });
+              return results;
+            },
+            { timeout: dynamicTimeout }
+          );
 
           allResults.push({ userId: user.userId, userDelete });
         }
@@ -1283,10 +1296,39 @@ const deleteEvaluate = async (req, res) => {
     });
   }
 };
+
+const calculateTimeout = async (result) => {
+  // คำนวณ timeout จากจำนวนข้อมูล
+  const totalForms = result.formResults.length;
+  const totalQuestions = result.formResults.reduce(
+    (sum, form) => sum + form.questions.length,
+    0
+  );
+
+  // กำหนดเวลาขั้นต่ำและการคำนวณเพิ่มตามขนาดข้อมูล
+  const baseTimeout = 10000; // 10 วินาทีเป็นค่าขั้นต่ำ
+  const timeoutPerForm = 2000; // เพิ่ม 2 วินาทีต่อฟอร์ม
+  const timeoutPerQuestion = 500; // เพิ่ม 0.5 วินาทีต่อคำถาม
+
+  const calculatedTimeout = Math.min(
+    baseTimeout +
+      totalForms * timeoutPerForm +
+      totalQuestions * timeoutPerQuestion,
+    60000 // ไม่เกิน 1 นาที
+  );
+
+  return {
+    timeout: calculatedTimeout,
+    maxWait: Math.min(calculatedTimeout / 2, 30000), // maxWait ไม่เกินครึ่งหนึ่งของ timeout และไม่เกิน 30 วินาที
+    dataSize: { totalForms, totalQuestions },
+  };
+};
+
 const saveToHistory = async (req, res) => {
   try {
     const { period_id } = req.body;
     let status = false;
+
     // ดึงข้อมูลผู้ใช้ทั้งหมด
     const allUsers = await user.getAllUsers();
 
@@ -1298,145 +1340,203 @@ const saveToHistory = async (req, res) => {
       )
       .map((user) => user.id);
 
-    // สร้าง history และ detail สำหรับผู้ใช้แต่ละคน
-    const resultsCreate = await Promise.all(
-      filterUserIds.map(async (userId) => {
-        const result = await findResultEvaluateDetailByUserId(
-          userId,
-          period_id
-        );
-        if (result) {
-          status = true;
-          return await prisma.$transaction(async (tx) => {
-            // สร้าง history
-            const createHistory = await history.createHistory(
-              result.historyData,
-              tx
+    // ฟังก์ชันแบ่งข้อมูลเป็นกลุ่ม (Batch Processing)
+    const chunkArray = (array, size) => {
+      const result = [];
+      for (let i = 0; i < array.length; i += size) {
+        result.push(array.slice(i, i + size));
+      }
+      return result;
+    };
+
+    // แบ่งผู้ใช้เป็นกลุ่ม (เช่น 10 รายการต่อ Batch)
+    const userChunks = chunkArray(filterUserIds, 10);
+    console.log("userChunks", userChunks);
+
+    const resultsCreate = [];
+
+    // วนลูปประมวลผลทีละ Batch
+    for (const chunk of userChunks) {
+      const batchResults = await Promise.allSettled(
+        chunk.map(async (userId) => {
+          try {
+            // ดึงข้อมูล Evaluate สำหรับ User
+            const result = await findResultEvaluateDetailByUserId(
+              userId,
+              period_id
             );
-            if (!createHistory) {
-              throw new Error("Failed to create history");
+            if (
+              !result ||
+              !result.formResults ||
+              result.formResults.length === 0
+            ) {
+              console.warn(
+                `No evaluate data found for userId: ${userId}, periodId: ${period_id}`
+              );
+              return null;
             }
-
-            // วนลูปสร้าง history detail, form score, และ question score
-            const historyCreateAll = await Promise.all(
-              result.formResults.map(async (form) => {
-                const formScore = [];
-                const historyDetailData = {
-                  history_id: createHistory.history_id, // ใช้ id จาก history ที่สร้าง
-                  questionHead: form.formName,
-                  level: form.questions[0].level,
-                };
-
-                const createHistoryDetail = await history.createHistoryDetail(
-                  historyDetailData,
+            status = true;
+            const timeoutSettings = await calculateTimeout(result);
+            await prisma.$transaction(
+              async (tx) => {
+                // สร้าง history
+                const createHistory = await history.createHistory(
+                  result.historyData,
                   tx
                 );
-                if (!createHistoryDetail) {
-                  throw new Error("Failed to create historyDetail");
+                if (!createHistory) {
+                  throw new Error("Failed to create history");
                 }
 
-                // สร้าง form score
-                if (form?.total) {
-                  form?.total.map((item) => {
-                    formScore.push({
-                      history_detail_id: createHistoryDetail.id,
-                      type_name: item.total,
-                      total_SD_per_type: item.sd,
-                      total_mean_per_type: item.average,
-                    });
-                  });
-                  formScore.push({
-                    history_detail_id: createHistoryDetail.id,
-                    type_name: "sumScore",
-                    total_SD_per_type: form.totalSDPerForm,
-                    total_mean_per_type: form.totalAvgPerForm,
-                  });
-                } else {
-                  formScore.push({
-                    history_detail_id: createHistoryDetail.id,
-                    type_name: "sumScore",
-                    total_SD_per_type: form.totalSDPerForm,
-                    total_mean_per_type: form.totalAvgPerForm,
-                  });
-                }
-
-                const createFormScore = await history.createHistoryFormScore(
-                  formScore,
-                  tx
-                );
-                if (!createFormScore) {
-                  throw new Error("Failed to create FormScore");
-                }
-
-                // สร้าง question score
-                let questionScoreData = form.questions.map((question) => {
-                  if (question?.scores) {
-                    const scores = [];
-                    question?.scores.map((score) => {
-                      scores.push({
-                        history_detail_id: createHistoryDetail.id,
-                        question: question.questionName,
-                        type_name: score.type,
-                        SD: score.sd,
-                        mean: score.average,
-                      });
-                    });
-                    scores.push({
-                      history_detail_id: createHistoryDetail.id,
-                      question: question.questionName,
-                      type_name: "sumScore",
-                      SD: question.sumScore.standardDeviation,
-                      mean: question.sumScore.average,
-                    });
-                    return scores;
-                  } else {
-                    return {
-                      history_detail_id: createHistoryDetail.id,
-                      question: question.questionName,
-                      type_name: "sumScore",
-                      SD: question.sumScore.standardDeviation,
-                      mean: question.sumScore.average,
+                // วนลูปสร้าง HistoryDetail, FormScore และ QuestionScore
+                const historyCreateAll = await Promise.all(
+                  result.formResults.map(async (form) => {
+                    const formScore = [];
+                    const historyDetailData = {
+                      history_id: createHistory.history_id, // ใช้ id จาก history ที่สร้าง
+                      questionHead: form.formName,
+                      level: form.questions[0]?.level,
                     };
-                  }
-                });
+                    // console.log("historyDetailData",historyDetailData);
 
-                if (form?.total) {
-                  questionScoreData = questionScoreData.flat();
-                }
+                    // สร้าง HistoryDetail
+                    const createHistoryDetail =
+                      await history.createHistoryDetail(historyDetailData, tx);
+                    if (!createHistoryDetail || !createHistoryDetail.id) {
+                      console.error("Failed to create historyDetail");
+                      throw new Error("Failed to create historyDetail");
+                    }
 
-                const createQuestionScore =
-                  await history.createHistoryQuestionScore(
-                    questionScoreData,
-                    tx
-                  );
-                if (!createQuestionScore) {
-                  throw new Error("Failed to create QuestionScore");
-                }
+                    console.log(
+                      `Created HistoryDetail with ID: ${createHistoryDetail.id}`
+                    );
 
-                return {
-                  createHistoryDetail,
-                  createFormScore,
-                  createQuestionScore,
-                };
-              })
+                    // เตรียมข้อมูล Form Score
+                    if (form?.total) {
+                      form?.total.map((item) => {
+                        formScore.push({
+                          history_detail_id: createHistoryDetail.id,
+                          type_name: item.total,
+                          total_SD_per_type: item.sd,
+                          total_mean_per_type: item.average,
+                        });
+                      });
+                      formScore.push({
+                        history_detail_id: createHistoryDetail.id,
+                        type_name: "sumScore",
+                        total_SD_per_type: form.totalSDPerForm,
+                        total_mean_per_type: form.totalAvgPerForm,
+                      });
+                    } else {
+                      formScore.push({
+                        history_detail_id: createHistoryDetail.id,
+                        type_name: "sumScore",
+                        total_SD_per_type: form.totalSDPerForm,
+                        total_mean_per_type: form.totalAvgPerForm,
+                      });
+                    }
+
+                    // สร้าง Form Score
+                    const createFormScore =
+                      await history.createHistoryFormScore(formScore, tx);
+                    if (!createFormScore) {
+                      console.error("Failed to create FormScore");
+                      throw new Error("Failed to create FormScore");
+                    }
+
+                    // สร้าง Question Score
+                    let questionScoreData = form.questions.map((question) => {
+                      if (question?.scores) {
+                        const scores = [];
+                        question?.scores.map((score) => {
+                          scores.push({
+                            history_detail_id: createHistoryDetail.id,
+                            question: question.questionName,
+                            type_name: score.type,
+                            SD: score.sd,
+                            mean: score.average,
+                          });
+                        });
+                        scores.push({
+                          history_detail_id: createHistoryDetail.id,
+                          question: question.questionName,
+                          type_name: "sumScore",
+                          SD: question.sumScore.standardDeviation,
+                          mean: question.sumScore.average,
+                        });
+                        return scores;
+                      } else {
+                        return {
+                          history_detail_id: createHistoryDetail.id,
+                          question: question.questionName,
+                          type_name: "sumScore",
+                          SD: question.sumScore.standardDeviation,
+                          mean: question.sumScore.average,
+                        };
+                      }
+                    });
+
+                    if (form?.total) {
+                      questionScoreData = questionScoreData.flat();
+                    }
+
+                    // สร้าง Question Score
+                    const createQuestionScore =
+                      await history.createHistoryQuestionScore(
+                        questionScoreData,
+                        tx
+                      );
+                    if (!createQuestionScore) {
+                      console.error("Failed to create QuestionScore");
+                      throw new Error("Failed to create QuestionScore");
+                    }
+
+                    return {
+                      createHistoryDetail,
+                      createFormScore,
+                      createQuestionScore,
+                    };
+                  })
+                );
+
+                return { createHistory, historyCreateAll };
+              },
+              {
+                maxWait: timeoutSettings.maxWait,
+                timeout: timeoutSettings.timeout,
+              }
             );
+          } catch (error) {
+            console.error(error.message);
+            throw error;
+          }
+        })
+      );
 
-            return { createHistory, historyCreateAll };
-          });
-        }
-      })
-    );
+      // จัดการผลลัพธ์ของ Batch
+      const successfulTransactions = batchResults.filter(
+        (result) => result.status === "fulfilled"
+      );
+      const failedTransactions = batchResults.filter(
+        (result) => result.status === "rejected"
+      );
 
+      console.log(
+        `Batch complete. Success: ${successfulTransactions.length}, Failed: ${failedTransactions.length}`
+      );
+
+      resultsCreate.push(...successfulTransactions);
+    }
+
+    // อัปเดต Backup Status
     if (status) {
       const updateBackup = await period.setBackupTrue(period_id);
-
       if (!updateBackup) {
         return res.status(400).json({ message: "Can not set back Up true" });
       }
     } else {
-      return res.status(404).json({ message: "Not found Evluate result !!" });
+      return res.status(404).json({ message: "Not found Evaluate result !!" });
     }
-
     return res.status(200).json({ resultsCreate });
   } catch (error) {
     console.error(error);
@@ -1631,34 +1731,49 @@ const deleteHistoryByPeriod = async (req, res) => {
   try {
     const periodId = req.params.periodId;
     console.log("p1", periodId);
+    // Find history data
+    const historyData = await history.findHistoryByPeriod(periodId); // Fetch history with details
+    if (!historyData.length) {
+      throw new Error(`No history found for period ID: ${periodId}`);
+    }
 
-    await prisma.$transaction(async (tx) => {
-      // Find history data
-      const historyData = await history.findHistoryByPeriod(periodId); // Fetch history with details
-      if (!historyData.length) {
-        throw new Error(`No history found for period ID: ${periodId}`);
-      }
+    for (const subHistory of historyData) {
+      const totalDetail = subHistory.history_detail.length;
+      const baseTimeout = 10000; // 10 วินาทีเป็นค่าขั้นต่ำ
+      const timeoutPerForm = 2000; // เพิ่ม 2 วินาทีต่อฟอร์ม
+      const timeoutPerQuestion = 500; // เพิ่ม 0.5 วินาทีต่อคำถาม
+      const calculatedTimeout = Math.min(
+        baseTimeout + totalDetail * timeoutPerForm + 10 * timeoutPerQuestion,
+        12000 // ไม่เกิน 2 นาที
+      );
+      await prisma.$transaction(
+        async (tx) => {
+          for (const detail of subHistory.history_detail) {
+            console.log(`Deleting detail: ${detail.id}`);
+            // Delete related question scores
+            await history.deleteHistoryQuestionScore(detail.id, tx);
 
-      for (const subHistory of historyData) {
-        for (const detail of subHistory.history_detail) {
-          console.log(`Deleting detail: ${detail.id}`);
+            // Delete related form scores
+            await history.deleteHistoryFormScore(detail.id, tx);
 
-          // Delete related question scores
-          await history.deleteHistoryQuestionScore(detail.id, tx);
+            // Delete the history detail
+            await history.deleteHistoryDetailByID(detail.id, tx);
+            console.log(`Deleted history detail with ID: ${detail.id}`);
+          }
 
-          // Delete related form scores
-          await history.deleteHistoryFormScore(detail.id, tx);
-
-          // Delete the history detail
-          await history.deleteHistoryDetailByID(detail.id, tx);
-          console.log(`Deleted history detail with ID: ${detail.id}`);
+          // Delete the main history record
+          await history.deleteHistoryById(subHistory.history_id, tx);
+          console.log(
+            `Deleted history record with ID: ${subHistory.history_id}`
+          );
+        },
+        {
+          maxWait: Math.min(calculatedTimeout / 2, 30000),
+          timeout: calculatedTimeout,
         }
+      );
+    }
 
-        // Delete the main history record
-        await history.deleteHistoryById(subHistory.history_id, tx);
-        console.log(`Deleted history record with ID: ${subHistory.history_id}`);
-      }
-    });
     console.log("p2", periodId);
 
     await period.setBackupFalse(periodId);

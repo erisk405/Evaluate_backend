@@ -1,7 +1,7 @@
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 
-const createHistory = async (historyData, tx) => {
+const createHistory = async (historyData) => {
   try {
     const user_id = historyData.user_id;
     const period_id = historyData.period_id;
@@ -10,7 +10,7 @@ const createHistory = async (historyData, tx) => {
     const total_SD = historyData.total_SD;
     const total_mean = historyData.total_mean;
 
-    return tx.history.create({
+    return prisma.history.create({
       data: {
         user_id,
         period_id,
@@ -26,7 +26,7 @@ const createHistory = async (historyData, tx) => {
   }
 };
 
-const createHistoryDetail = async (historyDetailData, tx) => {
+const createHistoryDetail = async (historyDetailData,tx) => {
   try {
     return tx.historyDetail.create({
       data: {
@@ -41,8 +41,9 @@ const createHistoryDetail = async (historyDetailData, tx) => {
   }
 };
 
-const createHistoryQuestionScore = async (questionScoreData, tx) => {
+const createHistoryQuestionScore = async (questionScoreData,tx) => {
   try {
+    // ใช้ prisma โดยตรงแทน tx
     const dataCreate = await tx.historyQuestionScore.createMany({
       data: questionScoreData.map((data) => ({
         history_detail_id: data.history_detail_id,
@@ -54,12 +55,13 @@ const createHistoryQuestionScore = async (questionScoreData, tx) => {
     });
     return dataCreate;
   } catch (error) {
-    console.error("Error failed to create historyDetail");
+    console.error("Error failed to create historyQuestionScore");
     throw error;
   }
 };
 
-const createHistoryFormScore = async (formScore, tx) => {
+
+const createHistoryFormScore = async (formScore,tx) => {
   try {
     const dataCreate = await tx.historyFormScore.createMany({
       data: formScore.map((data) => ({

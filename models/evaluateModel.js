@@ -116,11 +116,13 @@ const getResultEvaluateById = async (evaluator_id, period_id) => {
   try {
     const result = prisma.evaluate.findMany({
       where: {
-        evaluator_id,
-        period_id,
+        AND: [
+          { evaluator_id: evaluator_id },
+          { period_id: period_id },
+        ],
       },
       select: {
-        id:true,
+        id: true,
         evaluator: {
           select: {
             prefix: {
@@ -209,9 +211,9 @@ const upDateDateEval = async (evaluate_id, tx) => {
 const findEvaluateByPeriod = async (period_id) => {
   try {
     return prisma.evaluate.findMany({
-      where:{
-        period_id
-      }
+      where: {
+        period_id,
+      },
     });
   } catch (error) {
     console.error("Error failed to find evaluate for this period:", error);
@@ -244,5 +246,5 @@ module.exports = {
   findResultEvaluate,
   upDateDateEval,
   findEvaluateByPeriod,
-  calculateScoreByMean
+  calculateScoreByMean,
 };
