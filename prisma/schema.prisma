@@ -111,7 +111,7 @@ model Form {
 
 model FormQuestion {
   id      String @id @default(uuid())
-  content String @unique
+  content String
   form_id String
   form    Form   @relation("form-have-question", fields: [form_id], references: [id])
 
@@ -163,6 +163,8 @@ model Permission {
   assessorRole   Role             @relation("AssessorOfRole", fields: [assessor_role_id], references: [id])
   permissionForm PermissionForm[] @relation("PermissionToForm")
 
+  // Composite Unique Constraint
+  @@unique([assessor_role_id, evaluator_role_id])
   @@index([assessor_role_id])
   @@index([evaluator_role_id])
 }
@@ -183,8 +185,8 @@ model Period {
   title     String
   start     DateTime
   end       DateTime
-  isAction  Boolean @default(false)
-  backUp    Boolean @default(false)
+  isAction  Boolean  @default(false)
+  backUp    Boolean  @default(false)
 
   evaluate Evaluate[]
   history  History[]
@@ -199,39 +201,40 @@ model History {
   total_SD        Float
   total_mean      Float
 
-  user            User   @relation(fields: [user_id], references: [id])
-  period          Period @relation(fields: [period_id], references: [period_id])
-  @@unique([period_id,user_id])
+  user           User            @relation(fields: [user_id], references: [id])
+  period         Period          @relation(fields: [period_id], references: [period_id])
   history_detail HistoryDetail[]
+
+  @@unique([period_id, user_id])
 }
 
 model HistoryDetail {
-  id String         @id @default(uuid())
-  history_id        String
-  questionHead      String
-  level             VisionFormLevel
+  id           String          @id @default(uuid())
+  history_id   String
+  questionHead String
+  level        VisionFormLevel
 
-  history           History        @relation(fields: [history_id], references: [history_id])
-  historyQuestionScore     HistoryQuestionScore[]
+  history              History                @relation(fields: [history_id], references: [history_id])
+  historyQuestionScore HistoryQuestionScore[]
   historyFormScore     HistoryFormScore[]
 }
 
 model HistoryQuestionScore {
-  id   String @id @default(uuid())
-  history_detail_id  String
-  question           String
-  type_name          String
-  mean                Float
-  SD                  Float
-  history_detail HistoryDetail @relation(fields: [history_detail_id], references: [id])
+  id                String        @id @default(uuid())
+  history_detail_id String
+  question          String
+  type_name         String
+  mean              Float
+  SD                Float
+  history_detail    HistoryDetail @relation(fields: [history_detail_id], references: [id])
 }
 
 model HistoryFormScore {
-  id   String @id @default(uuid())
-  history_detail_id  String
-  type_name          String
-  total_SD_per_type  Float
-  total_mean_per_type  Float
+  id                  String @id @default(uuid())
+  history_detail_id   String
+  type_name           String
+  total_SD_per_type   Float
+  total_mean_per_type Float
 
   history_detail HistoryDetail @relation(fields: [history_detail_id], references: [id])
 }

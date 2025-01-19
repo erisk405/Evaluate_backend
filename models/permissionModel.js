@@ -53,11 +53,15 @@ const deletePermission = async (assessor_role_id) => {
   try {
     return prisma.permission.deleteMany({
       where: {
-        assessor_role_id: assessor_role_id,
+        OR: [
+          { assessor_role_id: assessor_role_id },
+          { evaluator_role_id: assessor_role_id },
+        ],
       },
     });
   } catch (error) {
     console.error({ message: error });
+    throw error; // Ensure the error is propagated to the caller
   }
 };
 
@@ -77,15 +81,15 @@ const findPermissionFormById = async (permission_id) => {
       where: {
         permission_id,
       },
-      select:{
-        form:{
-          select:{
-            id:true,
-            name:true,
-          }
+      select: {
+        form: {
+          select: {
+            id: true,
+            name: true,
+          },
         },
-        ingroup:true
-      }
+        ingroup: true,
+      },
     });
   } catch (error) {}
 };
@@ -115,9 +119,8 @@ const findEvaluatorPermissions = async (userId) => {
                 name: true,
               },
             },
-            ingroup:true
+            ingroup: true,
           },
-          
         },
         assessorRole: {
           select: {
@@ -129,7 +132,7 @@ const findEvaluatorPermissions = async (userId) => {
     });
     return evaluatorPermissions;
   } catch (error) {
-    console.error('Error finding evaluator permissions:', error);
+    console.error("Error finding evaluator permissions:", error);
   }
 };
 

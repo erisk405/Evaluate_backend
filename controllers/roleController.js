@@ -46,16 +46,17 @@ const updateRole = async (req, res) => {
 const deleteRole = async (req,res) => {
   try {
     const {id} = req.body
+    console.log("accessorId",id);
+    
     const permissionfind = await permission.findPermissionByRoleId(id);
-    if(!!permissionfind){
+    if(permissionfind){
       for(const [_,value]of Object.entries(permissionfind)){
         // console.log("value",value);
         const deletePermissionForm = await permission.deletePermissionForm(value.permission_id);
-        // console.log("deletePermissionForm",deletePermissionForm);
-        
+        console.log("deletePermissionForm",deletePermissionForm);
       }
       const deletePermission = await permission.deletePermission(id);
-      // console.log("deletePermission",deletePermission);
+      console.log("deletePermission",deletePermission);
       
     }
     const deleteVision = await form.deleteVisionByRoleId(id)

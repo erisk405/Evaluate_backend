@@ -240,13 +240,13 @@ const changePassword = async (req, res) => {
     if (!isMatch) {
       return res
         .status(409)
-        .json({ message: "Old password is not correct !!" });
+        .json({ message: "รหัสผ่านเดิม ไม่ถูกต้อง !!" });
     }
     const updated = await User.updateUserPassword(userId, new_pass);
 
     return res
       .status(201)
-      .json({ message: "Set new password success**", update: updated });
+      .json({ message: "ตั้งค่ารหัสผ่านใหม่สำเร็จ", update: updated });
   } catch (error) {
     console.log(error);
     return res.status(500).json({
@@ -264,7 +264,7 @@ const changePasswordByUserId = async (req, res) => {
 
     return res
       .status(201)
-      .json({ message: "Set new password success**", update: updated });
+      .json({ message: "ตั้งรหัสผ่านใหม่สำเร็จ*", update: updated });
   } catch (error) {
     console.log(error);
     return res.status(500).json({

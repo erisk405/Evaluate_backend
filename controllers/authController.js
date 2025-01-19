@@ -122,7 +122,9 @@ const resetPassword = async (req, res) => {
     }
 
     const token = authHeader.split(" ")[1];
-    if (!token) return res.status(403).json({ message: "No token provided" });
+    if (!token) {
+      return res.status(403).json({ message: "No token provided" });
+    }
 
     jwt.verify(token, process.env.jwtSecret, async (err, decoded) => {
       if (err) {
@@ -134,11 +136,11 @@ const resetPassword = async (req, res) => {
       if (!updated) {
         return res
           .status(403)
-          .json({ success: false, message: "Cannot updated" });
+          .json({ success: false, message: "เปลี่ยนรหัสผ่านไม่สำเร็จ" });
       }
       return res
         .status(200)
-        .json({ success: true, message: "Reset password successfully!" });
+        .json({ success: true, message: "รีเซ็ตรหัสผ่านสำเร็จแล้ว!" });
     });
   } catch (error) {
     console.error("Error:", err);
