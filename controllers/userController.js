@@ -224,6 +224,37 @@ const updateUserImage = async (req, res) => {
     res.status(500).json({ error: "Something went wrong!", message: error });
   }
 };
+const updateUserImageByAdmin = async (req, res) => {
+  try {
+    const userId = req.params.userId;
+    console.log("userId:", userId);
+    // URL ของรูปที่ถูกอัพโหลด
+    if (!req.file || !req.file.path) {
+      throw new Error("Not found path image");
+    }
+    const user = await User.findUserById(userId);
+    if (!user) {
+      return res.status(404).json({ error: "User not found!" });
+    }
+    console.log("user:", user);
+    if (user.image) {
+      // Delete the old image
+      await deleteImage(user.image.public_id);
+      // ลบ old image จาก database
+      await Image.DeleteImage(user.image.id);
+    }
+
+    // บันทึก Image ลงในตาราง Image
+    const newImage = await Image.CreateImage(req.file);
+    // อัพเดต image_id ในตาราง User
+    const imageId = newImage.id;
+    const updatedUser = await User.updateImage(userId, imageId);
+    res.status(201).json(updatedUser);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Something went wrong!", message: error });
+  }
+};
 
 const showRole = async (req, res) => {
   const role = req.role;
@@ -321,4 +352,5 @@ module.exports = {
   changePassword,
   changePasswordByUserId,
   deleteUser,
+  updateUserImageByAdmin
 };

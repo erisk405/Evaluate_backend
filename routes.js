@@ -12,6 +12,7 @@ const evaluateController = require("./controllers/evaluateController");
 const superviseController = require("./controllers/superviseController");
 const exportController = require("./controllers/exportController");
 const { upload, uploadDepartmentImage } = require("./controllers/routeUpload");
+const { verify } = require("jsonwebtoken");
 const router = express.Router();
 
 router.get("/protected",middleware.verifyToken,(req,res) =>{
@@ -73,6 +74,10 @@ router.put("/password/:userId",middleware.verifyToken,middleware.verifyAdmin,use
 router.delete("/user",middleware.verifyToken,middleware.verifyAdmin,userController.deleteUser);
 //--------------user----------------------
 
+
+//--------------------------Image---------------------------------
+router.put("/imageUser/:userId",upload.single('image'), middleware.verifyToken,middleware.verifyAdmin,userController.updateUserImageByAdmin);
+//--------------------------Image---------------------------------
 //--------------form----------------------
 router.post("/form",middleware.verifyToken,middleware.verifyAdmin,formController.createForm)
 router.put("/roleFormVision",middleware.verifyToken,middleware.verifyAdmin,formController.updateVisionOfForm)
