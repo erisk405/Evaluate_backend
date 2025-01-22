@@ -21,22 +21,31 @@ const createEvaluate = async (req, res) => {
     // และ จากนั้น ก็ใช้ ใช้ try-catch เพื่อจัดการข้อผิดพลาด เช่น การ validate รูปแบบของ evalData.questions
     // หากเกิดข้อผิดพลาด ระบบจะ rollback และส่ง response พร้อมข้อความแสดงข้อผิดพลาด
     // console.log("evalData", evalData);
+    const questionsCount = evalData.questions.length
+    // เวลาพื้นฐาน timeout of 5 วิ
+    const baseTimeout = 5000;
+    // เพิ่มครั้งละ 500ms ต่อ 1 คำถาม
+    const timePerQuestion = 500;
+    const timeout = baseTimeout + questionsCount * timePerQuestion;
+    const total = Math.min(timeout, 30000);
+    const result = await prisma.$transaction(
+      async (tx) => {
+        // เรียกใช้ฟังก์ชันใน Model พร้อมส่ง transaction object
+        const created = await evaluate.createEvaluate(evalData, tx);
+        if (!created) throw new Error("Failed to create evaluate");
+        console.log("created", created.id);
 
-    const result = await prisma.$transaction(async (tx) => {
-      // เรียกใช้ฟังก์ชันใน Model พร้อมส่ง transaction object
-      const created = await evaluate.createEvaluate(evalData, tx);
-      if (!created) throw new Error("Failed to create evaluate");
-      console.log("created", created.id);
+        const createDetail = await evaluateDetail.createDetailEval(
+          created.id,
+          evalData.questions,
+          tx
+        );
+        if (!createDetail) throw new Error("Failed to create evaluate details");
 
-      const createDetail = await evaluateDetail.createDetailEval(
-        created.id,
-        evalData.questions,
-        tx
-      );
-      if (!createDetail) throw new Error("Failed to create evaluate details");
-
-      return created;
-    });
+        return created;
+      },
+      { timeout: total }
+    );
     res.status(201).json(result);
   } catch (error) {
     console.error("Error in createEvaluate:", error);
