@@ -172,6 +172,12 @@ const myProfile = async (userId) => {
           status: true,
         },
       },
+      supervise: {
+        select: {
+          department_id: true,
+          supervise_id: true,
+        },
+      },
     },
   });
 };
