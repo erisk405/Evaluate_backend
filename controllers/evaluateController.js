@@ -168,6 +168,10 @@ const getAssessorsPerFormByEvaluator = async (userId) => {
 
         totalAssessors += assessorIngroup + assessorOutgroup;
         // console.log(totalAssessors);
+        
+        // console.log("ingroup",assessorIngroup);
+        // console.log("outgroup",assessorOutgroup);
+        
         return permission.permissionForm.map((form) => ({
           ingroup: form.ingroup,
           formId: form.form.id,

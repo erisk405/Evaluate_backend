@@ -91,6 +91,13 @@ const getScoreByQuestionForDepartment = async (
                   }
                 }
               },
+              {
+                role:{
+                  role_level:{
+                    not:"LEVEL_4"
+                  }
+                }
+              }
           ],
           },
         },
