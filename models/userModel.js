@@ -506,7 +506,7 @@ const filterUserForExecutive = async (userId) => {
         filterUsers = allUsers.filter(
           (user) =>
             user.department?.id === userDetail.department_id &&
-            user.role?.role_level === "LEVEL_1"
+            user.role?.role_level !== "LEVEL_4"
         );
       } else if (role_level === "LEVEL_3") {
         const supervises = userDetail.supervise;
@@ -517,9 +517,7 @@ const filterUserForExecutive = async (userId) => {
             allUsers.map((user) => {
               if (
                 (user.department?.id === data.department_id &&
-                  user.role?.role_level === "LEVEL_1") ||
-                (user.department?.id === data.department_id &&
-                  user.role?.role_level === "LEVEL_2")
+                  user.role?.role_level !== "LEVEL_4") 
               ) {
                 filterUsers.push(user);
               }
