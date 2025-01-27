@@ -1101,7 +1101,7 @@ const getAllResultEvaluateOverviewByUserId = async (req, res) => {
       return res.status(404).json({ message: "not found detail" });
     }
     const period_id = req.params.period_id;
-    const filterUsers = await user.filterUserForExecutive(userId);
+    const filterUsers = await user.filterUserForExecutive(userDetail);
     if (!filterUsers || filterUsers.length == 0) {
       return res.status(404).json({ message: "ไม่มีผลการประเมิน" });
     }
@@ -1160,8 +1160,10 @@ const getAllResultEvaluateOverview = async (req, res) => {
     if (!userDetail) {
       return res.status(404).json({ message: "not found detail" });
     }
+    // console.log(userDetail);
+    
     const period_id = req.params.period_id;
-    const filterUsers = await user.filterUserForExecutive(userId);
+    const filterUsers = await user.filterUserForExecutive(userDetail);
     if (!filterUsers || filterUsers.length == 0) {
       return res.status(404).json({ message: "ไม่มีผลการประเมิน" });
     }

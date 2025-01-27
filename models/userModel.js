@@ -194,7 +194,11 @@ const findUserById = async (id) => {
       role: true,
       supervise: true,
       department_id: true,
-      department: true,
+      department:{
+        include:{
+          supervise:true
+        }
+      },
       password: true,
     },
   });
@@ -490,23 +494,27 @@ const findPermissionByUserId = async (userId, period_id) => {
   }
 };
 
-const filterUserForExecutive = async (userId) => {
+const filterUserForExecutive = async (userDetail) => {
+  // console.log(userDetail);
+  
   try {
-    const userDetail = await findUserById(userId);
     if (!userDetail) {
       throw new Error("cannot get userDetail");
     }
     const allUsers = await getAllUsers();
+  
     let filterUsers = [];
     const role_level = userDetail.role.role_level;
+    // console.log(userDetail.department.supervise);
+    
     // console.log(role_level);
 
     if (role_level) {
       if (role_level === "LEVEL_2") {
         filterUsers = allUsers.filter(
           (user) =>
-            user.department?.id === userDetail.department_id &&
-            user.role?.role_level !== "LEVEL_4"
+           (user.department?.id === userDetail.department_id &&
+            user.role?.role_level !== "LEVEL_4") || (user.id === userDetail.department.supervise?.user_id)
         );
       } else if (role_level === "LEVEL_3") {
         const supervises = userDetail.supervise;
