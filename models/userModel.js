@@ -325,6 +325,11 @@ const countAssessors = async (assessorRoleId, userId) => {
       where: { id: userId },
       select: {
         department_id: true,
+        department: {
+          select: {
+            supervise: true,
+          },
+        },
         supervise: {
           select: {
             department_id: true,
@@ -332,17 +337,33 @@ const countAssessors = async (assessorRoleId, userId) => {
         },
       },
     });
-    // console.log(userDepartment);
 
     if (!userDepartment) {
       throw new Error("User not found");
     }
+
     const { department_id, supervise } = userDepartment;
+    const departSupervise = userDepartment.department?.supervise; // ใช้ ?. ป้องกัน error
 
     // ตรวจสอบและเตรียม department_id จาก supervise
     const supervisedDepartments =
       supervise?.map((s) => s.department_id?.toString()) || [];
-    // console.log("supervisedDepartments", supervisedDepartments);
+
+    // กำหนดเงื่อนไข OR โดยตรวจสอบว่า departSupervise ไม่เป็น null ก่อน
+    const orConditions = [
+      {
+        department_id:
+          supervisedDepartments.length > 0
+            ? { in: supervisedDepartments }
+            : department_id,
+      },
+    ];
+
+    if (departSupervise) {
+      orConditions.push({
+        id: departSupervise.user_id,
+      });
+    }
 
     const assessorCount = await prisma.user.count({
       where: {
@@ -354,28 +375,30 @@ const countAssessors = async (assessorRoleId, userId) => {
             },
           },
           {
-            department_id:
-              supervisedDepartments.length > 0
-                ? { in: supervisedDepartments }
-                : department_id,
+            OR: orConditions,
           },
         ],
       },
-    
     });
-   
+
     return assessorCount;
   } catch (error) {
     console.error("Error counting assessors:", error);
     throw error;
   }
 };
+
 const countAssessorsOutgroup = async (assessorRoleId, userId) => {
   try {
     const userDepartment = await prisma.user.findUnique({
       where: { id: userId },
       select: {
         department_id: true,
+        department: {
+          select: {
+            supervise: true,
+          },
+        },
         supervise: {
           select: {
             department_id: true,
@@ -387,26 +410,36 @@ const countAssessorsOutgroup = async (assessorRoleId, userId) => {
     if (!userDepartment) {
       throw new Error("User not found");
     }
+
     const { department_id, supervise } = userDepartment;
+    const userSupervise = userDepartment.department?.supervise?.user_id; // ใช้ ?. ป้องกัน error
 
     // ตรวจสอบและเตรียม department_id จาก supervise
     const supervisedDepartments =
       supervise?.map((s) => s.department_id?.toString()) || [];
 
+    // สร้างเงื่อนไข NOT
+    const notConditions = [
+      {
+        department_id:
+          supervisedDepartments.length > 0
+            ? { in: supervisedDepartments }
+            : department_id,
+      },
+    ];
+
+    if (userSupervise) {
+      notConditions.push({
+        id: userSupervise,
+      });
+    }
+
     const assessorCount = await prisma.user.count({
       where: {
         role_id: assessorRoleId,
-        OR: [
-          {
-            NOT: {
-              department_id:
-                supervisedDepartments.length > 0
-                  ? { in: supervisedDepartments }
-                  : department_id,
-            },
-          },
-        ],
-        // เฉพาะ outgroup
+        NOT: {
+          OR: notConditions,
+        },
       },
     });
 
@@ -416,6 +449,7 @@ const countAssessorsOutgroup = async (assessorRoleId, userId) => {
     throw error;
   }
 };
+
 
 const findPermissionByUserId = async (userId, period_id) => {
   try {
@@ -506,7 +540,6 @@ const filterUserForExecutive = async (userDetail) => {
     let filterUsers = [];
     const role_level = userDetail.role.role_level;
     // console.log(userDetail.department.supervise);
-    
     // console.log(role_level);
 
     if (role_level) {
