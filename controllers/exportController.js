@@ -26,7 +26,7 @@ const exportResultOverviewByUserId = async (req, res) => {
       "รายงานสรุปผลการประเมินสำหรับ " +
       userDetail.prefix?.prefix_name +
       userDetail.name;
-    const filterUsers = await user.filterUserForExecutive(userId);
+    const filterUsers = await user.filterUserForExecutive(userDetail);
     if (!filterUsers) {
       return res
         .status(404)
