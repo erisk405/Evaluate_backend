@@ -4,8 +4,8 @@ const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const User = require("../models/userModel");
 const Role = require("../models/roleModel");
-const tokenExpiresIn = 36000;
-const tokenMaxAge = tokenExpiresIn * 1000;
+const tokenExpiresIn = 3600;
+const tokenMaxAge = tokenExpiresIn * 10; // 10 ชั่วโมง
 const isProduction = process.env.NODE_ENV === "production";
 const baseUrl = isProduction
   ? `${process.env.CLIENT_URL}`
@@ -14,22 +14,38 @@ const register = async (req, res) => {
   try {
     const role = await Role.checkMemberRole();
     await User.createUser(req.body, role);
-    res.status(201).json({ message: "User registered success !!!" });
+    res.status(201).json({ message: "ลงทะเบียนผู้ใช้สำเร็จ!" });
   } catch (error) {
-    res.status(500).json({ message: "Error registered user!" });
+    console.error("Error in register:", error);
+    if (error.code === "P2002") {
+      return res
+        .status(400)
+        .json({ message: "อีเมลนี้ถูกใช้ไปแล้ว กรุณาใช้อีเมลอื่น" });
+    }
+
+    if (error.code === "P2003") {
+      return res
+        .status(400)
+        .json({ message: "ข้อมูลที่ส่งมาไม่ถูกต้อง กรุณาตรวจสอบข้อมูล" });
+    }
+
+    res
+      .status(500)
+      .json({ message: "เกิดข้อผิดพลาดในการลงทะเบียน กรุณาลองใหม่ภายหลัง" });
   }
 };
+
 const login = async (req, res) => {
   const { email, password } = req.body;
   try {
     const user = await User.findUserByEmail(email);
     if (!user) {
-      return res.status(401).json({ message: "Invalid username or password" });
+      return res.status(401).json({ message: "อีเมลหรือรหัสผ่านไม่ถูกต้อง" });
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return res.status(401).json({ message: "Invalid username or password" });
+      return res.status(401).json({ message: "อีเมลหรือรหัสผ่านไม่ถูกต้อง" });
     }
 
     const token = jwt.sign(
