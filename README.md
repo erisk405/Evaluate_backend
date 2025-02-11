@@ -171,9 +171,10 @@ npm start
 
 ```
 
-# 🔗 Links
-- **Frontend Repository:** <a href="https://github.com/erisk405/Evaluate_backend"><p>GitHub</p></a>
-- **Backend Repository:** <a href="https://github.com/erisk405/Evaluate"><p>GitHub</p></a>
+## 🔗 Links
+- **Frontend Repository:** [GitHub](https://github.com/erisk405/Evaluate)
+- **Backend Repository:** [GitHub](https://github.com/erisk405/Evaluate_backend)
+
 
 ## Awesome contributors :star_struck:
 <a href="https://github.com/erisk405">
