@@ -714,10 +714,7 @@ const getResultEvaluateDetail = async (req, res) => {
         );
         const visionLevel = visionForm?.level;
         if (!visionLevel || visionLevel === "UNSET") {
-          return res.status(400).json({
-            message:
-              "Not set yet visionFormLevel : for " + userDetail.role.role_name,
-          });
+          throw new Error("ยังไม่ได้กำหนดค่า การแสดงผลของฟอร์ม(Form Vision) " + userDetail.role.role_name,)
         }
 
         const questions = await Promise.all(
@@ -880,7 +877,7 @@ const getResultEvaluateDetail = async (req, res) => {
     console.log(error);
 
     return res.status(500).json({
-      message: "เกิดข้อผิดพลาดภายในระบบ",
+      message: error.message,
       error: error.message,
     });
   }

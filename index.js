@@ -7,7 +7,7 @@ const { Server } = require("socket.io");
 const http = require("http");
 
 // Allow specific frontend origins
-const allowedOrigins = [process.env.CLIENT_URL, "http://localhost:3000"];
+const allowedOrigins = [process.env.CLIENT_URL];
 
 const app = express();
 const server = http.createServer(app);
