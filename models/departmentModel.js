@@ -296,15 +296,26 @@ const updateImage = async (departmentId, imageId) => {
 };
 const deleteDepartment = async (departmentId) => {
   try {
+    // ทำการลบข้อมูลโดยตรง แต่จับข้อผิดพลาดที่เกิดจาก foreign key constraint
     return await prisma.department.delete({
       where: { id: departmentId },
-      include:{
-        image:true
-      }
+      include: { image: true }
     });
   } catch (error) {
-    console.error({ message: error.message });
-    throw new Error("Database error during department deletion");
+    // จัดการข้อผิดพลาดที่เกิดจาก prisma
+    if (error.code === 'P2003' || error.code === 'P2014') {
+      // P2003: Foreign key constraint failed on the field
+      // P2014: The change you are trying to make would violate the required relation
+      throw new Error("RefferentData");
+    }
+    
+    if (error.code === 'P2025') {
+      // Record to delete does not exist
+      throw new Error("ไม่พบข้อมูลแผนกที่ต้องการลบ");
+    }
+    
+    // กรณีอื่นๆ
+    throw new Error(`เกิดข้อผิดพลาดในการลบข้อมูล: ${error.message}`);
   }
 };
 const updateDepartmentImage = async (departmentId, imageId) => {

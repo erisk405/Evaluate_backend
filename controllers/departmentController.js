@@ -208,30 +208,49 @@ const getDepartmentForAdmin = async (req, res) => {
   }
 };
 
-const deleteDepartment = async (req,res)=>{
+const deleteDepartment = async (req, res) => {
   try {
     const depart_id = req.params.id;
     const deleteDepart = await department.deleteDepartment(depart_id);
-    if(!deleteDepart){
-      return res.status(400).json({message:"Cannot delete department"})
-    }
-
+    
     if (deleteDepart.image) {
       await route.deleteImageFromCloudinary(deleteDepart.image.public_id);
       await Image.DeleteImage(deleteDepart.image.id);
     }
-
-    res.status(200).json({message:"delete success",delete:deleteDepart})
-
-
+    
+    res.status(200).json({
+      message: "ลบข้อมูลออกจากระบบแล้ว",
+      delete: deleteDepart
+    });
     
   } catch (error) {
+    // กรณีแผนกยังมีข้อมูลที่ถูกอ้างอิงอยู่
+    if (error.message === "RefferentData") {
+      return res.status(400).json({
+        error: "reference_constraint_error",
+        message: "ไม่สามารถลบแผนกได้เนื่องจากยังมีข้อมูลที่เกี่ยวข้อง",
+        details: "กรุณาลบข้อมูลที่อ้างอิงถึงแผนกนี้ก่อน เช่น พนักงาน หรือข้อมูลอื่นๆ ที่เกี่ยวข้อง",
+        solution: "โปรดย้ายหรือลบข้อมูลที่เกี่ยวข้องกับแผนกนี้ก่อนทำการลบแผนก"
+      });
+    } 
+    
+    // กรณีไม่พบแผนกที่ต้องการลบ
+    if (error.message === "ไม่พบข้อมูลแผนกที่ต้องการลบ") {
+      return res.status(404).json({
+        error: "not_found_error",
+        message: "ไม่พบข้อมูลแผนกที่ต้องการลบ",
+        details: `ไม่พบแผนกที่มีรหัส ${req.params.id} ในระบบ`
+      });
+    }
+    
+    // กรณีเกิดข้อผิดพลาดอื่นๆ
     return res.status(500).json({
-      message: "เกิดข้อผิดพลาดภายในระบบ",
-      error: error.message,
+      error: "server_error",
+      message: "เกิดข้อผิดพลาดในการลบข้อมูลแผนก",
+      details: process.env.NODE_ENV === 'development' ? error.message : "กรุณาติดต่อผู้ดูแลระบบ"
     });
   }
-}
+};
 module.exports = {
   createDepartment,
   getDepartments,

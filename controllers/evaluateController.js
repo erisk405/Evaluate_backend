@@ -714,7 +714,7 @@ const getResultEvaluateDetail = async (req, res) => {
         );
         const visionLevel = visionForm?.level;
         if (!visionLevel || visionLevel === "UNSET") {
-          throw new Error("ยังไม่ได้กำหนดค่า การแสดงผลของฟอร์ม(Form Vision) " + userDetail.role.role_name,)
+          throw new Error("ยังไม่ได้กำหนดค่า การแสดงผลของฟอร์ม(Form Vision) ตำแหน่ง " + userDetail.role.role_name,)
         }
 
         const questions = await Promise.all(
@@ -894,18 +894,16 @@ const getResultEvaluateDetailByUserId = async (req, res) => {
     );
 
     const headData = {
-      evaluatorName: userDetail.prefix.prefix_name + userDetail.name,
-      periodName: evaluateData.period.title,
-      roleName: userDetail.role.role_name,
-      department: userDetail.department.department_name,
+      evaluatorName: userDetail?.prefix?.prefix_name + userDetail?.name,
+      periodName: evaluateData?.period?.title,
+      roleName: userDetail?.role?.role_name,
+      department: userDetail?.department?.department_name,
       totalAvg: 3,
       totalSD: 0,
     };
 
     if (!evaluateData) {
-      return res
-        .status(404)
-        .json({ message: "not found evaluate for this evaluator" });
+      throw new Error("ไม่พบการประเมินผลของผู้ใช้งาน")
     }
     const allScores = [];
     const formResults = await Promise.all(
@@ -918,10 +916,8 @@ const getResultEvaluateDetailByUserId = async (req, res) => {
         );
         const visionLevel = visionForm?.level;
         if (!visionLevel || visionLevel === "UNSET") {
-          return res.status(400).json({
-            message:
-              "Not set yet visionFormLevel : for " + userDetail.role.role_name,
-          });
+          throw new Error("ยังไม่ได้กำหนดค่า การแสดงผลของฟอร์ม(Form Vision) ตำแหน่ง" + userDetail.role.role_name)
+      
         }
 
         const questions = await Promise.all(
@@ -1084,7 +1080,7 @@ const getResultEvaluateDetailByUserId = async (req, res) => {
     console.log(error);
 
     return res.status(500).json({
-      message: "เกิดข้อผิดพลาดภายในระบบ",
+      message: "เกิดข้อผิดพลาดภายในระบบ เพราะ " + error.message,
       error: error.message,
     });
   }
