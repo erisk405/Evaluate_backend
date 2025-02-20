@@ -12,7 +12,6 @@ const evaluateController = require("./controllers/evaluateController");
 const superviseController = require("./controllers/superviseController");
 const exportController = require("./controllers/exportController");
 const { upload, uploadDepartmentImage } = require("./controllers/routeUpload");
-const { verify } = require("jsonwebtoken");
 const router = express.Router();
 
 router.get("/protected",middleware.verifyToken,(req,res) =>{

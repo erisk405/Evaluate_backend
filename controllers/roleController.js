@@ -127,8 +127,7 @@ const resolveRole = async (req, res) => {
       if(!setUserRole){
         return res.status(404).json({ message: "don't set UserRole" });
       }
-      console.log('updated UserRole');
-      
+      console.log('Updated role success');
     }
 
     // io.emit("rolRequestHandled", { requestId, status });

@@ -1,5 +1,4 @@
 const User = require("../models/userModel");
-const Role = require("../models/roleModel");
 const Image = require("../models/imageModel");
 const bcrypt = require("bcryptjs");
 const { deleteImage } = require("./routeUpload");
