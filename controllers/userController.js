@@ -268,9 +268,7 @@ const changePassword = async (req, res) => {
     const { old_pass, new_pass } = req.body;
     const isMatch = await bcrypt.compare(old_pass, user.password);
     if (!isMatch) {
-      return res
-        .status(409)
-        .json({ message: "รหัสผ่านเดิม ไม่ถูกต้อง !!" });
+      return res.status(409).json({ message: "รหัสผ่านเดิม ไม่ถูกต้อง !!" });
     }
     const updated = await User.updateUserPassword(userId, new_pass);
 
@@ -312,7 +310,7 @@ const deleteUser = async (req, res) => {
     // Find all users that will be deleted
     const users = await User.findUsersByIds(userIds);
     if (!users || users.length === 0) {
-      return res.status(404).json({ error: "No users found!" });
+      return res.status(404).json({ error: "ไม่พบผู้ใช้งาน!" });
     }
     // Delete images for all users that have them
     for (const user of users) {
@@ -324,11 +322,17 @@ const deleteUser = async (req, res) => {
     // Delete users and their related records
     const result = await User.deleteUsersByIds(userIds);
     return res.status(200).json({
-      message: "Users and related records deleted successfully",
+      message: "ลบผู้ใช้และบันทึกที่เกี่ยวข้องสำเร็จแล้ว",
       deletedCount: result.count,
     });
   } catch (error) {
     console.log(error);
+    if ((error.code = "P2003")) {
+      return res.status(401).json({
+        message: "ไม่สามารถลบได้ เนื่องจากผู้ใช้งานดังกล่าวมีผลการประเมินแล้ว",
+        error: error.message,
+      });
+    }
     return res.status(500).json({
       message: "เกิดข้อผิดพลาดภายในระบบ",
       error: error.message,
@@ -351,5 +355,5 @@ module.exports = {
   changePassword,
   changePasswordByUserId,
   deleteUser,
-  updateUserImageByAdmin
+  updateUserImageByAdmin,
 };

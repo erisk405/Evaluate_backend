@@ -86,8 +86,8 @@ const forgotPassword = async (req, res) => {
     }
 
     // Generate token for password reset
-    const token = jwt.sign({ uid: findUser.id }, process.env.jwtSecret, {
-      expiresIn: "15m",
+    const token = jwt.sign({ id: findUser.id }, process.env.jwtSecret, {
+      expiresIn: "900s", // 15 minutes
     });
     const resetLink = `${baseUrl}/reset-password/${token}`;
 
@@ -148,7 +148,7 @@ const resetPassword = async (req, res) => {
           .status(500)
           .json({ message: "Failed to authenticate token" });
       }
-      const updated = await User.updateUserPassword(decoded.uid, newPassword);
+      const updated = await User.updateUserPassword(decoded.id, newPassword);
       if (!updated) {
         return res
           .status(403)

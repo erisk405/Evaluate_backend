@@ -10,16 +10,24 @@ const verifyToken = (req, res, next) => {
   }
 
   const token = authHeader.split(" ")[1];
-
+  
   jwt.verify(token, process.env.jwtSecret, async (err, decoded) => {
     if (err) {
       console.error("Token verification error:", err);
       return res.status(500).json({ message: "Failed to authenticate token" });
     }
-    const { id, role } = await User.findUserById(decoded.id);
-    req.userId = id;
-    req.role = role.role_name;
-    next();
+    try {
+      if (!decoded.id) {
+        return res.status(200).json({ message: "reset password" });
+      }
+      const { id, role } = await User.findUserById(decoded.id);
+      req.userId = id;
+      req.role = role.role_name;
+      next();
+    } catch (error) {
+      console.error("Error:", error);
+      return res.status(500).json({ message: "Failed to authenticate token" });
+    }
   });
 };
 
