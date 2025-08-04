@@ -8,7 +8,6 @@ const createEvaluate = async (evaluate, tx) => {
         period_id: evaluate.period_id,
         assessor_id: evaluate.assessor_id,
         evaluator_id: evaluate.evaluator_id,
-        eval_depart_id: evaluate.eval_depart_id,
         date: new Date(),
       },
     });

@@ -13,6 +13,28 @@ const prisma = new PrismaClient();
 const createEvaluate = async (req, res) => {
   try {
     const evalData = req.body;
+    
+    // ตรวจสอบว่ามีการประเมินอยู่แล้วหรือไม่
+    const existingEvaluation = await prisma.evaluate.findFirst({
+      where: {
+        assessor_id: evalData.assessor_id,
+        evaluator_id: evalData.evaluator_id,
+        period_id: evalData.period_id
+      }
+    });
+
+    if (existingEvaluation) {
+      return res.status(409).json({
+        message: "ท่านได้ทำการประเมินบุคคลนี้ไปแล้ว",
+        error: "DUPLICATE_EVALUATION",
+        details: {
+          assessor_id: evalData.assessor_id,
+          evaluator_id: evalData.evaluator_id,
+          period_id: evalData.period_id
+        }
+      });
+    }
+
     //Transaction ($transaction):
     // Prisma มีเมธอด $transaction สำหรับรวมหลายคำสั่ง SQL ให้อยู่ใน transaction เดียวกัน
     // หากคำสั่งใดล้มเหลว (throw error) ระบบจะทำการ rollback ทุกคำสั่งที่อยู่ใน transaction นั้น
@@ -49,6 +71,15 @@ const createEvaluate = async (req, res) => {
     res.status(201).json(result);
   } catch (error) {
     console.error("Error in createEvaluate:", error);
+
+    // ตรวจสอบ Prisma error code P2002 (Unique constraint violation)
+    if (error.code === 'P2002') {
+      return res.status(409).json({
+        message: "ท่านได้ทำการประเมินบุคคลนี้ไปแล้ว",
+        error: "DUPLICATE_EVALUATION",
+        details: error.meta
+      });
+    }
 
     // ตรวจสอบและแยกข้อผิดพลาดเพื่อส่งข้อความ
     if (error.message === "Failed to create evaluate") {

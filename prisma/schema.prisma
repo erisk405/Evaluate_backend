@@ -84,7 +84,7 @@ model Evaluate {
   period         Period           @relation(fields: [period_id], references: [period_id])
   evaluateDetail EvaluateDetail[] @relation("EvaluateToDetail")
 
-  @@unique([assessor_id, evaluator_id])
+  @@unique([assessor_id, evaluator_id, period_id])
 }
 
 model EvaluateDetail {
